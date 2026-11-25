@@ -1,0 +1,2833 @@
+################################################################################
+# Regime Regular - cálculo com observabilidade (4 itens, item 4 com erro REG-011)
+# POST <BASE>/regime/api/calculadora/observabilidade/regime-geral
+# Corpo enviado (reg.json):
+{"id":"6194602ea71cbf9431c236de4409d920","versao":"1.0.0","dhFatoGerador":"2027-03-10T10:00:00-03:00","municipio":4314902,"uf":"RS",
+"itens":[
+{"numero":1,"ncm":"10063021","cst":"200","cClassTrib":"200003","baseCalculo":100.00,"quantidade":20,"unidade":"KG","aliquotasNominais":{"cbs":8.8,"ibsEstadual":0.05,"ibsMunicipal":0.05}},
+{"numero":2,"ncm":"22030000","cst":"000","cClassTrib":"000001","quantidade":12,"unidade":"LT","impostoSeletivo":{"cst":"000","cClassTrib":"000001","baseCalculo":150.00,"quantidade":12,"unidade":"LT","impostoInformado":15.00},"aliquotasNominais":{"cbs":8.8,"ibsEstadual":0.05,"ibsMunicipal":0.05,"impostoSeletivo":{"adValorem":10.0}}},
+{"numero":3,"nbs":"122011200","cst":"200","cClassTrib":"200028","baseCalculo":1200.00,"aliquotasNominais":{"cbs":8.8,"ibsEstadual":0.05,"ibsMunicipal":0.05}},
+{"numero":4,"ncm":"02013000","cst":"200","cClassTrib":"200035","baseCalculo":80.00,"aliquotasNominais":{"cbs":8.8,"ibsEstadual":0.05,"ibsMunicipal":0.05}}]}
+
+# Resposta:
+HTTP/1.1 200 
+X-CALC-APP-VERSION: 1.7.2
+X-CALC-DB-VERSION: V0073
+x-warning-dados-simulados: 6
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 0
+X-Frame-Options: SAMEORIGIN
+Content-Type: application/json
+{
+  "objetos": [
+    {
+      "nObj": 1,
+      "estadoItem": "CALCULO_SIMULADO",
+      "tribCalc": {
+        "IBSCBS": {
+          "CST": "200",
+          "cClassTrib": "200003",
+          "gIBSCBS": {
+            "vBC": "100.00",
+            "gIBSUF": {
+              "pIBSUF": "0.05",
+              "gRed": {
+                "pRedAliq": "100.00",
+                "pAliqEfet": "0.00"
+              },
+              "vIBSUF": "0.00"
+            },
+            "gIBSMun": {
+              "pIBSMun": "0.05",
+              "gRed": {
+                "pRedAliq": "100.00",
+                "pAliqEfet": "0.00"
+              },
+              "vIBSMun": "0.00"
+            },
+            "vIBS": "0.00",
+            "gCBS": {
+              "pCBS": "8.80",
+              "gRed": {
+                "pRedAliq": "100.00",
+                "pAliqEfet": "0.00"
+              },
+              "vCBS": "0.00"
+            }
+          },
+          "memoriaCalculo": {
+            "cbs": "Operação de consumo com enquadramento legal em Art. 125, tributada conforme Alíquota zero. A base de cálculo utilizada é de R$ 100,00, com alíquota de zero.",
+            "ibsUF": "Operação de consumo com enquadramento legal em Art. 125, tributada conforme Alíquota zero. A base de cálculo utilizada é de R$ 100,00, com alíquota de zero.",
+            "ibsMun": "Operação de consumo com enquadramento legal em Art. 125, tributada conforme Alíquota zero. A base de cálculo utilizada é de R$ 100,00, com alíquota de zero."
+          }
+        }
+      }
+    },
+    {
+      "nObj": 2,
+      "estadoItem": "CALCULO_SIMULADO",
+      "tribCalc": {
+        "IS": {
+          "CSTIS": "000",
+          "cClassTribIS": "000001",
+          "vBCIS": "150.00",
+          "pIS": "10.00",
+          "uTrib": "LT",
+          "qTrib": "12",
+          "vIS": "15.00",
+          "memoriaCalculo": "Operação de consumo sujeita à tributação pelo Imposto Seletivo, com enquadramento legal em Art. 412, I, tributada conforme Tributação pelo Imposto Seletivo - Com Cálculo. A base de cálculo utilizada é de R$ 150,00, com alíquota ad valorem de 10,00%. A alíquota ad rem é de 0,00."
+        },
+        "IBSCBS": {
+          "CST": "000",
+          "cClassTrib": "000001",
+          "gIBSCBS": {
+            "vBC": "165.00",
+            "gIBSUF": {
+              "pIBSUF": "0.05",
+              "vIBSUF": "0.08"
+            },
+            "gIBSMun": {
+              "pIBSMun": "0.05",
+              "vIBSMun": "0.08"
+            },
+            "vIBS": "0.16",
+            "gCBS": {
+              "pCBS": "8.80",
+              "vCBS": "14.52"
+            }
+          },
+          "memoriaCalculo": {
+            "cbs": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 165,00, com alíquota de 8,80%.",
+            "ibsUF": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 165,00, com alíquota de 0,05%.",
+            "ibsMun": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 165,00, com alíquota de 0,05%."
+          }
+        }
+      }
+    },
+    {
+      "nObj": 3,
+      "estadoItem": "CALCULO_SIMULADO",
+      "tribCalc": {
+        "IBSCBS": {
+          "CST": "200",
+          "cClassTrib": "200028",
+          "gIBSCBS": {
+            "vBC": "1200.00",
+            "gIBSUF": {
+              "pIBSUF": "0.05",
+              "gRed": {
+                "pRedAliq": "60.00",
+                "pAliqEfet": "0.02"
+              },
+              "vIBSUF": "0.24"
+            },
+            "gIBSMun": {
+              "pIBSMun": "0.05",
+              "gRed": {
+                "pRedAliq": "60.00",
+                "pAliqEfet": "0.02"
+              },
+              "vIBSMun": "0.24"
+            },
+            "vIBS": "0.48",
+            "gCBS": {
+              "pCBS": "8.80",
+              "gRed": {
+                "pRedAliq": "60.00",
+                "pAliqEfet": "3.52"
+              },
+              "vCBS": "42.24"
+            }
+          },
+          "memoriaCalculo": {
+            "cbs": "Operação de consumo com enquadramento legal em Art. 129, tributada conforme Alíquota reduzida em 60%. A base de cálculo utilizada é de R$ 1.200,00, com alíquota de 8,80%, sendo que esse regime define uma redução de 60,00% na alíquota.",
+            "ibsUF": "Operação de consumo com enquadramento legal em Art. 129, tributada conforme Alíquota reduzida em 60%. A base de cálculo utilizada é de R$ 1.200,00, com alíquota de 0,05%, sendo que esse regime define uma redução de 60,00% na alíquota.",
+            "ibsMun": "Operação de consumo com enquadramento legal em Art. 129, tributada conforme Alíquota reduzida em 60%. A base de cálculo utilizada é de R$ 1.200,00, com alíquota de 0,05%, sendo que esse regime define uma redução de 60,00% na alíquota."
+          }
+        }
+      }
+    },
+    {
+      "nObj": 4,
+      "estadoItem": "INCONSISTENCIA_ENTRADA",
+      "erros": [
+        {
+          "type": "http://localhost/api/calculadora/observabilidade/erros?codigo=REG-011",
+          "title": "NCM não vinculada",
+          "code": "REG-011",
+          "pointer": "#/itens/3/ncm",
+          "detail": "NCM de código 02013000 não vinculada à Classificação Tributária de código 200035 (CBS e IBS)"
+        }
+      ]
+    }
+  ],
+  "total": {
+    "tribCalc": {
+      "ISTot": {
+        "vIS": "15.00"
+      },
+      "IBSCBSTot": {
+        "vBCIBSCBS": "1465.00",
+        "gIBS": {
+          "gIBSUF": {
+            "vDif": "0.00",
+            "vDevTrib": "0.00",
+            "vIBSUF": "0.32"
+          },
+          "gIBSMun": {
+            "vDif": "0.00",
+            "vDevTrib": "0.00",
+            "vIBSMun": "0.32"
+          },
+          "vIBS": "0.64",
+          "vCredPres": "0.00",
+          "vCredPresCondSus": "0.00"
+        },
+        "gCBS": {
+          "vDif": "0.00",
+          "vDevTrib": "0.00",
+          "vCBS": "56.76",
+          "vCredPres": "0.00",
+          "vCredPresCondSus": "0.00"
+        },
+        "gMono": {
+          "vIBSMono": "0.00",
+          "vCBSMono": "0.00",
+          "vIBSMonoReten": "0.00",
+          "vCBSMonoReten": "0.00",
+          "vIBSMonoRet": "0.00",
+          "vCBSMonoRet": "0.00"
+        }
+      }
+    }
+  }
+}
+
+################################################################################
+# Regime Regular - erro global (UF/município inválidos) -> 422 problem+json
+# POST <BASE>/regime/api/calculadora/observabilidade/regime-geral
+# Corpo enviado (reg422.json):
+{"id":"x","versao":"1.0.0","dhFatoGerador":"2027-03-10T10:00:00-03:00","municipio":9999999,"uf":"XX","itens":[{"numero":1,"cst":"000","cClassTrib":"000001","baseCalculo":10}]}
+
+# Resposta:
+HTTP/1.1 422 
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 0
+X-Frame-Options: SAMEORIGIN
+Content-Type: application/problem+json
+{
+  "detail": "O cálculo contém 1 erro(s).",
+  "instance": "/api/calculadora/observabilidade/regime-geral",
+  "status": 422,
+  "title": "Erros no processamento do cálculo",
+  "type": "about:blank",
+  "timestamp": "2026-11-25T21:57:31.268527413Z",
+  "errors": [
+    {
+      "type": "http://localhost/api/calculadora/observabilidade/erros?codigo=REG-020",
+      "title": "UF não encontrada",
+      "code": "REG-020",
+      "pointer": "#/itens/-1",
+      "detail": "UF de sigla XX não encontrada"
+    }
+  ]
+}
+
+################################################################################
+# Regime Regular - JSON fora do contrato -> 400 problem+json
+# POST <BASE>/regime/api/calculadora/observabilidade/regime-geral
+# Corpo enviado (reg400.json):
+{"id":"x","versao":"1.0.0","itens":"abc"}
+
+# Resposta:
+HTTP/1.1 400 
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 0
+X-Frame-Options: SAMEORIGIN
+Content-Type: application/problem+json
+Connection: close
+{
+  "detail": "JSON parse error: Cannot deserialize value of type `java.util.ArrayList<br.gov.serpro.rtc.api.model.input.ItemOperacaoInput>` from String value (token `JsonToken.VALUE_STRING`)",
+  "instance": "/api/calculadora/observabilidade/regime-geral",
+  "status": 400,
+  "title": "Erro de sistema não previsto",
+  "type": "http://localhost/errors/erro-de-sistema-nao-previsto",
+  "timestamp": "2026-11-25T21:57:31.313161405Z"
+}
+
+################################################################################
+# Regime Regular - descrição de erro
+# GET <BASE>/regime/api/calculadora/observabilidade/erros?codigo=REG-011
+# Resposta:
+HTTP/1.1 200 
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 0
+X-Frame-Options: SAMEORIGIN
+Content-Type: application/json
+{
+  "codigo": "REG-011",
+  "titulo": "NCM não vinculada",
+  "descricao": "O código NCM informado não está vinculado a nenhuma classificação tributária vigente."
+}
+
+################################################################################
+# Regime Regular - descrição de erro inexistente (404)
+# GET <BASE>/regime/api/calculadora/observabilidade/erros?codigo=REG-999
+# Resposta:
+HTTP/1.1 404 
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 0
+X-Frame-Options: SAMEORIGIN
+Content-Length: 0
+
+
+################################################################################
+# Regime Regular - versão
+# GET <BASE>/regime/api/calculadora/dados-abertos/versao
+# Resposta:
+HTTP/1.1 200 
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 0
+X-Frame-Options: SAMEORIGIN
+Content-Type: application/json
+{
+  "ambiente": "offline",
+  "dataVersaoDb": "2026-11-09",
+  "descricaoVersaoApp": "1.7.2",
+  "descricaoVersaoDb": "Nova tabela de Classificações Tributárias (IT 2025.002 v.1.71), publicada em 30/10/2026.",
+  "versaoApp": "1.7.2",
+  "versaoDb": "V0073"
+}
+
+################################################################################
+# Dados abertos - UFs
+# GET <BASE>/regime/api/calculadora/dados-abertos/ufs
+# Resposta:
+HTTP/1.1 200 
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 0
+X-Frame-Options: SAMEORIGIN
+Content-Type: application/json
+[
+  {
+    "codigo": 11,
+    "nome": "RONDÔNIA",
+    "sigla": "RO"
+  },
+  {
+    "codigo": 12,
+    "nome": "ACRE",
+    "sigla": "AC"
+  },
+  {
+    "codigo": 13,
+    "nome": "AMAZONAS",
+    "sigla": "AM"
+  },
+  {
+    "codigo": 14,
+    "nome": "RORAIMA",
+    "sigla": "RR"
+  },
+  {
+    "codigo": 15,
+    "nome": "PARÁ",
+    "sigla": "PA"
+  },
+  {
+    "codigo": 16,
+    "nome": "AMAPÁ",
+    "sigla": "AP"
+  },
+  {
+    "codigo": 17,
+    "nome": "TOCANTINS",
+    "sigla": "TO"
+  },
+  {
+    "codigo": 21,
+    "nome": "MARANHÃO",
+    "sigla": "MA"
+  },
+  {
+    "codigo": 22,
+    "nome": "PIAUÍ",
+    "sigla": "PI"
+  },
+  {
+    "codigo": 23,
+    "nome": "CEARÁ",
+    "sigla": "CE"
+  },
+  {
+    "codigo": 24,
+    "nome": "RIO GRANDE DO NORTE",
+    "sigla": "RN"
+  },
+  {
+    "codigo": 25,
+    "nome": "PARAÍBA",
+    "sigla": "PB"
+  },
+  {
+    "codigo": 26,
+    "nome": "PERNAMBUCO",
+    "sigla": "PE"
+  },
+  {
+    "codigo": 27,
+    "nome": "ALAGOAS",
+    "sigla": "AL"
+  },
+  {
+    "codigo": 28,
+    "nome": "SERGIPE",
+    "sigla": "SE"
+  },
+  {
+    "codigo": 29,
+    "nome": "BAHIA",
+    "sigla": "BA"
+  },
+  {
+    "codigo": 31,
+    "nome": "MINAS GERAIS",
+    "sigla": "MG"
+  },
+  {
+    "codigo": 32,
+    "nome": "ESPÍRITO SANTO",
+    "sigla": "ES"
+  },
+  {
+    "codigo": 33,
+    "nome": "RIO DE JANEIRO",
+    "sigla": "RJ"
+  },
+  {
+    "codigo": 35,
+    "nome": "SÃO PAULO",
+    "sigla": "SP"
+  },
+  {
+    "codigo": 41,
+    "nome": "PARANÁ",
+    "sigla": "PR"
+  },
+  {
+    "codigo": 42,
+    "nome": "SANTA CATARINA",
+    "sigla": "SC"
+  },
+  {
+    "codigo": 43,
+    "nome": "RIO GRANDE DO SUL",
+    "sigla": "RS"
+  },
+  {
+    "codigo": 50,
+    "nome": "MATO GROSSO DO SUL",
+    "sigla": "MS"
+  },
+  {
+    "codigo": 51,
+    "nome": "MATO GROSSO",
+    "sigla": "MT"
+  },
+  {
+    "codigo": 52,
+    "nome": "GOIÁS",
+    "sigla": "GO"
+  },
+  {
+    "codigo": 53,
+    "nome": "DISTRITO FEDERAL",
+    "sigla": "DF"
+  },
+  {
+    "codigo": 99,
+    "nome": "EXTERIOR",
+    "sigla": "EX"
+  }
+]
+
+################################################################################
+# Dados abertos - municípios da UF
+# GET <BASE>/regime/api/calculadora/dados-abertos/ufs/municipios?siglaUf=AC
+# Resposta:
+HTTP/1.1 200 
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 0
+X-Frame-Options: SAMEORIGIN
+Content-Type: application/json
+[
+  {
+    "codigo": 1200013,
+    "nome": "Acrelândia"
+  },
+  {
+    "codigo": 1200054,
+    "nome": "Assis Brasil"
+  },
+  {
+    "codigo": 1200104,
+    "nome": "Brasiléia"
+  },
+  {
+    "codigo": 1200138,
+    "nome": "Bujari"
+  },
+  {
+    "codigo": 1200179,
+    "nome": "Capixaba"
+  },
+  {
+    "codigo": 1200203,
+    "nome": "Cruzeiro do Sul"
+  },
+  {
+    "codigo": 1200252,
+    "nome": "Epitaciolândia"
+  },
+  {
+    "codigo": 1200302,
+    "nome": "Feijó"
+  },
+  {
+    "codigo": 1200328,
+    "nome": "Jordão"
+  },
+  {
+    "codigo": 1200336,
+    "nome": "Mâncio Lima"
+  },
+  {
+    "codigo": 1200344,
+    "nome": "Manoel Urbano"
+  },
+  {
+    "codigo": 1200351,
+    "nome": "Marechal Thaumaturgo"
+  },
+  {
+    "codigo": 1200385,
+    "nome": "Plácido de Castro"
+  },
+  {
+    "codigo": 1200393,
+    "nome": "Porto Walter"
+  },
+  {
+    "codigo": 1200401,
+    "nome": "Rio Branco"
+  },
+  {
+    "codigo": 1200427,
+    "nome": "Rodrigues Alves"
+  },
+  {
+    "codigo": 1200435,
+    "nome": "Santa Rosa do Purus"
+  },
+  {
+    "codigo": 1200450,
+    "nome": "Senador Guiomard"
+  },
+  {
+    "codigo": 1200500,
+    "nome": "Sena Madureira"
+  },
+  {
+    "codigo": 1200609,
+    "nome": "Tarauacá"
+  },
+  {
+    "codigo": 1200708,
+    "nome": "Xapuri"
+  },
+  {
+    "codigo": 1200807,
+    "nome": "Porto Acre"
+  }
+]
+
+################################################################################
+# Dados abertos - CST CBS/IBS com cClassTrib aninhadas
+# GET <BASE>/regime/api/calculadora/dados-abertos/situacoes-tributarias/cbs-ibs?data=2027-01-01
+# Resposta:
+HTTP/1.1 200 
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 0
+X-Frame-Options: SAMEORIGIN
+Content-Type: application/json
+[
+  {
+    "classificacoesTributarias": [
+      {
+        "codigo": "000001",
+        "descricao": "Situações tributadas integralmente pelo IBS e CBS."
+      },
+      {
+        "codigo": "000002",
+        "descricao": "Exploração de via"
+      },
+      {
+        "codigo": "000003",
+        "descricao": "Regime automotivo - projetos incentivados (art. 311)"
+      },
+      {
+        "codigo": "000004",
+        "descricao": "Regime automotivo - projetos incentivados (art. 312)"
+      },
+      {
+        "codigo": "000005",
+        "descricao": "Operação com EAC destinado à mistura com gasolina A, mas com saída do biocombustível com destinação diversa"
+      },
+      {
+        "codigo": "000006",
+        "descricao": "Situações tributadas integralmente pelo IBS e CBS realizadas por autônomo"
+      }
+    ],
+    "codigo": "000",
+    "descricao": "Tributação integral",
+    "id": 1
+  },
+  {
+    "classificacoesTributarias": [
+      {
+        "codigo": "010001",
+        "descricao": "Operações do FGTS não realizadas pela Caixa Econômica Federal"
+      },
+      {
+        "codigo": "010002",
+        "descricao": "Operações do serviço financeiro"
+      }
+    ],
+    "codigo": "010",
+    "descricao": "Tributação com alíquotas uniformes",
+    "id": 2
+  },
+  {
+    "classificacoesTributarias": [
+      {
+        "codigo": "011001",
+        "descricao": "Planos de assistência funerária."
+      },
+      {
+        "codigo": "011002",
+        "descricao": "Planos de assistência à saúde"
+      },
+      {
+        "codigo": "011003",
+        "descricao": "Intermediação de planos de assistência à saúde"
+      },
+      {
+        "codigo": "011004",
+        "descricao": "Concursos e prognósticos"
+      },
+      {
+        "codigo": "011005",
+        "descricao": "Planos de assistência à saúde de animais domésticos"
+      }
+    ],
+    "codigo": "011",
+    "descricao": "Tributação com alíquotas uniformes reduzidas",
+    "id": 3
+  },
+  {
+    "classificacoesTributarias": [
+      {
+        "codigo": "200001",
+        "descricao": "Serviços de transporte de bens até as zonas de processamento de exportação e bens exportados a partir das zonas de processamento de exportação"
+      },
+      {
+        "codigo": "200002",
+        "descricao": "Fornecimento ou importação para produtor rural não contribuinte ou TAC"
+      },
+      {
+        "codigo": "200003",
+        "descricao": "Vendas de produtos destinados à alimentação humana (Anexo I)"
+      },
+      {
+        "codigo": "200004",
+        "descricao": "Fornecimento de dispositivos médicos (Anexo XII)"
+      },
+      {
+        "codigo": "200005",
+        "descricao": "Fornecimento de dispositivos médicos para órgãos da administração pública e entidades de saúde imunes (Anexo IV)"
+      },
+      {
+        "codigo": "200006",
+        "descricao": "Situação de emergência de saúde pública reconhecida pelo Poder público"
+      },
+      {
+        "codigo": "200007",
+        "descricao": "Fornecimento dos dispositivos de acessibilidade próprios para pessoas com deficiência (Anexo XIII)"
+      },
+      {
+        "codigo": "200008",
+        "descricao": "Fornecimento dos dispositivos de acessibilidade próprios para pessoas com deficiência adquiridos por órgãos da administração pública (Anexo V)"
+      },
+      {
+        "codigo": "200009",
+        "descricao": "Fornecimento dos medicamentos registrados na Anvisa"
+      },
+      {
+        "codigo": "200010",
+        "descricao": "Fornecimento dos medicamentos registrados na Anvisa, adquiridos por órgãos da administração pública"
+      },
+      {
+        "codigo": "200011",
+        "descricao": "Fornecimento das composições para nutrição enteral e parenteral quando adquiridas por órgãos da administração pública (Anexo VI)"
+      },
+      {
+        "codigo": "200012",
+        "descricao": "Situação de emergência de saúde pública reconhecida pelo Poder público"
+      },
+      {
+        "codigo": "200013",
+        "descricao": "Fornecimento de tampões higiênicos, absorventes higiênicos internos ou externos"
+      },
+      {
+        "codigo": "200014",
+        "descricao": "Fornecimento dos produtos hortícolas, frutas e ovos (Anexo XV)"
+      },
+      {
+        "codigo": "200015",
+        "descricao": "Venda de automóveis de passageiros de fabricação nacional adquiridos por motoristas profissionais ou pessoas com deficiência"
+      },
+      {
+        "codigo": "200016",
+        "descricao": "Prestação de serviços de pesquisa e desenvolvimento por Instituição Científica, Tecnológica e de Inovação (ICT)"
+      },
+      {
+        "codigo": "200017",
+        "descricao": "Operações relacionadas ao FGTS"
+      },
+      {
+        "codigo": "200018",
+        "descricao": "Operações de resseguro e retrocessão"
+      },
+      {
+        "codigo": "200019",
+        "descricao": "Importador dos serviços financeiros contribuinte"
+      },
+      {
+        "codigo": "200020",
+        "descricao": "Operação praticada por sociedades cooperativas optantes por regime específico do IBS e CBS"
+      },
+      {
+        "codigo": "200021",
+        "descricao": "Serviços de transporte público coletivo de passageiros ferroviário e hidroviário"
+      },
+      {
+        "codigo": "200022",
+        "descricao": "Operação originada fora da ZFM que destine bem material industrializado a contribuinte estabelecido na ZFM"
+      },
+      {
+        "codigo": "200023",
+        "descricao": "Operação realizada por indústria incentivada que destine bem material intermediário para outra indústria incentivada na ZFM"
+      },
+      {
+        "codigo": "200024",
+        "descricao": "Operação originada fora das Áreas de Livre Comércio destinadas a contribuinte estabelecido nas Áreas de Livre Comércio"
+      },
+      {
+        "codigo": "200025",
+        "descricao": "Fornecimento dos serviços de educação relacionados ao Programa Universidade para Todos (Prouni)"
+      },
+      {
+        "codigo": "200026",
+        "descricao": "Locação de imóveis localizados nas zonas reabilitadas"
+      },
+      {
+        "codigo": "200027",
+        "descricao": "Operações de locação, cessão onerosa e arrendamento de bens imóveis"
+      },
+      {
+        "codigo": "200028",
+        "descricao": "Fornecimento dos serviços de educação (Anexo II)"
+      },
+      {
+        "codigo": "200029",
+        "descricao": "Fornecimento dos serviços de saúde humana (Anexo III)"
+      },
+      {
+        "codigo": "200030",
+        "descricao": "Venda dos dispositivos médicos (Anexo IV)"
+      },
+      {
+        "codigo": "200031",
+        "descricao": "Fornecimento dos dispositivos de acessibilidade próprios para pessoas com deficiência (Anexo V)"
+      },
+      {
+        "codigo": "200032",
+        "descricao": "Fornecimento dos medicamentos registrados na Anvisa ou produzidos por farmácias de manipulação, ressalvados os medicamentos sujeitos à alíquota zero"
+      },
+      {
+        "codigo": "200033",
+        "descricao": "Fornecimento das composições para nutrição enteral e parenteral (Anexo VI)"
+      },
+      {
+        "codigo": "200034",
+        "descricao": "Fornecimento dos alimentos destinados ao consumo humano (Anexo VII)"
+      },
+      {
+        "codigo": "200035",
+        "descricao": "Fornecimento dos produtos de higiene pessoal e limpeza (Anexo VIII)"
+      },
+      {
+        "codigo": "200036",
+        "descricao": "Fornecimento de produtos agropecuários, aquícolas, pesqueiros, florestais e extrativistas vegetais in natura"
+      },
+      {
+        "codigo": "200037",
+        "descricao": "Fornecimento de serviços ambientais de conservação ou recuperação da vegetação nativa"
+      },
+      {
+        "codigo": "200038",
+        "descricao": "Fornecimento dos insumos agropecuários e aquícolas (Anexo IX)"
+      },
+      {
+        "codigo": "200039",
+        "descricao": "Fornecimento dos bens e serviços relacionados com produções nacionais artísticas, culturais, de eventos, jornalísticas e audiovisuais (Anexo X)"
+      },
+      {
+        "codigo": "200040",
+        "descricao": "Fornecimento de serviços de comunicação institucional à administração pública"
+      },
+      {
+        "codigo": "200041",
+        "descricao": "Fornecimento de serviço de educação desportiva (art. 141. I)"
+      },
+      {
+        "codigo": "200042",
+        "descricao": "Fornecimento de serviço de gestão e exploração do desporto (art. 141. II)"
+      },
+      {
+        "codigo": "200043",
+        "descricao": "Fornecimento à administração pública dos serviços e dos bens relativos à soberania (Anexo XI)"
+      },
+      {
+        "codigo": "200044",
+        "descricao": "Operações e prestações de serviços de segurança da informação e segurança cibernética desenvolvidos por sociedade que tenha sócio brasileiro (Anexo XI)"
+      },
+      {
+        "codigo": "200045",
+        "descricao": "Operações relacionadas a projetos de reabilitação urbana de zonas históricas e de áreas críticas de recuperação e reconversão urbanística"
+      },
+      {
+        "codigo": "200046",
+        "descricao": "Operações com bens imóveis"
+      },
+      {
+        "codigo": "200047",
+        "descricao": "Bares e Restaurantes"
+      },
+      {
+        "codigo": "200048",
+        "descricao": "Hotelaria, Parques de Diversão e Parques Temáticos"
+      },
+      {
+        "codigo": "200049",
+        "descricao": "Transporte coletivo de passageiros rodoviário, ferroviário e hidroviário"
+      },
+      {
+        "codigo": "200050",
+        "descricao": "Serviços de transporte aéreo regional coletivo de passageiros ou de carga"
+      },
+      {
+        "codigo": "200051",
+        "descricao": "Agências de Turismo"
+      },
+      {
+        "codigo": "200052",
+        "descricao": "Prestação de serviços de profissões intelectuais"
+      },
+      {
+        "codigo": "200053",
+        "descricao": "Fornecimento de medicamentos registrados na Anvisa, quando  classificados como soros ou vacinas"
+      },
+      {
+        "codigo": "200054",
+        "descricao": "Fornecimento de bem material pela cooperativa de produção agropecuária a associado não sujeito ao regime regular do IBS e da CBS"
+      },
+      {
+        "codigo": "200055",
+        "descricao": "Fornecimento dos serviços com redução de alíquota de 60% realizado por autônomo"
+      },
+      {
+        "codigo": "200056",
+        "descricao": "Fornecimento dos serviços com redução de alíquota de 30% realizado por autônomo"
+      }
+    ],
+    "codigo": "200",
+    "descricao": "Alíquota reduzida",
+    "id": 4
+  },
+  {
+    "classificacoesTributarias": [
+      {
+        "codigo": "220001",
+        "descricao": "Incorporação imobiliária submetida ao regime especial de tributação"
+      },
+      {
+        "codigo": "220002",
+        "descricao": "Incorporação imobiliária submetida ao regime especial de tributação"
+      },
+      {
+        "codigo": "220003",
+        "descricao": "Alienação de imóvel decorrente de parcelamento do solo"
+      }
+    ],
+    "codigo": "220",
+    "descricao": "Alíquota fixa",
+    "id": 5
+  },
+  {
+    "classificacoesTributarias": [
+      {
+        "codigo": "221001",
+        "descricao": "Locação, cessão onerosa ou arrendamento de bem imóvel com alíquota sobre a receita bruta"
+      },
+      {
+        "codigo": "221002",
+        "descricao": "Incorporação imobiliária submetida ao regime especial de tributação"
+      },
+      {
+        "codigo": "221003",
+        "descricao": "Incorporação imobiliária submetida ao regime especial de tributação"
+      },
+      {
+        "codigo": "221004",
+        "descricao": "Alienação de imóvel decorrente de parcelamento do solo"
+      }
+    ],
+    "codigo": "221",
+    "descricao": "Alíquota fixa proporcional",
+    "id": 6
+  },
+  {
+    "classificacoesTributarias": [
+      {
+        "codigo": "222001",
+        "descricao": "Transporte internacional de passageiros, caso os trechos de ida e volta sejam vendidos em conjunto"
+      }
+    ],
+    "codigo": "222",
+    "descricao": "Redução de Base de Cálculo",
+    "id": 7
+  },
+  {
+    "classificacoesTributarias": [
+      {
+        "codigo": "400001",
+        "descricao": "Fornecimento de serviços de transporte público coletivo de passageiros rodoviário e metroviário"
+      },
+      {
+        "codigo": "400002",
+        "descricao": "Fornecimento de serviços de transporte público coletivo de passageiros rodoviário e metroviário com medição por quilômetro rodado"
+      },
+      {
+        "codigo": "400003",
+        "descricao": "Bagagens"
+      },
+      {
+        "codigo": "400004",
+        "descricao": "Remessas internacionais"
+      }
+    ],
+    "codigo": "400",
+    "descricao": "Isenção",
+    "id": 8
+  },
+  {
+    "classificacoesTributarias": [
+      {
+        "codigo": "410001",
+        "descricao": "Fornecimento de bonificações quando constem no documento fiscal e que não dependam de evento posterior"
+      },
+      {
+        "codigo": "410002",
+        "descricao": "Transferências entre estabelecimentos pertencentes ao mesmo contribuinte"
+      },
+      {
+        "codigo": "410003",
+        "descricao": "Doações e amostras grátis sem contraprestação em benefício do doador"
+      },
+      {
+        "codigo": "410004",
+        "descricao": "Exportações de bens e serviços"
+      },
+      {
+... (420 linhas omitidas)
+
+################################################################################
+# Dados abertos - cClassTrib CBS/IBS (lista completa)
+# GET <BASE>/regime/api/calculadora/dados-abertos/classificacoes-tributarias/cbs-ibs?data=2027-01-01
+# Resposta:
+HTTP/1.1 200 
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 0
+X-Frame-Options: SAMEORIGIN
+Content-Type: application/json
+[
+  {
+    "codigo": "000001",
+    "creditoOperacaoAntecedente": "Manutenção",
+    "dataAtualizacao": "2026-10-01",
+    "descricao": "Situações tributadas integralmente pelo IBS e CBS.",
+    "descricaoTratamentoTributario": "Tributação integral",
+    "exigeGrupoDesoneracao": false,
+    "incompativelComSuspensao": false,
+    "indicaApropriacaoCreditoAdquirenteCbs": true,
+    "indicaApropriacaoCreditoAdquirenteIbs": true,
+    "indicaCreditoPresumidoAdquirente": false,
+    "indicaCreditoPresumidoFornecedor": false,
+    "nomenclatura": "NBS ou NCM",
+    "percentualReducaoCbs": 0.0,
+    "percentualReducaoIbsMun": 0.0,
+    "percentualReducaoIbsUf": 0.0,
+    "possuiPercentualReducao": false,
+    "tipoAliquota": "Padrão",
+    "tiposDfeClassificacao": [
+      {
+        "descricao": "Nota Fiscal Eletrônica",
+        "sigla": "NF-e",
+        "tipo": 55
+      },
+      {
+        "descricao": "Nota Fiscal de Consumidor Eletrônica",
+        "sigla": "NFC-e",
+        "tipo": 65
+      },
+      {
+        "descricao": "Conhecimento de Transporte Eletrônico",
+        "sigla": "CT-e",
+        "tipo": 57
+      },
+      {
+        "descricao": "Conhecimento de Transporte Eletrônico para Outros Serviços ",
+        "sigla": "CT-e OS",
+        "tipo": 67
+      },
+      {
+        "descricao": "Bilhete de Passagem Eletrônico",
+        "sigla": "BP-e",
+        "tipo": 63
+      },
+      {
+        "descricao": "Bilhete de Passagem Eletrônico para Transporte Aéreo",
+        "sigla": "BP-e TA",
+        "tipo": 83
+      },
+      {
+        "descricao": "Nota Fiscal de Energia Elétrica Eletrônica",
+        "sigla": "NF3-e",
+        "tipo": 66
+      },
+      {
+        "descricao": "Nota Fiscal de Serviços Eletrônica",
+        "sigla": "NFS-e",
+        "tipo": 91
+      },
+      {
+        "descricao": "Nota Fiscal de Fatura de Serviços de Comunicação Eletrônica",
+        "sigla": "NFCom",
+        "tipo": 62
+      },
+      {
+        "descricao": "Nota Fiscal da Água e Saneamento Eletrônica",
+        "sigla": "NFAg",
+        "tipo": 75
+      },
+      {
+        "descricao": "Nota Fiscal Eletrônica do Gás",
+        "sigla": "NFGas",
+        "tipo": 76
+      },
+      {
+        "descricao": "Declaração de Importação de Remessa",
+        "sigla": "DIR",
+        "tipo": 95
+      },
+      {
+        "descricao": "Declaração Única de Importação ",
+        "sigla": "Duimp",
+        "tipo": 96
+      }
+    ]
+  },
+  {
+    "codigo": "000002",
+    "creditoOperacaoAntecedente": "Manutenção",
+    "dataAtualizacao": "2026-10-01",
+    "descricao": "Exploração de via",
+    "descricaoTratamentoTributario": "Tributação integral",
+    "exigeGrupoDesoneracao": false,
+    "incompativelComSuspensao": false,
+    "indicaApropriacaoCreditoAdquirenteCbs": true,
+    "indicaApropriacaoCreditoAdquirenteIbs": true,
+    "indicaCreditoPresumidoAdquirente": false,
+    "indicaCreditoPresumidoFornecedor": false,
+    "nomenclatura": "NBS",
+    "percentualReducaoCbs": 0.0,
+    "percentualReducaoIbsMun": 0.0,
+    "percentualReducaoIbsUf": 0.0,
+    "possuiPercentualReducao": false,
+    "tipoAliquota": "Padrão",
+    "tiposDfeClassificacao": [
+      {
+        "descricao": "Nota Fiscal de Serviço Eletrônica de Exploração de Vias",
+        "sigla": "NFS-e Via",
+        "tipo": 92
+      }
+    ]
+  },
+  {
+    "codigo": "000003",
+    "creditoOperacaoAntecedente": "Manutenção",
+    "dataAtualizacao": "2026-10-01",
+    "descricao": "Regime automotivo - projetos incentivados (art. 311)",
+    "descricaoTratamentoTributario": "Tributação integral",
+    "exigeGrupoDesoneracao": false,
+    "incompativelComSuspensao": false,
+    "indicaApropriacaoCreditoAdquirenteCbs": true,
+    "indicaApropriacaoCreditoAdquirenteIbs": true,
+    "indicaCreditoPresumidoAdquirente": false,
+    "indicaCreditoPresumidoFornecedor": true,
+    "nomenclatura": "NCM",
+    "percentualReducaoCbs": 0.0,
+    "percentualReducaoIbsMun": 0.0,
+    "percentualReducaoIbsUf": 0.0,
+    "possuiPercentualReducao": false,
+    "tipoAliquota": "Padrão",
+    "tiposDfeClassificacao": [
+      {
+        "descricao": "Nota Fiscal Eletrônica",
+        "sigla": "NF-e",
+        "tipo": 55
+      }
+    ]
+  },
+  {
+    "codigo": "000004",
+    "creditoOperacaoAntecedente": "Manutenção",
+    "dataAtualizacao": "2026-10-01",
+    "descricao": "Regime automotivo - projetos incentivados (art. 312)",
+    "descricaoTratamentoTributario": "Tributação integral",
+    "exigeGrupoDesoneracao": false,
+    "incompativelComSuspensao": false,
+    "indicaApropriacaoCreditoAdquirenteCbs": true,
+    "indicaApropriacaoCreditoAdquirenteIbs": true,
+    "indicaCreditoPresumidoAdquirente": false,
+    "indicaCreditoPresumidoFornecedor": true,
+    "nomenclatura": "NCM",
+    "percentualReducaoCbs": 0.0,
+    "percentualReducaoIbsMun": 0.0,
+    "percentualReducaoIbsUf": 0.0,
+    "possuiPercentualReducao": false,
+    "tipoAliquota": "Padrão",
+    "tiposDfeClassificacao": [
+      {
+        "descricao": "Nota Fiscal Eletrônica",
+        "sigla": "NF-e",
+        "tipo": 55
+      }
+    ]
+  },
+  {
+    "codigo": "000005",
+    "creditoOperacaoAntecedente": "Manutenção",
+    "dataAtualizacao": "2026-10-01",
+    "descricao": "Operação com EAC destinado à mistura com gasolina A, mas com saída do biocombustível com destinação diversa",
+    "descricaoTratamentoTributario": "Tributação integral",
+    "exigeGrupoDesoneracao": false,
+    "incompativelComSuspensao": false,
+    "indicaApropriacaoCreditoAdquirenteCbs": true,
+    "indicaApropriacaoCreditoAdquirenteIbs": true,
+    "indicaCreditoPresumidoAdquirente": false,
+    "indicaCreditoPresumidoFornecedor": false,
+    "nomenclatura": "NCM",
+    "percentualReducaoCbs": 0.0,
+    "percentualReducaoIbsMun": 0.0,
+    "percentualReducaoIbsUf": 0.0,
+    "possuiPercentualReducao": false,
+    "tipoAliquota": "Padrão",
+    "tiposDfeClassificacao": [
+      {
+        "descricao": "Nota Fiscal Eletrônica",
+        "sigla": "NF-e",
+        "tipo": 55
+      }
+    ]
+  },
+  {
+    "codigo": "000006",
+    "creditoOperacaoAntecedente": "Manutenção",
+    "dataAtualizacao": "2026-10-01",
+    "descricao": "Situações tributadas integralmente pelo IBS e CBS realizadas por autônomo",
+    "descricaoTratamentoTributario": "Tributação integral",
+    "exigeGrupoDesoneracao": false,
+    "incompativelComSuspensao": false,
+    "indicaApropriacaoCreditoAdquirenteCbs": true,
+    "indicaApropriacaoCreditoAdquirenteIbs": true,
+    "indicaCreditoPresumidoAdquirente": false,
+    "indicaCreditoPresumidoFornecedor": false,
+    "nomenclatura": "NBS ou NCM",
+    "percentualReducaoCbs": 0.0,
+    "percentualReducaoIbsMun": 0.0,
+    "percentualReducaoIbsUf": 0.0,
+    "possuiPercentualReducao": false,
+    "tipoAliquota": "Padrão",
+    "tiposDfeClassificacao": [
+      {
+        "descricao": "Nota Fiscal de Serviços Eletrônica",
+        "sigla": "NFS-e",
+        "tipo": 91
+      }
+    ]
+  },
+  {
+    "codigo": "010001",
+    "creditoOperacaoAntecedente": "Manutenção",
+    "dataAtualizacao": "2026-10-01",
+    "descricao": "Operações do FGTS não realizadas pela Caixa Econômica Federal",
+    "descricaoTratamentoTributario": "Tributação com alíquotas uniformes - operações do FGTS",
+    "exigeGrupoDesoneracao": false,
+    "incompativelComSuspensao": false,
+    "indicaApropriacaoCreditoAdquirenteCbs": true,
+    "indicaApropriacaoCreditoAdquirenteIbs": true,
+    "indicaCreditoPresumidoAdquirente": false,
+    "indicaCreditoPresumidoFornecedor": false,
+    "nomenclatura": "NBS",
+    "percentualReducaoCbs": 0.0,
+    "percentualReducaoIbsMun": 0.0,
+    "percentualReducaoIbsUf": 0.0,
+    "possuiPercentualReducao": false,
+    "tipoAliquota": "Uniforme setorial",
+    "tiposDfeClassificacao": [
+      {
+        "descricao": "Nota Fiscal de Serviços Eletrônica",
+        "sigla": "NFS-e",
+        "tipo": 91
+      },
+      {
+        "descricao": "Declaração de Regimes Específicos",
+        "sigla": "DERE",
+        "tipo": 94
+      }
+    ]
+  },
+  {
+    "codigo": "010002",
+    "creditoOperacaoAntecedente": "Manutenção",
+    "dataAtualizacao": "2026-10-01",
+    "descricao": "Operações do serviço financeiro",
+    "descricaoTratamentoTributario": "Tributação com alíquotas uniformes - operações do setor financeiro",
+    "exigeGrupoDesoneracao": false,
+    "incompativelComSuspensao": false,
+    "indicaApropriacaoCreditoAdquirenteCbs": true,
+    "indicaApropriacaoCreditoAdquirenteIbs": true,
+    "indicaCreditoPresumidoAdquirente": false,
+    "indicaCreditoPresumidoFornecedor": false,
+    "nomenclatura": "NBS",
+    "percentualReducaoCbs": 0.0,
+    "percentualReducaoIbsMun": 0.0,
+    "percentualReducaoIbsUf": 0.0,
+    "possuiPercentualReducao": false,
+    "tipoAliquota": "Uniforme setorial",
+    "tiposDfeClassificacao": [
+      {
+        "descricao": "Declaração de Regimes Específicos",
+        "sigla": "DERE",
+        "tipo": 94
+      },
+      {
+        "descricao": "Nota Fiscal de Serviços Eletrônica",
+        "sigla": "NFS-e",
+        "tipo": 91
+      }
+    ]
+  },
+  {
+    "codigo": "011001",
+    "creditoOperacaoAntecedente": "Manutenção",
+    "dataAtualizacao": "2026-10-01",
+    "descricao": "Planos de assistência funerária.",
+    "descricaoTratamentoTributario": "Tributação com alíquotas uniformes reduzidas em 60%",
+    "exigeGrupoDesoneracao": false,
+    "incompativelComSuspensao": false,
+    "indicaApropriacaoCreditoAdquirenteCbs": true,
+    "indicaApropriacaoCreditoAdquirenteIbs": true,
+    "indicaCreditoPresumidoAdquirente": false,
+    "indicaCreditoPresumidoFornecedor": false,
+    "nomenclatura": "NBS",
+    "percentualReducaoCbs": 60.0,
+    "percentualReducaoIbsMun": 60.0,
+    "percentualReducaoIbsUf": 60.0,
+    "possuiPercentualReducao": true,
+    "tipoAliquota": "Uniforme nacional (referência)",
+    "tiposDfeClassificacao": [
+      {
+        "descricao": "Declaração de Regimes Específicos",
+        "sigla": "DERE",
+        "tipo": 94
+      }
+    ]
+  },
+  {
+    "codigo": "011002",
+    "creditoOperacaoAntecedente": "Manutenção",
+    "dataAtualizacao": "2026-10-01",
+    "descricao": "Planos de assistência à saúde",
+    "descricaoTratamentoTributario": "Tributação com alíquotas uniformes reduzidas em 60%",
+    "exigeGrupoDesoneracao": false,
+    "incompativelComSuspensao": false,
+    "indicaApropriacaoCreditoAdquirenteCbs": true,
+    "indicaApropriacaoCreditoAdquirenteIbs": true,
+    "indicaCreditoPresumidoAdquirente": false,
+    "indicaCreditoPresumidoFornecedor": false,
+    "nomenclatura": "NBS",
+    "percentualReducaoCbs": 60.0,
+    "percentualReducaoIbsMun": 60.0,
+    "percentualReducaoIbsUf": 60.0,
+    "possuiPercentualReducao": true,
+    "tipoAliquota": "Uniforme nacional (referência)",
+    "tiposDfeClassificacao": [
+      {
+        "descricao": "Declaração de Regimes Específicos",
+        "sigla": "DERE",
+        "tipo": 94
+      }
+    ]
+  },
+  {
+    "codigo": "011003",
+    "creditoOperacaoAntecedente": "Manutenção",
+    "dataAtualizacao": "2026-10-01",
+    "descricao": "Intermediação de planos de assistência à saúde",
+    "descricaoTratamentoTributario": "Tributação com alíquotas uniformes reduzidas em 60%",
+    "exigeGrupoDesoneracao": false,
+    "incompativelComSuspensao": false,
+    "indicaApropriacaoCreditoAdquirenteCbs": true,
+    "indicaApropriacaoCreditoAdquirenteIbs": true,
+    "indicaCreditoPresumidoAdquirente": false,
+    "indicaCreditoPresumidoFornecedor": false,
+    "nomenclatura": "NBS",
+    "percentualReducaoCbs": 60.0,
+    "percentualReducaoIbsMun": 60.0,
+    "percentualReducaoIbsUf": 60.0,
+    "possuiPercentualReducao": true,
+    "tipoAliquota": "Uniforme nacional (referência)",
+    "tiposDfeClassificacao": [
+      {
+        "descricao": "Nota Fiscal de Serviços Eletrônica",
+        "sigla": "NFS-e",
+        "tipo": 91
+      }
+    ]
+  },
+  {
+    "codigo": "011004",
+    "creditoOperacaoAntecedente": "Manutenção",
+    "dataAtualizacao": "2026-10-01",
+    "descricao": "Concursos e prognósticos",
+    "descricaoTratamentoTributario": "Tributação com alíquotas uniformes",
+    "exigeGrupoDesoneracao": false,
+    "incompativelComSuspensao": false,
+    "indicaApropriacaoCreditoAdquirenteCbs": true,
+    "indicaApropriacaoCreditoAdquirenteIbs": true,
+    "indicaCreditoPresumidoAdquirente": false,
+    "indicaCreditoPresumidoFornecedor": false,
+    "nomenclatura": "NBS",
+    "percentualReducaoCbs": 0.0,
+    "percentualReducaoIbsMun": 0.0,
+    "percentualReducaoIbsUf": 0.0,
+    "possuiPercentualReducao": true,
+    "tipoAliquota": "Uniforme nacional (referência)",
+    "tiposDfeClassificacao": [
+      {
+        "descricao": "Declaração de Regimes Específicos",
+        "sigla": "DERE",
+        "tipo": 94
+      }
+    ]
+  },
+  {
+    "codigo": "011005",
+    "creditoOperacaoAntecedente": "Manutenção",
+    "dataAtualizacao": "2026-10-01",
+    "descricao": "Planos de assistência à saúde de animais domésticos",
+    "descricaoTratamentoTributario": "Tributação com alíquotas uniformes reduzidas em 30%",
+    "exigeGrupoDesoneracao": false,
+    "incompativelComSuspensao": false,
+    "indicaApropriacaoCreditoAdquirenteCbs": true,
+    "indicaApropriacaoCreditoAdquirenteIbs": true,
+    "indicaCreditoPresumidoAdquirente": false,
+    "indicaCreditoPresumidoFornecedor": false,
+    "nomenclatura": "NBS",
+    "percentualReducaoCbs": 30.0,
+    "percentualReducaoIbsMun": 30.0,
+    "percentualReducaoIbsUf": 30.0,
+    "possuiPercentualReducao": true,
+... (5247 linhas omitidas)
+
+################################################################################
+# Dados abertos - uma cClassTrib
+# GET <BASE>/regime/api/calculadora/dados-abertos/classificacoes-tributarias/cbs-ibs/class-trib/200028?data=2027-01-01
+# Resposta:
+HTTP/1.1 200 
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 0
+X-Frame-Options: SAMEORIGIN
+Content-Type: application/json
+{
+  "codigo": "200028",
+  "creditoOperacaoAntecedente": "Manutenção",
+  "dataAtualizacao": "2026-10-01",
+  "descricao": "Fornecimento dos serviços de educação (Anexo II)",
+  "descricaoTratamentoTributario": "Alíquota reduzida em 60%",
+  "exigeGrupoDesoneracao": false,
+  "incompativelComSuspensao": false,
+  "indicaApropriacaoCreditoAdquirenteCbs": true,
+  "indicaApropriacaoCreditoAdquirenteIbs": true,
+  "indicaCreditoPresumidoAdquirente": false,
+  "indicaCreditoPresumidoFornecedor": false,
+  "nomenclatura": "NBS",
+  "percentualReducaoCbs": 60.0,
+  "percentualReducaoIbsMun": 60.0,
+  "percentualReducaoIbsUf": 60.0,
+  "possuiPercentualReducao": true,
+  "tipoAliquota": "Padrão",
+  "tipoReceitaBrutaSimplesNacional": 1,
+  "tiposDfeClassificacao": [
+    {
+      "descricao": "Nota Fiscal de Serviços Eletrônica",
+      "sigla": "NFS-e",
+      "tipo": 91
+    }
+  ]
+}
+
+################################################################################
+# Dados abertos - CST do Imposto Seletivo
+# GET <BASE>/regime/api/calculadora/dados-abertos/situacoes-tributarias/imposto-seletivo?data=2027-01-01
+# Resposta:
+HTTP/1.1 200 
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 0
+X-Frame-Options: SAMEORIGIN
+Content-Type: application/json
+[
+  {
+    "codigo": "000",
+    "descricao": "Tributado com Imposto Seletivo",
+    "id": 19
+  },
+  {
+    "codigo": "100",
+    "descricao": "Imunidade",
+    "id": 20
+  },
+  {
+    "codigo": "200",
+    "descricao": "Não ocorrência do Fato Gerador",
+    "id": 21
+  },
+  {
+    "codigo": "300",
+    "descricao": "Devolução",
+    "id": 22
+  },
+  {
+    "codigo": "400",
+    "descricao": "Suspensão",
+    "id": 23
+  },
+  {
+    "codigo": "500",
+    "descricao": "Alíquota Zero",
+    "id": 24
+  },
+  {
+    "codigo": "600",
+    "descricao": "Isenção",
+    "id": 25
+  }
+]
+
+################################################################################
+# Dados abertos - NCM (detalhe)
+# GET <BASE>/regime/api/calculadora/dados-abertos/ncm?ncm=22030000&data=2027-01-01
+# Resposta:
+HTTP/1.1 200 
+x-warning-dados-simulados: 1
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 0
+X-Frame-Options: SAMEORIGIN
+Content-Type: application/json
+{
+  "capitulo": "Bebidas, líquidos alcoólicos e vinagres.",
+  "subitem": "Cervejas de malte.",
+  "temAliquotaAdRem": false,
+  "temAliquotaAdValorem": true,
+  "tributadoPeloImpostoSeletivo": true
+}
+
+################################################################################
+# Dados abertos - NCM vigentes (lista)
+# GET <BASE>/regime/api/calculadora/dados-abertos/ncm/vigentes?data=2027-01-01
+# Resposta:
+HTTP/1.1 200 
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 0
+X-Frame-Options: SAMEORIGIN
+Content-Type: application/json
+[
+  {
+    "ncm": "01012100",
+    "descricao": "-- Reprodutores de raça pura"
+  },
+  {
+    "ncm": "01012900",
+    "descricao": "-- Outros"
+  },
+  {
+    "ncm": "01013000",
+    "descricao": "- Asininos"
+  },
+  {
+    "ncm": "01019000",
+    "descricao": "- Outros"
+  },
+  {
+    "ncm": "01022110",
+    "descricao": "Prenhes ou com cria ao pé"
+  },
+  {
+    "ncm": "01022190",
+    "descricao": "Outros"
+  },
+  {
+    "ncm": "01022911",
+    "descricao": "Prenhes ou com cria ao pé"
+  },
+  {
+    "ncm": "01022919",
+    "descricao": "Outros"
+  },
+  {
+    "ncm": "01022990",
+    "descricao": "Outros"
+  },
+  {
+    "ncm": "01023110",
+    "descricao": "Prenhes ou com cria ao pé"
+  },
+  {
+    "ncm": "01023190",
+    "descricao": "Outros"
+  },
+  {
+    "ncm": "01023911",
+    "descricao": "Prenhes ou com cria ao pé"
+  },
+  {
+    "ncm": "01023919",
+    "descricao": "Outros"
+  },
+  {
+    "ncm": "01023990",
+    "descricao": "Outros"
+  },
+  {
+    "ncm": "01029000",
+    "descricao": "- Outros"
+  },
+  {
+    "ncm": "01031000",
+    "descricao": "- Reprodutores de raça pura"
+  },
+  {
+    "ncm": "01039100",
+    "descricao": "-- De peso inferior a 50kg"
+  },
+  {
+    "ncm": "01039200",
+    "descricao": "-- De peso igual ou superior a 50kg"
+  },
+  {
+    "ncm": "01041011",
+    "descricao": "Prenhes ou com cria ao pé"
+  },
+  {
+    "ncm": "01041019",
+    "descricao": "Outros"
+  },
+  {
+    "ncm": "01041090",
+    "descricao": "Outros"
+  },
+  {
+    "ncm": "01042010",
+    "descricao": "Reprodutores de raça pura"
+  },
+  {
+    "ncm": "01042090",
+    "descricao": "Outros"
+  },
+  {
+    "ncm": "01051110",
+    "descricao": "De linhas puras ou híbridas, para reprodução"
+  },
+  {
+    "ncm": "01051190",
+    "descricao": "Outros"
+  },
+  {
+    "ncm": "01051200",
+    "descricao": "-- Peruas e perus"
+  },
+  {
+    "ncm": "01051300",
+    "descricao": "-- Patos"
+  },
+  {
+    "ncm": "01051400",
+    "descricao": "-- Gansos"
+  },
+  {
+    "ncm": "01051500",
+    "descricao": "-- Galinhas-d'angola (pintadas)"
+  },
+  {
+    "ncm": "01059400",
+    "descricao": "-- Aves da espécie <i>Gallus domesticus</i>"
+  },
+  {
+    "ncm": "01059900",
+    "descricao": "-- Outros"
+  },
+  {
+    "ncm": "01061100",
+    "descricao": "-- Primatas"
+  },
+  {
+    "ncm": "01061200",
+    "descricao": "-- Baleias, golfinhos e botos (mamíferos da ordem Cetacea); peixes-boi (manatins) e dugongos (mamíferos da ordem Sirenia); otárias e focas, leões-marinhos e morsas (mamíferos da subordem Pinnipedia)"
+  },
+  {
+    "ncm": "01061300",
+    "descricao": "-- Camelos e outros camelídeos (<i>Camelidae</i>)"
+  },
+  {
+    "ncm": "01061400",
+    "descricao": "-- Coelhos e lebres"
+  },
+  {
+    "ncm": "01061900",
+    "descricao": "-- Outros"
+  },
+  {
+    "ncm": "01062000",
+    "descricao": "- Répteis (incluindo as serpentes e as tartarugas marinhas)"
+  },
+  {
+    "ncm": "01063100",
+    "descricao": "-- Aves de rapina"
+  },
+  {
+    "ncm": "01063200",
+    "descricao": "-- Psitaciformes (incluindo os papagaios, os periquitos, as araras e as catatuas)"
+  },
+  {
+    "ncm": "01063310",
+    "descricao": "Avestruzes (<i>Struthio camelus</i>), para reprodução"
+  },
+  {
+    "ncm": "01063390",
+    "descricao": "Outros"
+  },
+  {
+    "ncm": "01063900",
+    "descricao": "-- Outras"
+  },
+  {
+    "ncm": "01064100",
+    "descricao": "-- Abelhas"
+  },
+  {
+    "ncm": "01064900",
+    "descricao": "-- Outros"
+  },
+  {
+    "ncm": "01069000",
+    "descricao": "- Outros"
+  },
+  {
+    "ncm": "02011000",
+    "descricao": "- Carcaças e meias-carcaças"
+  },
+  {
+    "ncm": "02012010",
+    "descricao": "Quartos dianteiros"
+  },
+  {
+    "ncm": "02012020",
+    "descricao": "Quartos traseiros"
+  },
+  {
+    "ncm": "02012090",
+    "descricao": "Outras"
+  },
+  {
+    "ncm": "02013000",
+    "descricao": "- Desossadas"
+  },
+  {
+    "ncm": "02021000",
+    "descricao": "- Carcaças e meias-carcaças"
+  },
+  {
+    "ncm": "02022010",
+    "descricao": "Quartos dianteiros"
+  },
+  {
+    "ncm": "02022020",
+    "descricao": "Quartos traseiros"
+  },
+  {
+    "ncm": "02022090",
+    "descricao": "Outras"
+  },
+  {
+    "ncm": "02023000",
+    "descricao": "- Desossadas"
+  },
+  {
+    "ncm": "02031100",
+    "descricao": "-- Carcaças e meias-carcaças"
+  },
+  {
+    "ncm": "02031200",
+    "descricao": "-- Pernas, pás e respectivos pedaços, não desossados"
+  },
+  {
+    "ncm": "02031900",
+    "descricao": "-- Outras"
+  },
+  {
+    "ncm": "02032100",
+    "descricao": "-- Carcaças e meias-carcaças"
+  },
+  {
+    "ncm": "02032200",
+    "descricao": "-- Pernas, pás e respectivos pedaços, não desossados"
+  },
+  {
+    "ncm": "02032900",
+    "descricao": "-- Outras"
+  },
+  {
+    "ncm": "02041000",
+    "descricao": "- Carcaças e meias-carcaças de cordeiro, frescas ou refrigeradas"
+  },
+  {
+    "ncm": "02042100",
+    "descricao": "-- Carcaças e meias-carcaças"
+  },
+  {
+    "ncm": "02042200",
+    "descricao": "-- Outras peças não desossadas"
+  },
+  {
+    "ncm": "02042300",
+    "descricao": "-- Desossadas"
+  },
+  {
+    "ncm": "02043000",
+    "descricao": "- Carcaças e meias-carcaças de cordeiro, congeladas"
+  },
+  {
+    "ncm": "02044100",
+    "descricao": "-- Carcaças e meias-carcaças"
+  },
+  {
+    "ncm": "02044200",
+    "descricao": "-- Outras peças não desossadas"
+  },
+  {
+    "ncm": "02044300",
+    "descricao": "-- Desossadas"
+  },
+  {
+    "ncm": "02045000",
+    "descricao": "- Carnes de animais da espécie caprina"
+  },
+  {
+    "ncm": "02050000",
+    "descricao": "Carnes de animais das espécies cavalar, asinina e muar, frescas, refrigeradas ou congeladas."
+  },
+  {
+    "ncm": "02061000",
+    "descricao": "- Da espécie bovina, frescas ou refrigeradas"
+  },
+  {
+    "ncm": "02062100",
+    "descricao": "-- Línguas"
+  },
+  {
+    "ncm": "02062200",
+    "descricao": "-- Fígados"
+  },
+  {
+    "ncm": "02062910",
+    "descricao": "Rabos"
+  },
+  {
+    "ncm": "02062990",
+    "descricao": "Outros"
+  },
+  {
+    "ncm": "02063000",
+    "descricao": "- Da espécie suína, frescas ou refrigeradas"
+  },
+  {
+    "ncm": "02064100",
+    "descricao": "-- Fígados"
+  },
+  {
+    "ncm": "02064900",
+    "descricao": "-- Outras"
+  },
+  {
+    "ncm": "02068000",
+    "descricao": "- Outras, frescas ou refrigeradas"
+  },
+  {
+    "ncm": "02069000",
+    "descricao": "- Outras, congeladas"
+  },
+  {
+    "ncm": "02071100",
+    "descricao": "-- Não cortadas em pedaços, frescas ou refrigeradas"
+  },
+  {
+    "ncm": "02071210",
+    "descricao": "Com miudezas"
+  },
+  {
+    "ncm": "02071220",
+    "descricao": "Sem miudezas"
+  },
+  {
+    "ncm": "02071300",
+    "descricao": "-- Pedaços e miudezas, frescos ou refrigerados"
+  },
+  {
+    "ncm": "02071411",
+    "descricao": "Peitos"
+  },
+  {
+    "ncm": "02071412",
+    "descricao": "Coxas com sobrecoxas"
+  },
+  {
+    "ncm": "02071413",
+    "descricao": "Asas"
+  },
+  {
+    "ncm": "02071419",
+    "descricao": "Outros"
+  },
+  {
+    "ncm": "02071421",
+    "descricao": "Peitos, coxas e sobrecoxas, formando uma só peça"
+  },
+  {
+    "ncm": "02071422",
+    "descricao": "Peitos"
+  },
+  {
+    "ncm": "02071423",
+    "descricao": "Coxas com sobrecoxas"
+  },
+  {
+    "ncm": "02071424",
+    "descricao": "Carne mecanicamente separada"
+  },
+  {
+    "ncm": "02071429",
+    "descricao": "Outros"
+  },
+  {
+    "ncm": "02071431",
+    "descricao": "Fígados"
+  },
+  {
+    "ncm": "02071432",
+    "descricao": "Moelas"
+  },
+  {
+    "ncm": "02071433",
+    "descricao": "Corações"
+  },
+  {
+    "ncm": "02071434",
+    "descricao": "Pés e patas"
+  },
+  {
+    "ncm": "02071439",
+    "descricao": "Outras"
+  },
+  {
+    "ncm": "02072400",
+    "descricao": "-- Não cortadas em pedaços, frescas ou refrigeradas"
+... (41666 linhas omitidas)
+
+################################################################################
+# Dados abertos - NBS (detalhe)
+# GET <BASE>/regime/api/calculadora/dados-abertos/nbs?nbs=122011200&data=2027-01-01
+# Resposta:
+HTTP/1.1 200 
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 0
+X-Frame-Options: SAMEORIGIN
+Content-Type: application/json
+{
+  "capitulo": "Serviços de educação básica",
+  "item": "Serviços de pré-escola",
+  "posicao": "Serviços de educação infantil",
+  "temAliquotaAdValorem": false,
+  "tributadoPeloImpostoSeletivo": false
+}
+
+################################################################################
+# Dados abertos - NBS (lista)
+# GET <BASE>/regime/api/calculadora/dados-abertos/nbs/lista?data=2027-01-01
+# Resposta:
+HTTP/1.1 200 
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 0
+X-Frame-Options: SAMEORIGIN
+Content-Type: application/json
+[
+  {
+    "codigo": "101011100",
+    "descricao": "Serviços de construção de edificações residenciais de um e dois pavimentos"
+  },
+  {
+    "codigo": "101011200",
+    "descricao": "Serviços de construção de edificações residenciais com mais de dois pavimentos"
+  },
+  {
+    "codigo": "101012100",
+    "descricao": "Serviços de construção de edificações industriais"
+  },
+  {
+    "codigo": "101012200",
+    "descricao": "Serviços de construção de edificações comerciais"
+  },
+  {
+    "codigo": "101012900",
+    "descricao": "Serviços de construção de edificações não residenciais não classificados em subposições anteriores"
+  },
+  {
+    "codigo": "101013000",
+    "descricao": "Serviços de construção de edificações de uso misto (residencial e não residencial)"
+  },
+  {
+    "codigo": "101021100",
+    "descricao": "Serviços de construção de autoestradas (exceto autoestradas elevadas), ruas e estradas"
+  },
+  {
+    "codigo": "101021200",
+    "descricao": "Serviços de construção de ferrovias"
+  },
+  {
+    "codigo": "101021300",
+    "descricao": "Serviços de construção de pistas de pouso e decolagem em aeroportos e de infraestrutura aeroportuária"
+  },
+  {
+    "codigo": "101022000",
+    "descricao": "Serviços de construção de pontes, autoestradas elevadas e túneis"
+  },
+  {
+    "codigo": "101023100",
+    "descricao": "Serviços de construção de infraestrutura de proteção e acesso aquaviário"
+  },
+  {
+    "codigo": "101023200",
+    "descricao": "Serviços de construção de infraestrutura de acostagem aquaviária"
+  },
+  {
+    "codigo": "101023300",
+    "descricao": "Serviços de construção de infraestrutura terrestre e de obras de engenharia afins nos portos"
+  },
+  {
+    "codigo": "101023400",
+    "descricao": "Serviços de construção de barragens"
+  },
+  {
+    "codigo": "101023510",
+    "descricao": "Serviços de construção de adutoras em conduto livre"
+  },
+  {
+    "codigo": "101023520",
+    "descricao": "Serviços de construção de sistemas de irrigação"
+  },
+  {
+    "codigo": "101023530",
+    "descricao": "Serviços de construção relacionada ao controle dos cursos de água, inclusive canalização"
+  },
+  {
+    "codigo": "101024110",
+    "descricao": "Serviços de construção de dutos de longo curso para o transporte de petróleo, seus derivados, e gás"
+  },
+  {
+    "codigo": "101024120",
+    "descricao": "Serviços de construção de dutos de longo curso para o transporte e escoamento de águas"
+  },
+  {
+    "codigo": "101024190",
+    "descricao": "Serviços de construção de dutos de longo curso não classificados em subposições anteriores"
+  },
+  {
+    "codigo": "101024210",
+    "descricao": "Serviços de construção de linhas de comunicação de longo curso"
+  },
+  {
+    "codigo": "101024220",
+    "descricao": "Serviços de construção de linhas de transmissão de alta tensão"
+  },
+  {
+    "codigo": "101025100",
+    "descricao": "Serviços de construção de dutos locais"
+  },
+  {
+    "codigo": "101025210",
+    "descricao": "Serviços de construção de linhas locais de comunicação"
+  },
+  {
+    "codigo": "101025220",
+    "descricao": "Serviços de construção de linhas locais de transmissão de baixa e média tensão"
+  },
+  {
+    "codigo": "101025310",
+    "descricao": "Serviços de construção de sistemas de esgotos"
+  },
+  {
+    "codigo": "101025320",
+    "descricao": "Serviços de construção de sistemas de estações para elevação, tratamento e purificação de água"
+  },
+  {
+    "codigo": "101026100",
+    "descricao": "Serviços de construção de usinas de geração de energia"
+  },
+  {
+    "codigo": "101026900",
+    "descricao": "Serviços de construção de instalações industriais não classificados em subposições anteriores"
+  },
+  {
+    "codigo": "101027000",
+    "descricao": "Serviços de construção de minas e suas unidades industriais"
+  },
+  {
+    "codigo": "101028000",
+    "descricao": "Serviços de construção de instalações para recreação e atividades desportivas ao ar livre"
+  },
+  {
+    "codigo": "101029000",
+    "descricao": "Serviços de construção de obras de engenharia civil não classificados em subposições anteriores"
+  },
+  {
+    "codigo": "101031000",
+    "descricao": "Serviços de demolição"
+  },
+  {
+    "codigo": "101032000",
+    "descricao": "Serviços de preparação de terrenos e de canteiros de obras"
+  },
+  {
+    "codigo": "101033000",
+    "descricao": "Serviços de escavação e remoção de terra"
+  },
+  {
+    "codigo": "101034100",
+    "descricao": "Serviços de perfuração de poços de água"
+  },
+  {
+    "codigo": "101034200",
+    "descricao": "Serviços de instalação de sistemas sépticos"
+  },
+  {
+    "codigo": "101040000",
+    "descricao": "Serviços de montagem e de edificação de construções pré-fabricadas"
+  },
+  {
+    "codigo": "101051100",
+    "descricao": "Serviços de estaqueamento"
+  },
+  {
+    "codigo": "101051200",
+    "descricao": "Serviços de fundação"
+  },
+  {
+    "codigo": "101052100",
+    "descricao": "Serviços de construção de estruturas de edificações"
+  },
+  {
+    "codigo": "101052200",
+    "descricao": "Serviços de construção de estruturas de telhados e coberturas"
+  },
+  {
+    "codigo": "101053000",
+    "descricao": "Serviços de construção de telhados e coberturas e serviços de impermeabilização"
+  },
+  {
+    "codigo": "101054000",
+    "descricao": "Serviços de concretagem"
+  },
+  {
+    "codigo": "101055000",
+    "descricao": "Serviços de montagem de estruturas de aço"
+  },
+  {
+    "codigo": "101056000",
+    "descricao": "Serviços de alvenaria"
+  },
+  {
+    "codigo": "101057000",
+    "descricao": "Serviços de andaimes"
+  },
+  {
+    "codigo": "101059000",
+    "descricao": "Serviços especializados de construção não classificados em subposições anteriores"
+  },
+  {
+    "codigo": "101061100",
+    "descricao": "Serviços de instalação de fiação elétrica e componentes"
+  },
+  {
+    "codigo": "101061200",
+    "descricao": "Serviços de instalação de alarmes contra incêndio"
+  },
+  {
+    "codigo": "101061300",
+    "descricao": "Serviços de instalação de sistemas de alarmes antifurto"
+  },
+  {
+    "codigo": "101061400",
+    "descricao": "Serviços de instalação de antenas residenciais"
+  },
+  {
+    "codigo": "101061900",
+    "descricao": "Serviços de instalação elétrica não classificados em subposições anteriores"
+  },
+  {
+    "codigo": "101062100",
+    "descricao": "Serviços de instalação de tubulação para fornecimento de água"
+  },
+  {
+    "codigo": "101062200",
+    "descricao": "Serviços de instalação de tubulação para escoamento de água"
+  },
+  {
+    "codigo": "101063100",
+    "descricao": "Serviços de instalação de equipamentos de aquecimento"
+  },
+  {
+    "codigo": "101063200",
+    "descricao": "Serviços de instalação de equipamentos de ventilação e de ar condicionado"
+  },
+  {
+    "codigo": "101064000",
+    "descricao": "Serviços de instalação de gás"
+  },
+  {
+    "codigo": "101065000",
+    "descricao": "Serviços de instalação de isolamentos"
+  },
+  {
+    "codigo": "101066000",
+    "descricao": "Serviços de instalação de elevadores, esteiras e escadas rolantes"
+  },
+  {
+    "codigo": "101069000",
+    "descricao": "Serviços de instalação não classificados em subposições anteriores"
+  },
+  {
+    "codigo": "101071000",
+    "descricao": "Serviços de vidraçaria"
+  },
+  {
+    "codigo": "101072000",
+    "descricao": "Serviços de gesso e de estuque"
+  },
+  {
+    "codigo": "101073000",
+    "descricao": "Serviços de pintura"
+  },
+  {
+    "codigo": "101074000",
+    "descricao": "Serviços de revestimento de pisos e de paredes"
+  },
+  {
+    "codigo": "101075000",
+    "descricao": "Serviços de carpintaria e de serralharia"
+  },
+  {
+    "codigo": "101076000",
+    "descricao": "Serviços de instalação de cercas e grades"
+  },
+  {
+    "codigo": "101079000",
+    "descricao": "Serviços de acabamento não classificados em subposições anteriores"
+  },
+  {
+    "codigo": "102010000",
+    "descricao": "Serviços de intermediação na distribuição de mercadorias"
+  },
+  {
+    "codigo": "102020000",
+    "descricao": "Comércio atacadista"
+  },
+  {
+    "codigo": "102030000",
+    "descricao": "Comércio varejista"
+  },
+  {
+    "codigo": "102040000",
+    "descricao": "Serviços de despacho aduaneiro"
+  },
+  {
+    "codigo": "102050000",
+    "descricao": "Serviços de intermediação na comercialização de energia elétrica"
+  },
+  {
+    "codigo": "103011000",
+    "descricao": "Fornecimento de refeições acompanhado de serviços de restaurante"
+  },
+  {
+    "codigo": "103012100",
+    "descricao": "Fornecimento de refeições pelo sistema de autosserviço (self-service)"
+  },
+  {
+    "codigo": "103012200",
+    "descricao": "Fornecimento de comidas rápidas (fast-food)"
+  },
+  {
+    "codigo": "103012900",
+    "descricao": "Fornecimento de refeições com serviços limitados de restaurante não classificado em subposições anteriores"
+  },
+  {
+    "codigo": "103013100",
+    "descricao": "Fornecimento de alimentação para eventos"
+  },
+  {
+    "codigo": "103013200",
+    "descricao": "Fornecimento de alimentação para operadores de transportes (comissaria ou catering)"
+  },
+  {
+    "codigo": "103013900",
+    "descricao": "Fornecimento de alimentação, incluindo refeições, sob contrato não classificado em subposições anteriores"
+  },
+  {
+    "codigo": "103019000",
+    "descricao": "Fornecimento de alimentação não classificado em subposições anteriores"
+  },
+  {
+    "codigo": "103020000",
+    "descricao": "Fornecimento de bebidas em bares, cervejarias e outros"
+  },
+  {
+    "codigo": "103031100",
+    "descricao": "Serviços de hospedagem em quartos ou unidades de hospedagem para visitantes, com serviços diários de faxina"
+  },
+  {
+    "codigo": "103031200",
+    "descricao": "Serviços de hospedagem em quartos ou unidades de hospedagem para visitantes, sem serviços diários de faxina"
+  },
+  {
+    "codigo": "103031300",
+    "descricao": "Serviços de hospedagem em quartos ou unidades de hospedagem para visitantes, em propriedades partilhadas"
+  },
+  {
+    "codigo": "103031400",
+    "descricao": "Serviços de hospedagem em quartos ou unidades de hospedagem para visitantes, em quartos de múltipla ocupação"
+  },
+  {
+    "codigo": "103032000",
+    "descricao": "Serviços de acampamentos turísticos (camping)"
+  },
+  {
+    "codigo": "103039000",
+    "descricao": "Serviços de hospedagem para visitantes não classificados em subposições anteriores"
+  },
+  {
+    "codigo": "103041000",
+    "descricao": "Serviços de hospedagem em quartos ou unidades de hospedagem para estudantes em residências estudantis"
+  },
+  {
+    "codigo": "103042000",
+    "descricao": "Serviços de hospedagem em quartos ou unidades de hospedagem para trabalhadores em hotéis ou campos"
+  },
+  {
+    "codigo": "103049000",
+    "descricao": "Serviços de hospedagem, exceto para visitantes não classificados em subposições anteriores"
+  },
+  {
+    "codigo": "104011111",
+    "descricao": "Serviços de transporte rodoviário local prestados exclusivamente por meio de ônibus"
+  },
+  {
+    "codigo": "104011119",
+    "descricao": "Serviços de transporte rodoviário local regular de passageiros, exceto em áreas metropolitanas não classificados em subitens anteriores"
+  },
+  {
+    "codigo": "104011120",
+    "descricao": "Serviços de transporte rodoviário local regular de passageiros, em áreas metropolitanas"
+  },
+  {
+    "codigo": "104011210",
+    "descricao": "Serviços de transporte escolar"
+  },
+  {
+    "codigo": "104011220",
+    "descricao": "Serviços de transporte para aeroportos (shuttle)"
+  },
+  {
+    "codigo": "104011290",
+    "descricao": "Serviços especiais de transporte rodoviário local regular de passageiros não classificados em itens anteriores"
+  },
+  {
+    "codigo": "104011300",
+    "descricao": "Serviços de táxi"
+  },
+  {
+    "codigo": "104011400",
+    "descricao": "Serviços de carro com motorista, exceto táxi"
+  },
+  {
+    "codigo": "104011510",
+    "descricao": "Serviços de fretamento contínuo, local"
+... (3282 linhas omitidas)
+
+################################################################################
+# Simples Nacional - cálculo com observabilidade (CALCULADO, NAO_CALCULADO, INCONSISTENCIA_ENTRADA)
+# POST <BASE>/simples/api/calculadora/observabilidade/simples-nacional
+# Corpo enviado (sn.json):
+{"id":"507f1f77bcf86cd799439011","versao":"2.0.0","data":"2027-03-15","tpDoc":"55","CRT":"1",
+"itens":[
+{"numero":1,"cAtivSN":"01","cClassTrib":"000001","ncm":"22030000","baseCalculo":"950.00","valorImpostoSeletivo":"50.00","pIBSSN":"1.25","pCBSSN":"2.75"},
+{"numero":2,"cAtivSN":"99","cClassTrib":"000001","ncm":"10063021","baseCalculo":"100.00","valorImpostoSeletivo":"0.00","pIBSSN":"1.25","pCBSSN":"2.75"},
+{"numero":3,"cAtivSN":"01","cClassTrib":"000001","ncm":"1006","baseCalculo":"100.00","valorImpostoSeletivo":"0.00","pIBSSN":"1.25","pCBSSN":"2.75"}]}
+
+# Resposta:
+HTTP/1.1 200 
+X-CALC-APP-VERSION: 1.0.2
+X-CALC-DB-VERSION: V0073
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 0
+X-Frame-Options: SAMEORIGIN
+Content-Type: application/json
+{
+  "oper": {
+    "data": "2027-03-15",
+    "tpDoc": "55",
+    "CRT": "1"
+  },
+  "objetos": [
+    {
+      "nObj": 1,
+      "estadoItem": "CALCULADO",
+      "tribCalc": {
+        "vRBSNitem": "950.00",
+        "tpRBSN": 1,
+        "tpRBSNDescricao": "Receita bruta - interna",
+        "vBC": "950.00",
+        "pIBSSN": "1.25",
+        "vIBSSN": "11.88",
+        "vIBSPendSusp": "0.00",
+        "pCBSSN": "2.75",
+        "vCBSSN": "26.12",
+        "vCBSPendSusp": "0.00",
+        "IS": {
+          "valor": "50.00"
+        },
+        "totalItem": "88.00",
+        "memoriaCalculo": {
+          "cbs": "Receita bruta do Simples Nacional de R$ 950,00 (Receita bruta - interna). A base de cálculo utilizada é de R$ 950,00, com alíquota efetiva de 2,75%. Valor devido de R$ 26,12 e pendente/suspenso de R$ 0,00.",
+          "ibs": "Receita bruta do Simples Nacional de R$ 950,00 (Receita bruta - interna). A base de cálculo utilizada é de R$ 950,00, com alíquota efetiva de 1,25%. Valor devido de R$ 11,88 e pendente/suspenso de R$ 0,00."
+        }
+      }
+    },
+    {
+      "nObj": 2,
+      "estadoItem": "NAO_CALCULADO",
+      "motivoEstado": {
+        "codigo": "CATIVSN_DESCONHECIDO",
+        "descricao": "O código de atividade '99' não existe ou não está vigente na data do fato gerador; o IBS e a CBS do item não são calculados."
+      },
+      "tribCalc": {
+        "vRBSNitem": "100.00",
+        "tpRBSN": 1,
+        "tpRBSNDescricao": "Receita bruta - interna"
+      }
+    },
+    {
+      "nObj": 3,
+      "estadoItem": "INCONSISTENCIA_ENTRADA",
+      "erros": [
+        {
+          "type": "http://localhost/calculadora/observabilidade/simples-nacional/erros?codigo=VSN-051",
+          "title": "Formato de nomenclatura inválido",
+          "code": "VSN-051",
+          "pointer": "#/itens/2/ncm",
+          "detail": "O NCM deve conter exclusivamente 8 dígitos ASCII, sem espaços ou símbolos."
+        }
+      ]
+    }
+  ],
+  "total": {
+    "vRBSNtot": "1050.00",
+    "vBC": "950.00",
+    "vIBSSNtot": "11.88",
+    "vIBSSNtotPendSusp": "0.00",
+    "vCBSSNtot": "26.12",
+    "vCBSSNtotPendSusp": "0.00",
+    "totalIs": "50.00",
+    "totalTributos": "88.00"
+  }
+}
+
+################################################################################
+# Simples Nacional - erro global (tpDoc não suportado)
+# POST <BASE>/simples/api/calculadora/observabilidade/simples-nacional
+# Corpo enviado (sn422.json):
+{"id":"x","versao":"2.0.0","data":"2027-03-15","tpDoc":"99","CRT":"1","itens":[{"numero":1,"cAtivSN":"01","cClassTrib":"000001","ncm":"22030000","baseCalculo":"10.00","valorImpostoSeletivo":"0.00","pIBSSN":"1","pCBSSN":"1"}]}
+
+# Resposta:
+HTTP/1.1 422 
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 0
+X-Frame-Options: SAMEORIGIN
+Content-Type: application/problem+json
+{
+  "type": "about:blank",
+  "title": "Erros no processamento do cálculo do Simples Nacional",
+  "status": 422,
+  "detail": "O cálculo contém 1 erro(s).",
+  "instance": "/api/calculadora/observabilidade/simples-nacional",
+  "timestamp": "2026-11-25T21:57:32.304051206Z",
+  "errors": [
+    {
+      "type": "http://localhost/calculadora/observabilidade/simples-nacional/erros?codigo=VSN-015",
+      "title": "Tipo de documento fiscal (tpDoc) não suportado",
+      "code": "VSN-015",
+      "pointer": "#/tpDoc",
+      "detail": "Tipo de documento não suportado pelo cálculo do Simples Nacional, recebido: '99'."
+    }
+  ]
+}
+
+################################################################################
+# Simples Nacional - descrição de erro
+# GET <BASE>/simples/api/calculadora/observabilidade/simples-nacional/erros?codigo=VSN-051
+# Resposta:
+HTTP/1.1 200 
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 0
+X-Frame-Options: SAMEORIGIN
+Content-Type: application/json
+{
+  "codigo": "VSN-051",
+  "titulo": "Formato de nomenclatura inválido",
+  "descricao": "NCM deve conter 8 ou NBS deve conter 9 dígitos ASCII, sem espaços ou símbolos."
+}
+
+################################################################################
+# Simples Nacional - atividades vigentes
+# GET <BASE>/simples/api/calculadora/simples-nacional/atividades?data=2027-06-01
+# Resposta:
+HTTP/1.1 200 
+X-CALC-APP-VERSION: 1.0.2
+X-CALC-DB-VERSION: V0073
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 0
+X-Frame-Options: SAMEORIGIN
+Content-Type: application/json
+[
+  {
+    "codigo": "01",
+    "ordem": 1,
+    "descricao": "Revenda de mercadorias, venda de mercadorias industrializadas pelo contribuinte",
+    "anexoSemFatorR": "I",
+    "anexoComFatorR": null,
+    "sujeitaFatorR": false,
+    "rotuloAnexo": "I",
+    "rotuloCurtoAnexo": "I",
+    "disponivel": true,
+    "anexosFaltantes": [],
+    "modoFatorR": "NAO_APLICAVEL",
+    "tpDocsAdmissiveis": [
+      "55",
+      "65"
+    ]
+  },
+  {
+    "codigo": "02",
+    "ordem": 2,
+    "descricao": "Operações com os demais bens materiais, sem incidência de ICMS",
+    "anexoSemFatorR": "I",
+    "anexoComFatorR": null,
+    "sujeitaFatorR": false,
+    "rotuloAnexo": "I, menos ICMS",
+    "rotuloCurtoAnexo": "I",
+    "disponivel": true,
+    "anexosFaltantes": [],
+    "modoFatorR": "NAO_APLICAVEL",
+    "tpDocsAdmissiveis": [
+      "55",
+      "65"
+    ]
+  },
+  {
+    "codigo": "03",
+    "ordem": 3,
+    "descricao": "Venda de mercadorias industrializadas pelo contribuinte, com industrialização incentivada na Zona Franca de Manaus",
+    "anexoSemFatorR": "II",
+    "anexoComFatorR": null,
+    "sujeitaFatorR": false,
+    "rotuloAnexo": "II",
+    "rotuloCurtoAnexo": "II",
+    "disponivel": true,
+    "anexosFaltantes": [],
+    "modoFatorR": "NAO_APLICAVEL",
+    "tpDocsAdmissiveis": [
+      "55",
+      "65"
+    ]
+  },
+  {
+    "codigo": "04",
+    "ordem": 4,
+    "descricao": "Operações com os demais bens materiais, com industrialização incentivada na Zona Franca de Manaus, sem incidência de ICMS",
+    "anexoSemFatorR": "II",
+    "anexoComFatorR": null,
+    "sujeitaFatorR": false,
+    "rotuloAnexo": "II, menos ICMS",
+    "rotuloCurtoAnexo": "II",
+    "disponivel": true,
+    "anexosFaltantes": [],
+    "modoFatorR": "NAO_APLICAVEL",
+    "tpDocsAdmissiveis": [
+      "55",
+      "65"
+    ]
+  },
+  {
+    "codigo": "05",
+    "ordem": 5,
+    "descricao": "Prestação de serviços de transporte intermunicipal e interestadual de carga ou de passageiros autorizados no inciso VI do art. 17 da LC 123",
+    "anexoSemFatorR": "III",
+    "anexoComFatorR": null,
+    "sujeitaFatorR": false,
+    "rotuloAnexo": "III, menos ISS, mais ICMS do I",
+    "rotuloCurtoAnexo": "III",
+    "disponivel": true,
+    "anexosFaltantes": [],
+    "modoFatorR": "NAO_APLICAVEL",
+    "tpDocsAdmissiveis": [
+      "57",
+      "63",
+      "67",
+      "93"
+    ]
+  },
+  {
+    "codigo": "06",
+    "ordem": 6,
+    "descricao": "Prestação de serviços de comunicação",
+    "anexoSemFatorR": "III",
+    "anexoComFatorR": null,
+    "sujeitaFatorR": false,
+    "rotuloAnexo": "III, menos ISS, mais ICMS do I",
+    "rotuloCurtoAnexo": "III",
+    "disponivel": true,
+    "anexosFaltantes": [],
+    "modoFatorR": "NAO_APLICAVEL",
+    "tpDocsAdmissiveis": [
+      "62"
+    ]
+  },
+  {
+    "codigo": "07",
+    "ordem": 7,
+    "descricao": "Prestação de serviços, cessão de direitos, de uso ou de espaço com incidência do ISS, tributados exclusivamente pelo Anexo III",
+    "anexoSemFatorR": "III",
+    "anexoComFatorR": null,
+    "sujeitaFatorR": false,
+    "rotuloAnexo": "III",
+    "rotuloCurtoAnexo": "III",
+    "disponivel": true,
+    "anexosFaltantes": [],
+    "modoFatorR": "NAO_APLICAVEL",
+    "tpDocsAdmissiveis": [
+      "91"
+    ]
+  },
+  {
+    "codigo": "08",
+    "ordem": 8,
+    "descricao": "Prestação de serviços contábeis autorizados a pagar o ISS em valor fixo em guia do Município",
+    "anexoSemFatorR": "III",
+    "anexoComFatorR": null,
+    "sujeitaFatorR": false,
+    "rotuloAnexo": "III, menos o ISS",
+    "rotuloCurtoAnexo": "III",
+    "disponivel": true,
+    "anexosFaltantes": [],
+    "modoFatorR": "NAO_APLICAVEL",
+    "tpDocsAdmissiveis": [
+      "91"
+    ]
+  },
+  {
+    "codigo": "09",
+    "ordem": 9,
+    "descricao": "Prestação de serviços — Sujeitos ao Fator \"R\"",
+    "anexoSemFatorR": "V",
+    "anexoComFatorR": "III",
+    "sujeitaFatorR": true,
+    "rotuloAnexo": "III ou V",
+    "rotuloCurtoAnexo": "III ou V",
+    "disponivel": true,
+    "anexosFaltantes": [],
+    "modoFatorR": "OPCIONAL",
+    "tpDocsAdmissiveis": [
+      "91"
+    ]
+  },
+  {
+    "codigo": "10",
+    "ordem": 10,
+    "descricao": "Prestação de serviços de transporte municipal rodoviário, metroviário, ferroviário e aquaviário de passageiros relacionados no subitem 16.01 da lista anexa à LC 116/2003",
+    "anexoSemFatorR": "III",
+    "anexoComFatorR": null,
+    "sujeitaFatorR": false,
+    "rotuloAnexo": "III",
+    "rotuloCurtoAnexo": "III",
+    "disponivel": true,
+    "anexosFaltantes": [],
+    "modoFatorR": "NAO_APLICAVEL",
+    "tpDocsAdmissiveis": [
+      "91"
+    ]
+  },
+  {
+    "codigo": "11",
+    "ordem": 11,
+    "descricao": "Locação de bens móveis e operações com serviços, bens imateriais e direitos, inclusive com bens imóveis, sem incidência de ISS",
+    "anexoSemFatorR": "III",
+    "anexoComFatorR": null,
+    "sujeitaFatorR": false,
+    "rotuloAnexo": "III, menos o ISS",
+    "rotuloCurtoAnexo": "III",
+    "disponivel": true,
+    "anexosFaltantes": [],
+    "modoFatorR": "NAO_APLICAVEL",
+    "tpDocsAdmissiveis": [
+      "91"
+    ]
+  },
+  {
+    "codigo": "12",
+    "ordem": 12,
+    "descricao": "Prestação de serviços da área da construção civil relacionados nos subitens 7.02 e 7.05 da lista anexa à LC 116/2003",
+    "anexoSemFatorR": "III",
+    "anexoComFatorR": null,
+    "sujeitaFatorR": false,
+    "rotuloAnexo": "III",
+    "rotuloCurtoAnexo": "III",
+    "disponivel": true,
+    "anexosFaltantes": [],
+    "modoFatorR": "NAO_APLICAVEL",
+    "tpDocsAdmissiveis": [
+      "91"
+    ]
+  },
+  {
+    "codigo": "13",
+    "ordem": 13,
+    "descricao": "Prestação de serviços da área da construção civil relacionados nos subitens 7.02 e 7.05 da lista anexa à LC 116/2003",
+    "anexoSemFatorR": "IV",
+    "anexoComFatorR": null,
+    "sujeitaFatorR": false,
+    "rotuloAnexo": "IV",
+    "rotuloCurtoAnexo": "IV",
+    "disponivel": true,
+    "anexosFaltantes": [],
+    "modoFatorR": "NAO_APLICAVEL",
+    "tpDocsAdmissiveis": [
+      "91"
+    ]
+  },
+  {
+    "codigo": "14",
+    "ordem": 14,
+    "descricao": "Prestação de serviços",
+    "anexoSemFatorR": "IV",
+    "anexoComFatorR": null,
+    "sujeitaFatorR": false,
+    "rotuloAnexo": "IV",
+    "rotuloCurtoAnexo": "IV",
+    "disponivel": true,
+    "anexosFaltantes": [],
+    "modoFatorR": "NAO_APLICAVEL",
+    "tpDocsAdmissiveis": [
+      "91"
+    ]
+  },
+  {
+    "codigo": "90",
+    "ordem": 15,
+    "descricao": "Operações não Tributáveis",
+    "anexoSemFatorR": null,
+    "anexoComFatorR": null,
+    "sujeitaFatorR": false,
+    "rotuloAnexo": "Não tributável",
+    "rotuloCurtoAnexo": "Não tributável",
+    "disponivel": true,
+    "anexosFaltantes": [],
+    "modoFatorR": "NAO_APLICAVEL",
+    "tpDocsAdmissiveis": [
+      "55",
+      "57",
+      "62",
+      "63",
+      "65",
+      "67",
+      "91",
+      "93"
+    ]
+  }
+]
+
+################################################################################
+# Simples Nacional - atividades em 2026 (lista vazia, não é erro)
+# GET <BASE>/simples/api/calculadora/simples-nacional/atividades?data=2026-06-01
+# Resposta:
+HTTP/1.1 200 
+X-CALC-APP-VERSION: 1.0.2
+X-CALC-DB-VERSION: V0073
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 0
+X-Frame-Options: SAMEORIGIN
+Content-Type: application/json
+[]
+
+################################################################################
+# Simples Nacional - versão
+# GET <BASE>/simples/api/versao
+# Resposta:
+HTTP/1.1 200 
+X-CALC-APP-VERSION: 1.0.2
+X-CALC-DB-VERSION: V0073
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 0
+X-Frame-Options: SAMEORIGIN
+Content-Type: application/json
+{
+  "versaoApp": "1.0.2",
+  "versaoDb": "V0073",
+  "descricaoVersaoDb": "Nova tabela de Classificações Tributárias (IT 2025.002 v.1.71), publicada em 30/10/2026.",
+  "dataVersaoDb": "2026-11-09",
+  "arquivoDb": "calculadora-pro.db",
+  "ambiente": "offline"
+}
+
+################################################################################
+# DANFSe - readiness
+# GET <BASE>/danfse/health/ready
+# Resposta:
+HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Length: 16
+
+{"status":"ok"}
+
+
+################################################################################
+# DANFSe - liveness
+# GET <BASE>/danfse/health/live
+# Resposta:
+HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Length: 16
+
+{"status":"ok"}
+
+
+################################################################################
+# DANFSe - XML padrão nacional (mínimo) -> 200 application/pdf (corpo binário truncado)
+# POST <BASE>/danfse/api/danfse?stc=0&canhoto=true  (Content-Type: application/xml)
+# Corpo enviado (minimo.xml):
+<?xml version="1.0" encoding="UTF-8"?><NFSe xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.01"><infNFSe Id="NFS123"></infNFSe></NFSe>
+
+# Resposta:
+HTTP/1.1 200 OK
+Content-Disposition: attachment; filename="danfse.pdf"
+Content-Type: application/pdf
+Transfer-Encoding: chunked
+
+%PDF-1.7
+%....
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Count 1 /Kids [8 0 R] >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /
+
+
+################################################################################
+# DANFSe - XML municipal (ABRASF) -> 400
+# POST <BASE>/danfse/api/danfse?stc=0
+# Corpo enviado (abrasf.xml):
+<?xml version="1.0" encoding="UTF-8"?><CompNfse xmlns="http://www.abrasf.org.br/nfse.xsd"><Nfse><InfNfse Id="1"><Numero>1</Numero></InfNfse></Nfse></CompNfse>
+
+# Resposta:
+HTTP/1.1 400 Bad Request
+Content-Type: application/json
+Content-Length: 100
+
+{"sucesso":false,"mensagem":"expected element type \u003cNFSe\u003e but have \u003cCompNfse\u003e"}
+
+
+################################################################################
+# DANFSe - stc inválido -> 400
+# POST <BASE>/danfse/api/danfse?stc=5
+# Resposta:
+HTTP/1.1 400 Bad Request
+Content-Type: application/json
+Content-Length: 76
+
+{"sucesso":false,"mensagem":"parâmetro stc inválido: deve ser 0, 1 ou 2"}
+
+
+################################################################################
+# DANFSe - corpo acima de 5 MiB -> 413
+# POST <BASE>/danfse/api/danfse (6.000.000 bytes)
+# Resposta:
+HTTP/1.1 413 Request Entity Too Large
+Content-Type: application/json
+Content-Length: 56
+Connection: close
+
+{"sucesso":false,"mensagem":"Request Entity Too Large"}
+
+

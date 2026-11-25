@@ -1,0 +1,8 @@
+# Arquivos locais
+.env
+*.log
+.DS_Store
+# Wallets e credenciais nunca vão para o repositório
+wallet*/
+*.sso
+*.p12

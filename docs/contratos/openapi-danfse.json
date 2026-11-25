@@ -1,0 +1,143 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "API para gera\u00e7\u00e3o DANFSe",
+        "title": "DANFSe",
+        "contact": {},
+        "version": "1.0"
+    },
+    "basePath": "/",
+    "paths": {
+        "/api/danfse": {
+            "post": {
+                "description": "Gera um DANFSe em PDF a partir do XML bruto da NFS-e nacional. Envie o conte\u00fado completo do XML com Content-Type application/xml.",
+                "consumes": [
+                    "application/xml"
+                ],
+                "produces": [
+                    "application/pdf"
+                ],
+                "tags": [
+                    "DANFSe"
+                ],
+                "summary": "Gerar DANFSe em PDF com base no xml da nota.",
+                "parameters": [
+                    {
+                        "enum": [
+                            "0",
+                            "1",
+                            "2"
+                        ],
+                        "type": "string",
+                        "default": "0",
+                        "description": "Situa\u00e7\u00e3o da nota: 0=V\u00e1lida, 1=Substitu\u00edda, 2=Cancelada",
+                        "name": "stc",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": true,
+                        "description": "Exibir canhoto (recibo) no PDF. Ausente ou true habilita; false oculta.",
+                        "name": "canhoto",
+                        "in": "query"
+                    },
+                    {
+                        "description": "XML completo da NFS-e nacional (elemento raiz NFSe). Envie o XML bruto com Content-Type application/xml.",
+                        "name": "xml",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "DANFSe em PDF",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/controller.ErroResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/health/live": {
+            "get": {
+                "description": "Responde 200 com {\"status\":\"ok\"} enquanto o processo estiver de p\u00e9, sem checar depend\u00eancias externas nem gerar PDF.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Health"
+                ],
+                "summary": "Consulta o liveness do servi\u00e7o.",
+                "responses": {
+                    "200": {
+                        "description": "Servi\u00e7o de p\u00e9.",
+                        "schema": {
+                            "$ref": "#/definitions/controller.HealthStatus"
+                        }
+                    }
+                }
+            }
+        },
+        "/health/ready": {
+            "get": {
+                "description": "Responde 200 com {\"status\":\"ok\"} enquanto o servi\u00e7o estiver pronto para receber tr\u00e1fego e 503 com {\"status\":\"unavailable\"} durante o graceful shutdown.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Health"
+                ],
+                "summary": "Consulta o readiness do servi\u00e7o.",
+                "responses": {
+                    "200": {
+                        "description": "Servi\u00e7o pronto para receber tr\u00e1fego.",
+                        "schema": {
+                            "$ref": "#/definitions/controller.HealthStatus"
+                        }
+                    },
+                    "503": {
+                        "description": "Servi\u00e7o em graceful shutdown (n\u00e3o pronto).",
+                        "schema": {
+                            "$ref": "#/definitions/controller.HealthStatus"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "controller.ErroResponse": {
+            "type": "object",
+            "properties": {
+                "content": {},
+                "mensagem": {
+                    "type": "string",
+                    "example": "Mensagem informativa"
+                },
+                "sucesso": {
+                    "type": "boolean",
+                    "example": false
+                }
+            }
+        },
+        "controller.HealthStatus": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "description": "Status \u00e9 \"ok\" quando o servi\u00e7o est\u00e1 de p\u00e9/pronto e \"unavailable\" durante\no graceful shutdown (aguardando as requisi\u00e7\u00f5es em andamento).",
+                    "type": "string",
+                    "example": "ok"
+                }
+            }
+        }
+    }
+}

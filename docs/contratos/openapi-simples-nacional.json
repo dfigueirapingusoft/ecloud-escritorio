@@ -1,0 +1,1525 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "OpenAPI definition",
+        "version": "v0"
+    },
+    "servers": [
+        {
+            "url": "http://localhost:8084/api",
+            "description": "Generated server url"
+        }
+    ],
+    "tags": [
+        {
+            "name": "Vers\u00e3o da aplica\u00e7\u00e3o offline",
+            "description": "Status de atualiza\u00e7\u00e3o da aplica\u00e7\u00e3o e do banco de dados locais em rela\u00e7\u00e3o \u00e0s vers\u00f5es remotas"
+        },
+        {
+            "name": "Observabilidade - Calculadora do Simples Nacional",
+            "description": "Endpoint de observabilidade da Calculadora de Tributos do Simples Nacional"
+        },
+        {
+            "name": "Vers\u00e3o da aplica\u00e7\u00e3o",
+            "description": "Informa\u00e7\u00f5es de vers\u00e3o da aplica\u00e7\u00e3o, da base de dados e do ambiente"
+        },
+        {
+            "name": "Atividades do Simples Nacional",
+            "description": "Cat\u00e1logo de atividades do Simples Nacional e seus anexos (n\u00e3o inclui al\u00edquotas)"
+        }
+    ],
+    "paths": {
+        "/calculadora/observabilidade/simples-nacional": {
+            "post": {
+                "tags": [
+                    "Observabilidade - Calculadora do Simples Nacional"
+                ],
+                "summary": "OBSOLETO \u2014 C\u00e1lculo do Simples Nacional com al\u00edquotas por item (NT 2026.005)",
+                "description": "OBSOLETO: use POST calculadora/observabilidade/simples-nacional/nao-assistido (linha de al\u00edquotas do contribuinte no corpo), que atende todos os documentos fiscais (NF-e, NFC-e, CT-e, BP-e, NFCom e NFS-e) com o mesmo contrato e escolhe o par de al\u00edquotas com ou sem redistribui\u00e7\u00e3o do ISS. Este endpoint mant\u00e9m o contrato e os resultados de sempre. Implementa a NT 2026.005 v1.00 (Reforma Tribut\u00e1ria do Consumo \u2014 Simples Nacional; LC 123/2006, LC 214/2025, LC 227/2026). Recebe os dados da opera\u00e7\u00e3o (data, tpDoc, CRT, tpRegimeIBSCBS e tpEnteGov \u2014 este \u00faltimo a n\u00edvel de opera\u00e7\u00e3o, espelhando a tag gCompraGov/tpEnteGov da identifica\u00e7\u00e3o da nota, grupo B/ide do leiaute do DF-e) e os itens (cClassTrib, cAtivSN, base de c\u00e1lculo, vIS, al\u00edquotas efetivas pIBSSN/pCBSSN), resolve internamente o tpRBSN do cClassTrib (restrito ao grupo da CBS da tabela de classifica\u00e7\u00e3o) e espelha, por item, o leiaute do Evento de Tributa\u00e7\u00e3o do Simples Nacional (tpEvento 412140) \u2014 incluindo o c\u00f3digo tpRBSN e sua descri\u00e7\u00e3o (tpRBSNDescricao) \u2014, acumulando erros individuais por item. O comportamento do c\u00e1lculo \u00e9 parametrizado em banco de dados, sempre pela vig\u00eancia da data do fato gerador: os tipos de documento suportados, o efeito de cada tipo de receita bruta, a matriz de regime de apura\u00e7\u00e3o e o fator de transi\u00e7\u00e3o de compra governamental. O cAtivSN \u00e9 validado contra o cat\u00e1logo de atividades, com restri\u00e7\u00e3o de documento POR ATIVIDADE: atividade sem v\u00ednculo na associativa de tipos de DFE \u00e9 admiss\u00edvel em qualquer tpDoc suportado pelo c\u00e1lculo; atividade com v\u00ednculos, somente nos tpDoc vinculados \u2014 cAtivSN inadmiss\u00edvel leva ao estado NAO_CALCULADO, sem erro. Antes de qualquer outra valida\u00e7\u00e3o do item, verifica-se (primeira consulta de banco) se o cClassTrib est\u00e1 vinculado, na data, a tratamento tribut\u00e1rio ainda n\u00e3o implementado na Calculadora (indicador de ajuste): nesse caso o item sai com o estado NAO_IMPLEMENTADO e o erro VSN-027, sem c\u00e1lculo e fora dos totais. Compras governamentais (tpEnteGov informado na opera\u00e7\u00e3o) aplicam a todos os itens o deslocamento de al\u00edquotas CBS-IBS dos arts. 372 e 473 da LC 214/2025 (o redutor dos arts. 370/472 n\u00e3o integra o evento). Precis\u00e3o: as al\u00edquotas s\u00e3o usadas com todas as casas informadas (at\u00e9 34), inclusive ap\u00f3s a transforma\u00e7\u00e3o de compra governamental; cada valor de item \u00e9 arredondado uma \u00fanica vez a 2 casas (HALF_EVEN, ABNT NBR 5891) e os totais s\u00e3o a soma desses valores; pIBSSN/pCBSSN saem com 2 a 4 casas (tipo 3v2-4). Valores monet\u00e1rios de entrada no formato 13v2 (at\u00e9 2 casas), sem nota\u00e7\u00e3o cient\u00edfica.",
+                "operationId": "calcularTributosSimplesNacional",
+                "requestBody": {
+                    "description": "Dados de uma opera\u00e7\u00e3o do Simples Nacional",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/OperacaoSimplesInput"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Processamento realizado (itens podem ter erros individuais)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ObservabilidadeSimplesDomain"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Estrutura e/ou dados informados em formato n\u00e3o reconhecido",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetail"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Erro de valida\u00e7\u00e3o global (data, itens, dados obrigat\u00f3rios da opera\u00e7\u00e3o, tpEnteGov inv\u00e1lido, parametriza\u00e7\u00e3o de compra governamental indispon\u00edvel) ou opera\u00e7\u00e3o fora do escopo do c\u00e1lculo (tpDoc n\u00e3o suportado, MEI, regime regular, regime normal puro, incoer\u00eancias CRT \u00d7 tpRegimeIBSCBS)",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetail"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno na API",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetail"
+                                }
+                            }
+                        }
+                    }
+                },
+                "deprecated": true
+            }
+        },
+        "/calculadora/observabilidade/simples-nacional/nao-assistido": {
+            "post": {
+                "tags": [
+                    "Observabilidade - Calculadora do Simples Nacional"
+                ],
+                "summary": "C\u00e1lculo N\u00c3O ASSISTIDO do Simples Nacional para todos os documentos fiscais",
+                "description": "Calcula o IBS e a CBS no Simples Nacional para os documentos com CRT (55 NF-e, 65 NFC-e, 57 CT-e, 67 CT-e OS, 63 BP-e, 93 BP-e TM e 62 NFCom) e para a NFS-e (91), com o mesmo contrato. O regime chega no vocabul\u00e1rio do documento \u2014 CRT e tpRegimeIBSCBS, ou opSimpNac, regApIBSCBSSN e regApTribSN \u2014 e \u00e9 convertido no c\u00f3digo neutro devolvido em oper.regimeApuracao (SN_PLENO, SN_SUBLIMITE, PENDENTE, PENDENTE_SUBLIMITE ou SOMENTE_RECEITA; este \u00faltimo, do optante pelo regime regular do IBS e da CBS, devolve s\u00f3 a receita bruta). A linha de al\u00edquotas efetivas do contribuinte no per\u00edodo vem em aliquotasEfetivas (pontos percentuais, texto, precis\u00e3o integral; obrigat\u00f3ria, exceto no SOMENTE_RECEITA): fatorR, impedimentoSublimite e um par CBS/IBS por anexo, mais o par sem redistribui\u00e7\u00e3o do ISS nos anexos III a V. Para cada item, a Calculadora escolhe o anexo (cAtivSN e fator r) e o par com ou sem redistribui\u00e7\u00e3o do ISS \u2014 o par sem quando o ISS n\u00e3o entra no c\u00e1lculo do Simples: ISS fora do Simples (impedimento, CRT 2, regApIBSCBSSN 2, regApTribSN 2 ou 3), atividade sem ISS, imunidade, exporta\u00e7\u00e3o ou n\u00e3o incid\u00eancia (tribISSQN 2, 3 ou 4), isen\u00e7\u00e3o municipal (tpBM 1) e ISS retido (tpRetISSQN 2 ou 3) \u2014 e devolve a decis\u00e3o em resolucaoAliquotas (tipoAliquota, regraAliquota, al\u00edquotas integrais, motivo e avisos). Na NFS-e: exatamente 1 item, sem Imposto Seletivo, al\u00edquota com 2 casas no c\u00e1lculo (arredondada depois da compra governamental) e s\u00f3 o tpRBSN 1 gera valor. Erros por item no padr\u00e3o RFC 7807, como no endpoint cl\u00e1ssico.",
+                "operationId": "calcularTributosSimplesNacionalNaoAssistido",
+                "requestBody": {
+                    "description": "Dados de uma opera\u00e7\u00e3o do Simples Nacional, com a linha de al\u00edquotas do contribuinte",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/OperacaoSimplesNaoAssistidaInput"
+                            },
+                            "examples": {
+                                "NFS-e \u2014 constru\u00e7\u00e3o civil com isen\u00e7\u00e3o municipal": {
+                                    "summary": "Regra 7 (tpBM 1): par sem redistribui\u00e7\u00e3o; al\u00edquota de 2 casas",
+                                    "description": "NFS-e \u2014 constru\u00e7\u00e3o civil com isen\u00e7\u00e3o municipal",
+                                    "value": {
+                                        "id": "op-1",
+                                        "versao": "3.0.0",
+                                        "data": "2027-03-15",
+                                        "tpDoc": "91",
+                                        "opSimpNac": "3",
+                                        "regApIBSCBSSN": "1",
+                                        "regApTribSN": "1",
+                                        "aliquotasEfetivas": {
+                                            "fatorR": false,
+                                            "impedimentoSublimite": false,
+                                            "anexoIII": {
+                                                "pCBSSN": "2.3874",
+                                                "pIBSSN": "0.0263",
+                                                "semRedistribuicaoISS": {
+                                                    "pCBSSN": "2.3591",
+                                                    "pIBSSN": "0.0260"
+                                                }
+                                            }
+                                        },
+                                        "itens": [
+                                            {
+                                                "numero": 1,
+                                                "cAtivSN": "12",
+                                                "cClassTrib": "000001",
+                                                "nbs": "114051000",
+                                                "baseCalculo": "10000.00",
+                                                "tribISSQN": "1",
+                                                "tpRetISSQN": "1",
+                                                "tpBM": "1"
+                                            }
+                                        ]
+                                    }
+                                },
+                                "NF-e \u2014 CRT 1": {
+                                    "summary": "Anexo I, par \u00fanico",
+                                    "description": "NF-e \u2014 CRT 1",
+                                    "value": {
+                                        "id": "op-2",
+                                        "versao": "3.0.0",
+                                        "data": "2027-03-15",
+                                        "tpDoc": "55",
+                                        "CRT": "1",
+                                        "aliquotasEfetivas": {
+                                            "fatorR": true,
+                                            "impedimentoSublimite": false,
+                                            "anexoI": {
+                                                "pCBSSN": "1.1612",
+                                                "pIBSSN": "0.0129"
+                                            }
+                                        },
+                                        "itens": [
+                                            {
+                                                "numero": 1,
+                                                "cAtivSN": "01",
+                                                "cClassTrib": "000001",
+                                                "baseCalculo": "1000.00",
+                                                "valorImpostoSeletivo": "0.00"
+                                            }
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Processamento realizado (itens podem ter erros individuais)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ObservabilidadeSimplesDomain"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Estrutura e/ou dados informados em formato n\u00e3o reconhecido",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetail"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Erro de valida\u00e7\u00e3o global: dados obrigat\u00f3rios da opera\u00e7\u00e3o, tpDoc n\u00e3o habilitado, campos de regime inv\u00e1lidos, incoerentes ou do outro vocabul\u00e1rio (VSN-016 a 018, VSN-030 a 033), opera\u00e7\u00e3o fora do escopo (VSN-019), n\u00famero de itens (VSN-034), aliquotasEfetivas ausente (VSN-039) ou fora do formato (VSN-005/007), compra governamental (VSN-024/025)",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetail"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno na API",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetail"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/versao": {
+            "get": {
+                "tags": [
+                    "Vers\u00e3o da aplica\u00e7\u00e3o"
+                ],
+                "summary": "Consultar as informa\u00e7\u00f5es de vers\u00e3o da aplica\u00e7\u00e3o",
+                "description": "Informa a vers\u00e3o da aplica\u00e7\u00e3o, a vers\u00e3o, descri\u00e7\u00e3o e data da base de dados em uso e o ambiente em que a aplica\u00e7\u00e3o est\u00e1 publicada.",
+                "operationId": "getVersao",
+                "responses": {
+                    "200": {
+                        "description": "Informa\u00e7\u00f5es de vers\u00e3o da instala\u00e7\u00e3o",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/VersaoDomain"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/versao/status": {
+            "get": {
+                "tags": [
+                    "Vers\u00e3o da aplica\u00e7\u00e3o offline"
+                ],
+                "summary": "Consultar o status de vers\u00e3o da aplica\u00e7\u00e3o offline",
+                "description": "Compara as vers\u00f5es locais da aplica\u00e7\u00e3o e do banco de dados com as vers\u00f5es remotas publicadas no endpoint /versao da instala\u00e7\u00e3o online e informa, campo a campo, se a instala\u00e7\u00e3o local est\u00e1 atualizada. Quando a consulta remota est\u00e1 indispon\u00edvel, os campos remotos retornam nulos e os indicadores resultam falsos.",
+                "operationId": "getVersaoStatus",
+                "responses": {
+                    "200": {
+                        "description": "Comparativo de vers\u00f5es calculado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/VersaoOfflineDomain"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/calculadora/simples-nacional/atividades": {
+            "get": {
+                "tags": [
+                    "Atividades do Simples Nacional"
+                ],
+                "summary": "Listar atividades do Simples Nacional",
+                "description": "Retorna TODAS as atividades do Simples Nacional vigentes na data de refer\u00eancia informada, cada uma com seu(s) anexo(s) e com o c\u00f3digo oficial de Atividade do Simples Nacional (cAtivSN, NT 2026.005) como campo codigo. Tr\u00eas filtros-por-flag opcionais \u2014 nenhum deles remove atividades da listagem; as incompat\u00edveis v\u00eam marcadas, com motivos distingu\u00edveis e combin\u00e1veis: 'anexos' informa os anexos configurados pelo usu\u00e1rio e deriva 'disponivel'/'anexosFaltantes'/'modoFatorR'; 'tpDoc' informa o tipo do documento fiscal e devolve 'admissivelNoDocumento' (whitelist da associativa atividade \u00d7 documento: admiss\u00edvel somente nos documentos com v\u00ednculo vigente \u2014 'tpDocsAdmissiveis' \u00e9 sempre devolvido, lista vazia = nenhum documento publicado para a atividade); 'cClassTrib' informa a classifica\u00e7\u00e3o tribut\u00e1ria escolhida e devolve 'compativelComClassTrib' (espelho da regra UB14-90 da NT 2026.005: classifica\u00e7\u00f5es que declaram receita tornam indispon\u00edveis as atividades de opera\u00e7\u00f5es n\u00e3o tribut\u00e1veis \u2014 preven\u00e7\u00e3o na origem do erro VSN-023 do c\u00e1lculo). Com qualquer filtro informado, 'disponivel' agrega os eixos correspondentes. N\u00e3o inclui al\u00edquotas: a rela\u00e7\u00e3o anexo \u2192 al\u00edquota \u00e9 configurada externamente (via servi\u00e7o de terceiros, por exemplo).",
+                "operationId": "listarAtividades",
+                "parameters": [
+                    {
+                        "name": "data",
+                        "in": "query",
+                        "description": "Data de refer\u00eancia da consulta (YYYY-MM-DD); os lookups de vig\u00eancia usam esta data, nunca a data corrente do servidor",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        },
+                        "example": "2026-01-01"
+                    },
+                    {
+                        "name": "anexos",
+                        "in": "query",
+                        "description": "Anexos configurados pelo usu\u00e1rio, em numerais romanos mai\u00fasculos (I..V). Aceita CSV (anexos=I,II) ou par\u00e2metro repetido (anexos=I&anexos=II). Ausente = sem filtro (todos configurados); presente por\u00e9m vazio (anexos=) = nenhum configurado.",
+                        "required": false,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "example": "I,II"
+                    },
+                    {
+                        "name": "tpDoc",
+                        "in": "query",
+                        "description": "Tipo do documento fiscal (valor da coluna TPDF_TIPO da TIPO_DFE: 55, 65, 91, ...). Opcional; ausente = admissibilidade n\u00e3o avaliada. Valor mal-formado ou sem linha correspondente na TIPO_DFE = 400. N\u00e3o \u00e9 exigido que o documento esteja habilitado para o c\u00e1lculo (whitelist TIPO_DFE_CALCULO_SIMPLES_NACIONAL): essa rejei\u00e7\u00e3o (VSN-015) \u00e9 papel do endpoint de c\u00e1lculo.",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": 55
+                    },
+                    {
+                        "name": "cClassTrib",
+                        "in": "query",
+                        "description": "C\u00f3digo de classifica\u00e7\u00e3o tribut\u00e1ria (cClassTrib, 6 d\u00edgitos) escolhido pelo consumidor. Opcional; ausente = compatibilidade n\u00e3o avaliada. O tpRBSN do c\u00f3digo \u00e9 resolvido como no c\u00e1lculo: restrito ao grupo da CBS (tributo 2) e pela vig\u00eancia da data. C\u00f3digo inexistente ou fora de vig\u00eancia = 400 (o filtro nunca \u00e9 ignorado silenciosamente).",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "000001"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista de atividades vigentes na data",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/AtividadeSimplesDomain"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Data de refer\u00eancia ausente ou inv\u00e1lida, anexo fora do dom\u00ednio I..V, tpDoc mal-formado/inexistente na TIPO_DFE, ou cClassTrib inexistente/fora de vig\u00eancia na data (no grupo da CBS)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/AtividadeSimplesDomain"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/calculadora/simples-nacional/atividades/{codigo}": {
+            "get": {
+                "tags": [
+                    "Atividades do Simples Nacional"
+                ],
+                "summary": "Consultar atividade do Simples Nacional por c\u00f3digo",
+                "description": "Retorna uma atividade vigente na data de refer\u00eancia informada, pelo seu c\u00f3digo oficial cAtivSN (ex.: 09, 90), ou 404 se n\u00e3o existir/n\u00e3o estar vigente. Os campos derivados de anexos v\u00eam preenchidos como \"sem filtro\" (disponivel=true, anexosFaltantes=[]). Os par\u00e2metros opcionais 'tpDoc' e 'cClassTrib' recebem o mesmo tratamento da listagem: 'tpDocsAdmissiveis' \u00e9 sempre devolvido e, com os filtros informados, 'admissivelNoDocumento' e 'compativelComClassTrib' aparecem e comp\u00f5em o 'disponivel'.",
+                "operationId": "buscarAtividade",
+                "parameters": [
+                    {
+                        "name": "codigo",
+                        "in": "path",
+                        "description": "C\u00f3digo oficial cAtivSN da atividade (ex.: 09)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "09"
+                    },
+                    {
+                        "name": "data",
+                        "in": "query",
+                        "description": "Data de refer\u00eancia da consulta (YYYY-MM-DD); os lookups de vig\u00eancia usam esta data, nunca a data corrente do servidor",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        },
+                        "example": "2026-01-01"
+                    },
+                    {
+                        "name": "tpDoc",
+                        "in": "query",
+                        "description": "Tipo do documento fiscal (valor da coluna TPDF_TIPO da TIPO_DFE: 55, 65, 91, ...). Opcional; mal-formado ou inexistente = 400.",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": 55
+                    },
+                    {
+                        "name": "cClassTrib",
+                        "in": "query",
+                        "description": "C\u00f3digo de classifica\u00e7\u00e3o tribut\u00e1ria (cClassTrib, 6 d\u00edgitos). Opcional; inexistente ou fora de vig\u00eancia na data (no grupo da CBS) = 400.",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "000001"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Atividade encontrada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AtividadeSimplesDomain"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Data de refer\u00eancia ausente ou inv\u00e1lida, tpDoc mal-formado/inexistente na TIPO_DFE, ou cClassTrib inexistente/fora de vig\u00eancia na data (no grupo da CBS)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AtividadeSimplesDomain"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Atividade n\u00e3o encontrada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AtividadeSimplesDomain"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/calculadora/observabilidade/simples-nacional/erros": {
+            "get": {
+                "tags": [
+                    "Observabilidade - Calculadora do Simples Nacional"
+                ],
+                "summary": "Consultar descri\u00e7\u00e3o de erro do Simples Nacional",
+                "description": "Retorna t\u00edtulo e descri\u00e7\u00e3o em PT-BR para o c\u00f3digo de erro VSN- informado.",
+                "operationId": "buscarErro",
+                "parameters": [
+                    {
+                        "name": "codigo",
+                        "in": "query",
+                        "description": "C\u00f3digo do erro (ex: VSN-001)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Descri\u00e7\u00e3o do erro encontrada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErroDescricaoSimples"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "C\u00f3digo de erro n\u00e3o encontrado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErroDescricaoSimples"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "ItemSimplesInput": {
+                "type": "object",
+                "properties": {
+                    "numero": {
+                        "type": "integer",
+                        "format": "int32",
+                        "description": "N\u00famero do item na opera\u00e7\u00e3o",
+                        "example": 1
+                    },
+                    "cAtivSN": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "C\u00f3digo oficial de Atividade do Simples Nacional (2 caracteres, com zero \u00e0 esquerda; NT 2026.005), validado contra o cat\u00e1logo de atividades vigente na data. A restri\u00e7\u00e3o de documento \u00e9 POR ATIVIDADE: atividade sem v\u00ednculo na associativa de tipos de DFE \u00e9 admiss\u00edvel em qualquer tpDoc suportado; com v\u00ednculos, somente nos tpDoc vinculados. Ausente, desconhecido, fora de vig\u00eancia ou inadmiss\u00edvel para o tpDoc: o item n\u00e3o \u00e9 calculado (estado NAO_CALCULADO), sem erro",
+                        "example": "01"
+                    },
+                    "cClassTrib": {
+                        "type": "string",
+                        "description": "C\u00f3digo de Classifica\u00e7\u00e3o Tribut\u00e1ria do IBS e da CBS (6 d\u00edgitos). Obrigat\u00f3rio: resolve internamente o Tipo de Receita Bruta do Simples Nacional (tpRBSN, NT 2026.005)",
+                        "example": "000001"
+                    },
+                    "nbs": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "C\u00f3digo da Nomenclatura Brasileira de Servi\u00e7os. A obrigatoriedade e a valida\u00e7\u00e3o dependem da classifica\u00e7\u00e3o tribut\u00e1ria e do tipo de documento; n\u00e3o pode ser informado junto com NCM",
+                        "example": "114051000"
+                    },
+                    "ncm": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "C\u00f3digo da Nomenclatura Comum do Mercosul. A obrigatoriedade e a valida\u00e7\u00e3o dependem da classifica\u00e7\u00e3o tribut\u00e1ria e do tipo de documento; n\u00e3o pode ser informado junto com NBS",
+                        "example": "22030000"
+                    },
+                    "baseCalculo": {
+                        "type": "string",
+                        "description": "Base de c\u00e1lculo do item: vProd + vFrete + vSeg + vOutro - vDesc, SEM o valor do Imposto Seletivo (decimal como string). O nome \u00e9 deliberado: o contrato separa semanticamente a base sem vIS (baseCalculo) do valorImpostoSeletivo, e essa separa\u00e7\u00e3o sobrevive a qualquer mudan\u00e7a futura na composi\u00e7\u00e3o legal da RBSNitem sem quebra de compatibilidade. Formato 13v2: at\u00e9 13 d\u00edgitos inteiros e at\u00e9 2 casas decimais, sem nota\u00e7\u00e3o cient\u00edfica",
+                        "example": "950.00"
+                    },
+                    "valorImpostoSeletivo": {
+                        "type": "string",
+                        "description": "Valor do Imposto Seletivo j\u00e1 calculado (vIS). \"0.00\" quando n\u00e3o h\u00e1 IS. N\u00c3O comp\u00f5e a receita bruta do item (vRBSNitem) \u2014 parametriza\u00e7\u00e3o por vig\u00eancia, atualmente desligada em todas as vig\u00eancias; o valor \u00e9 apenas repassado na sa\u00edda e somado ao totalItem. Formato 13v2: at\u00e9 13 d\u00edgitos inteiros e at\u00e9 2 casas decimais",
+                        "example": "50.00"
+                    },
+                    "pIBSSN": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Al\u00edquota efetiva do Simples Nacional para o IBS, em pontos percentuais (NT 2026.005). Exigida apenas quando o c\u00e1lculo a usa (cAtivSN v\u00e1lido, regime que calcula IBS e tpRBSN 1, 4 ou 5). Ignorada na sa\u00edda para CRT=2. At\u00e9 3 d\u00edgitos inteiros e at\u00e9 34 casas decimais, sem nota\u00e7\u00e3o cient\u00edfica: o c\u00e1lculo usa todas as casas informadas, e a sa\u00edda apresenta a al\u00edquota com 2 a 4 casas (tipo 3v2-4)",
+                        "example": "1.25"
+                    },
+                    "pCBSSN": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Al\u00edquota efetiva do Simples Nacional para a CBS, em pontos percentuais (NT 2026.005). Exigida apenas quando o c\u00e1lculo a usa (cAtivSN v\u00e1lido e tpRBSN 1, 4 ou 5). At\u00e9 3 d\u00edgitos inteiros e at\u00e9 34 casas decimais, sem nota\u00e7\u00e3o cient\u00edfica: o c\u00e1lculo usa todas as casas informadas, e a sa\u00edda apresenta a al\u00edquota com 2 a 4 casas (tipo 3v2-4)",
+                        "example": "2.75"
+                    }
+                }
+            },
+            "OperacaoSimplesInput": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "description": "Identificador da opera\u00e7\u00e3o",
+                        "example": "507f1f77bcf86cd799439011"
+                    },
+                    "versao": {
+                        "type": "string",
+                        "description": "Vers\u00e3o do endpoint",
+                        "example": "2.0.0"
+                    },
+                    "data": {
+                        "type": "string",
+                        "description": "Data do fato gerador da opera\u00e7\u00e3o (YYYY-MM-DD). Todos os lookups de vig\u00eancia usam esta data",
+                        "example": "2027-03-15"
+                    },
+                    "tpDoc": {
+                        "type": "string",
+                        "description": "Tipo de documento fiscal eletr\u00f4nico da opera\u00e7\u00e3o (NT 2026.005). Os tipos suportados pelo c\u00e1lculo s\u00e3o parametrizados em banco, pela vig\u00eancia da data do fato gerador (na carga atual: 55 - NF-e e 65 - NFC-e)",
+                        "example": "55"
+                    },
+                    "CRT": {
+                        "type": "string",
+                        "description": "C\u00f3digo de Regime Tribut\u00e1rio do emitente: 1 (Simples Nacional), 2 (Simples Nacional - excesso de sublimite de receita bruta), 3 (Regime Normal) ou 4 (MEI). CRT=4 e CRT=3 sem tpRegimeIBSCBS=2 est\u00e3o fora do escopo do c\u00e1lculo (NT 2026.005)",
+                        "example": "1"
+                    },
+                    "tpRegimeIBSCBS": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Tipo de regime de apura\u00e7\u00e3o do IBS/CBS (NT 2026.005): 1 (regime regular - fora do escopo deste endpoint) ou 2 (apura\u00e7\u00e3o por fora, admitida apenas com CRT=3). Regras de coer\u00eancia C21a-10/20/30 da NT",
+                        "example": "2"
+                    },
+                    "tpEnteGov": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Tipo de ente governamental adquirente (compra governamental, NT 2026.005, se\u00e7\u00e3o 5.3.3; tag gCompraGov/tpEnteGov da identifica\u00e7\u00e3o da nota \u2014 grupo B/ide): 1 (Uni\u00e3o), 2 (Estado), 3 (Distrito Federal) ou 4 (Munic\u00edpio). Vale para a opera\u00e7\u00e3o inteira; quando informado, aplica a todos os itens o deslocamento de al\u00edquotas CBS-IBS dos arts. 372 e 473 da LC 214/2025",
+                        "example": "2"
+                    },
+                    "itens": {
+                        "type": "array",
+                        "description": "Itens da opera\u00e7\u00e3o",
+                        "items": {
+                            "$ref": "#/components/schemas/ItemSimplesInput"
+                        }
+                    }
+                }
+            },
+            "ErroDetalhe": {
+                "type": "object",
+                "properties": {
+                    "type": {
+                        "type": "string"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "code": {
+                        "type": "string"
+                    },
+                    "pointer": {
+                        "type": "string"
+                    },
+                    "detail": {
+                        "type": "string"
+                    }
+                }
+            },
+            "ImpostoSeletivoSimplesDomain": {
+                "type": "object",
+                "properties": {
+                    "valor": {
+                        "type": "number",
+                        "description": "Valor do Imposto Seletivo"
+                    }
+                }
+            },
+            "MemoriaCalculoSimplesDomain": {
+                "type": "object",
+                "properties": {
+                    "cbs": {
+                        "type": "string",
+                        "description": "Mem\u00f3ria de c\u00e1lculo da CBS"
+                    },
+                    "ibs": {
+                        "type": "string",
+                        "description": "Mem\u00f3ria de c\u00e1lculo do IBS. Suprimida para CRT=2"
+                    }
+                }
+            },
+            "MotivoEstadoSimplesDomain": {
+                "type": "object",
+                "description": "Motivo do estado NAO_CALCULADO do item (presente somente nesse estado)",
+                "properties": {
+                    "codigo": {
+                        "type": "string",
+                        "description": "C\u00f3digo do motivo. REGIME_SOMENTE_RECEITA: o optante apura o IBS e a CBS pelo regime regular; CATIVSN_AUSENTE: cAtivSN n\u00e3o informado; CATIVSN_DESCONHECIDO: cAtivSN inexistente ou fora de vig\u00eancia; CATIVSN_INADMISSIVEL_NO_DOCUMENTO: atividade n\u00e3o admitida no tipo de documento; ANEXO_SEM_ALIQUOTA_CBS: a Tabela de Al\u00edquotas Efetivas do Simples Nacional n\u00e3o traz a CBS do anexo (s\u00f3 no c\u00e1lculo assistido)",
+                        "enum": [
+                            "REGIME_SOMENTE_RECEITA",
+                            "CATIVSN_AUSENTE",
+                            "CATIVSN_DESCONHECIDO",
+                            "CATIVSN_INADMISSIVEL_NO_DOCUMENTO",
+                            "ANEXO_SEM_ALIQUOTA_CBS"
+                        ],
+                        "example": "REGIME_SOMENTE_RECEITA"
+                    },
+                    "descricao": {
+                        "type": "string",
+                        "description": "Descri\u00e7\u00e3o do motivo, pronta para exibi\u00e7\u00e3o ao usu\u00e1rio",
+                        "example": "O optante apura o IBS e a CBS pelo regime regular, fora do Simples Nacional; o item leva ao Simples apenas a receita bruta."
+                    }
+                }
+            },
+            "ObjetoSimplesDomain": {
+                "type": "object",
+                "properties": {
+                    "nObj": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "estadoItem": {
+                        "type": "string",
+                        "enum": [
+                            "CALCULADO",
+                            "NAO_CALCULADO",
+                            "NAO_IMPLEMENTADO",
+                            "INCONSISTENCIA_ENTRADA",
+                            "FALHA_TECNICA"
+                        ]
+                    },
+                    "motivoEstado": {
+                        "$ref": "#/components/schemas/MotivoEstadoSimplesDomain",
+                        "description": "Por que o IBS e a CBS do item n\u00e3o foram calculados: presente somente quando estadoItem = NAO_CALCULADO"
+                    },
+                    "tribCalc": {
+                        "$ref": "#/components/schemas/TributosSimplesDomain"
+                    },
+                    "erros": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ErroDetalhe"
+                        }
+                    }
+                }
+            },
+            "ObservabilidadeSimplesDomain": {
+                "type": "object",
+                "properties": {
+                    "oper": {
+                        "$ref": "#/components/schemas/OperacaoSimplesDomain"
+                    },
+                    "resolucaoAliquotas": {
+                        "type": "null",
+                        "$ref": "#/components/schemas/ResolucaoAliquotasDomain",
+                        "description": "Resolu\u00e7\u00e3o das al\u00edquotas efetivas por item. Ausente no endpoint cl\u00e1ssico e no regime SOMENTE_RECEITA"
+                    },
+                    "objetos": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ObjetoSimplesDomain"
+                        }
+                    },
+                    "total": {
+                        "$ref": "#/components/schemas/TotalSimplesDomain"
+                    }
+                }
+            },
+            "OperacaoSimplesDomain": {
+                "type": "object",
+                "properties": {
+                    "data": {
+                        "type": "string",
+                        "description": "Data do fato gerador"
+                    },
+                    "tpDoc": {
+                        "type": "string",
+                        "description": "Tipo de documento fiscal eletr\u00f4nico da opera\u00e7\u00e3o"
+                    },
+                    "CRT": {
+                        "type": "string",
+                        "description": "C\u00f3digo de Regime Tribut\u00e1rio do emitente (documentos com CRT)"
+                    },
+                    "tpRegimeIBSCBS": {
+                        "type": "string",
+                        "description": "Tipo de regime de apura\u00e7\u00e3o do IBS/CBS, quando informado (documentos com CRT)"
+                    },
+                    "opSimpNac": {
+                        "type": "string",
+                        "description": "Situa\u00e7\u00e3o do prestador perante o Simples Nacional (NFS-e)"
+                    },
+                    "regApIBSCBSSN": {
+                        "type": "string",
+                        "description": "Regime de apura\u00e7\u00e3o do IBS e da CBS pelo Simples Nacional (NFS-e)"
+                    },
+                    "regApTribSN": {
+                        "type": "string",
+                        "description": "Regime de apura\u00e7\u00e3o dos tributos federais e do ISS pelo Simples Nacional (NFS-e)"
+                    },
+                    "tpEnteGov": {
+                        "type": "string",
+                        "description": "Tipo de ente governamental adquirente (compra governamental), quando informado"
+                    },
+                    "regimeApuracao": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Regime de apura\u00e7\u00e3o (c\u00f3digo neutro) a que os campos de regime do documento levam: SN_PLENO, SN_SUBLIMITE, PENDENTE, PENDENTE_SUBLIMITE ou SOMENTE_RECEITA (optante pelo regime regular do IBS e da CBS: os itens saem NAO_CALCULADO, s\u00f3 com a receita bruta). Ausente no endpoint cl\u00e1ssico",
+                        "enum": [
+                            "SN_PLENO",
+                            "SN_SUBLIMITE",
+                            "PENDENTE",
+                            "PENDENTE_SUBLIMITE",
+                            "SOMENTE_RECEITA"
+                        ],
+                        "example": "SN_PLENO"
+                    }
+                }
+            },
+            "ResolucaoAliquotaItemDomain": {
+                "type": "object",
+                "properties": {
+                    "numero": {
+                        "type": "integer",
+                        "format": "int32",
+                        "description": "N\u00famero do item na opera\u00e7\u00e3o",
+                        "example": 1
+                    },
+                    "cAtivSN": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "C\u00f3digo de atividade do item, normalizado (sem espa\u00e7os; um \u00fanico d\u00edgito ganha o zero \u00e0 esquerda: \"7\" \u21d2 \"07\")",
+                        "example": "09"
+                    },
+                    "anexoAplicado": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Anexo aplicado ao item, em numeral romano (I..V); null quando a atividade n\u00e3o possui anexo (c\u00f3digo 90) ou n\u00e3o foi resolvida",
+                        "example": "III"
+                    },
+                    "tipoAliquota": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Tipo da al\u00edquota aplicada: SEM_ALIQUOTA (c\u00f3digo 90, zero), PAR_UNICO (anexos I e II), SEM_REDISTRIBUICAO ou COM_REDISTRIBUICAO do ISS (anexos III, IV e V); null quando o par n\u00e3o foi escolhido (atividade desconhecida ou n\u00e3o admitida no documento)",
+                        "enum": [
+                            "SEM_ALIQUOTA",
+                            "PAR_UNICO",
+                            "SEM_REDISTRIBUICAO",
+                            "COM_REDISTRIBUICAO"
+                        ],
+                        "example": "COM_REDISTRIBUICAO"
+                    },
+                    "regraAliquota": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Regra que escolheu o par: DOCUMENTO, ATIVIDADE_NAO_TRIBUTADA, ANEXO_SEM_ISS, ISS_FORA_DO_SIMPLES, ATIVIDADE_SEM_ISS, ISS_NAO_INCIDE, ISENCAO_MUNICIPAL, ISS_RETIDO ou PADRAO; null quando a atividade n\u00e3o foi resolvida",
+                        "enum": [
+                            "DOCUMENTO",
+                            "ATIVIDADE_NAO_TRIBUTADA",
+                            "ANEXO_SEM_ISS",
+                            "ISS_FORA_DO_SIMPLES",
+                            "ATIVIDADE_SEM_ISS",
+                            "ISS_NAO_INCIDE",
+                            "ISENCAO_MUNICIPAL",
+                            "ISS_RETIDO",
+                            "PADRAO"
+                        ],
+                        "example": "PADRAO"
+                    },
+                    "pIBSSN": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Al\u00edquota efetiva de IBS do par aplicado, com a precis\u00e3o integral recebida ou lida (pontos percentuais, texto), antes da compra governamental e do arredondamento do leiaute; \"0\" para atividade sem anexo; null quando n\u00e3o resolvida ou quando a linha n\u00e3o traz IBS (impedimento pelo sublimite)",
+                        "example": "0.01867380622521988789135487"
+                    },
+                    "pCBSSN": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Al\u00edquota efetiva de CBS do par aplicado, com a precis\u00e3o integral recebida ou lida (pontos percentuais, texto), antes da compra governamental e do arredondamento do leiaute; \"0\" para atividade sem anexo; null quando n\u00e3o resolvida",
+                        "example": "1.6839379378389463610262954"
+                    },
+                    "motivo": {
+                        "type": "string",
+                        "description": "Desfecho da resolu\u00e7\u00e3o: RESOLVIDA, ATIVIDADE_SEM_ANEXO (c\u00f3digo 90, al\u00edquotas zero), ATIVIDADE_DESCONHECIDA (cAtivSN nulo/desconhecido/fora de vig\u00eancia: item NAO_CALCULADO), ATIVIDADE_INADMISSIVEL_NO_DOCUMENTO (item NAO_CALCULADO), ANEXO_SEM_ALIQUOTA (a linha n\u00e3o tem a CBS do par), FATOR_R_AUSENTE (VSN-040) ou ITEM_NAO_IMPLEMENTADO (VSN-027)",
+                        "enum": [
+                            "RESOLVIDA",
+                            "ATIVIDADE_SEM_ANEXO",
+                            "ATIVIDADE_DESCONHECIDA",
+                            "ANEXO_SEM_ALIQUOTA",
+                            "ATIVIDADE_INADMISSIVEL_NO_DOCUMENTO",
+                            "FATOR_R_AUSENTE",
+                            "ITEM_NAO_IMPLEMENTADO"
+                        ],
+                        "example": "RESOLVIDA"
+                    },
+                    "avisos": {
+                        "type": "array",
+                        "description": "Avisos do item, que n\u00e3o bloqueiam o c\u00e1lculo (ex.: campo do ISS desconsiderado; par sem redistribui\u00e7\u00e3o ausente na linha). Lista vazia quando n\u00e3o h\u00e1",
+                        "items": {
+                            "type": "string",
+                            "example": "tpBM desconsiderado: a atividade 07 n\u00e3o admite benef\u00edcio municipal do ISS (regra E0536 da NFS-e)"
+                        }
+                    }
+                }
+            },
+            "ResolucaoAliquotasDomain": {
+                "description": "Resolu\u00e7\u00e3o das al\u00edquotas efetivas por item",
+                "oneOf": [
+                    {
+                        "$ref": "#/components/schemas/ResolucaoAliquotasNaoAssistido"
+                    }
+                ]
+            },
+            "ResolucaoAliquotasNaoAssistido": {
+                "type": "object",
+                "description": "Resolu\u00e7\u00e3o das al\u00edquotas do c\u00e1lculo n\u00e3o assistido: a linha recebida em aliquotasEfetivas",
+                "properties": {
+                    "fatorR": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ],
+                        "description": "fatorR recebido em aliquotasEfetivas (true = fator r igual ou superior a 28%); null quando n\u00e3o informado",
+                        "example": false
+                    },
+                    "indSublimite": {
+                        "type": "boolean",
+                        "description": "impedimentoSublimite recebido em aliquotasEfetivas (padr\u00e3o false)",
+                        "example": false
+                    },
+                    "itens": {
+                        "type": "array",
+                        "description": "Resolu\u00e7\u00e3o das al\u00edquotas de cada item, na ordem dos itens de entrada",
+                        "items": {
+                            "$ref": "#/components/schemas/ResolucaoAliquotaItemDomain"
+                        }
+                    },
+                    "avisos": {
+                        "type": "array",
+                        "description": "Avisos da opera\u00e7\u00e3o, que n\u00e3o bloqueiam o c\u00e1lculo. Lista vazia quando n\u00e3o h\u00e1",
+                        "items": {
+                            "type": "string",
+                            "example": "regApIBSCBSSN 2 (excesso de sublimite) com regApTribSN 1: incoerente \u2014 quem excede o sublimite tem o ISS fora do Simples Nacional"
+                        }
+                    }
+                }
+            },
+            "TotalSimplesDomain": {
+                "type": "object",
+                "properties": {
+                    "vRBSNtot": {
+                        "type": "number",
+                        "description": "Soma de vRBSNitem dos itens CALCULADO e NAO_CALCULADO (NT 2026.005)"
+                    },
+                    "vBC": {
+                        "type": "number",
+                        "description": "Soma de vBC (base de c\u00e1lculo de IBS/CBS) dos itens CALCULADO. Itens NAO_CALCULADO n\u00e3o t\u00eam vBC e ficam fora desta soma; suprimido quando nenhum item o tem"
+                    },
+                    "vIBSSNtot": {
+                        "type": "number",
+                        "description": "Soma de vIBSSN dos itens calculados. Suprimido quando nenhum item gera IBS (CRT=2)"
+                    },
+                    "vIBSSNtotPendSusp": {
+                        "type": "number",
+                        "description": "Soma de vIBSPendSusp dos itens calculados. Suprimido quando nenhum item gera IBS (CRT=2)"
+                    },
+                    "vCBSSNtot": {
+                        "type": "number",
+                        "description": "Soma de vCBSSN dos itens calculados"
+                    },
+                    "vCBSSNtotPendSusp": {
+                        "type": "number",
+                        "description": "Soma de vCBSPendSusp dos itens calculados"
+                    },
+                    "totalIs": {
+                        "type": "number",
+                        "description": "Soma de IS.valor dos itens calculados (conveni\u00eancia do projeto: o IS n\u00e3o integra o evento da NT)"
+                    },
+                    "totalTributos": {
+                        "type": "number",
+                        "description": "vIBSSNtot + vCBSSNtot + totalIs (somente os valores devidos)"
+                    }
+                }
+            },
+            "TributosSimplesDomain": {
+                "type": "object",
+                "properties": {
+                    "vRBSNitem": {
+                        "type": "number",
+                        "description": "Receita bruta do Simples Nacional do item (NT 2026.005): a baseCalculo, ou zero quando tpRBSN=0. O valorImpostoSeletivo N\u00c3O comp\u00f5e a receita bruta (parametriza\u00e7\u00e3o por vig\u00eancia, atualmente desligada em todas as vig\u00eancias \u2014 diverg\u00eancia deliberada com a f\u00f3rmula do campo P26 da NT)"
+                    },
+                    "tpRBSN": {
+                        "type": "integer",
+                        "format": "int32",
+                        "description": "Tipo de Receita Bruta do Simples Nacional, resolvido do cClassTrib (NT 2026.005): 0, 1, 2, 3, 4, 5 ou 9"
+                    },
+                    "tpRBSNDescricao": {
+                        "type": "string",
+                        "description": "Descri\u00e7\u00e3o do Tipo de Receita Bruta do Simples Nacional (texto oficial do leiaute do evento da NT 2026.005; ex.: \"Receita bruta - interna\"), vinda da tabela de tipos de receita bruta vigente na data do fato gerador"
+                    },
+                    "vBC": {
+                        "type": "number",
+                        "description": "Base de c\u00e1lculo de IBS/CBS do item: vRBSNitem \u00d7 fator do tipo de receita bruta, resolvido pela vig\u00eancia da data do fato gerador (tpRBSN 1 e 4: fator 1,0; tpRBSN 5: 0,5; tpRBSN 0, 2, 3 e 9: 0 \u2014 retorna 0.00). Suprimido para item NAO_CALCULADO: o c\u00e1lculo n\u00e3o ocorreu e emitir uma base de c\u00e1lculo sugeriria o contr\u00e1rio (o contrato do NAO_CALCULADO \u2014 apenas vRBSNitem, tpRBSN e tpRBSNDescricao \u2014 permanece intacto); o item tamb\u00e9m n\u00e3o contribui para o vBC do total"
+                    },
+                    "pIBSSN": {
+                        "type": "number",
+                        "description": "Al\u00edquota efetiva de IBS do Simples Nacional efetivamente aplicada, em pontos percentuais (p\u00f3s-transforma\u00e7\u00e3o de compra governamental). Suprimida para CRT=2"
+                    },
+                    "vIBSSN": {
+                        "type": "number",
+                        "description": "Valor devido de IBS do Simples Nacional. Suprimido para CRT=2"
+                    },
+                    "vIBSPendSusp": {
+                        "type": "number",
+                        "description": "Valor de IBS pendente/suspenso (exporta\u00e7\u00e3o indireta ou CRT=3 + tpRegimeIBSCBS=2). Suprimido para CRT=2"
+                    },
+                    "pCBSSN": {
+                        "type": "number",
+                        "description": "Al\u00edquota efetiva de CBS do Simples Nacional efetivamente aplicada, em pontos percentuais (p\u00f3s-transforma\u00e7\u00e3o de compra governamental)"
+                    },
+                    "vCBSSN": {
+                        "type": "number",
+                        "description": "Valor devido de CBS do Simples Nacional"
+                    },
+                    "vCBSPendSusp": {
+                        "type": "number",
+                        "description": "Valor de CBS pendente/suspenso (exporta\u00e7\u00e3o indireta ou CRT=3 + tpRegimeIBSCBS=2)"
+                    },
+                    "IS": {
+                        "$ref": "#/components/schemas/ImpostoSeletivoSimplesDomain",
+                        "description": "Imposto Seletivo (repasse do valor recebido, sem rec\u00e1lculo)"
+                    },
+                    "totalItem": {
+                        "type": "number",
+                        "description": "Total do item: vIBSSN + vCBSSN + IS.valor (somente os valores devidos; os pendentes/suspensos ficam fora)"
+                    },
+                    "memoriaCalculo": {
+                        "$ref": "#/components/schemas/MemoriaCalculoSimplesDomain",
+                        "description": "Mem\u00f3ria de c\u00e1lculo da CBS e do IBS. Suprimida para item NAO_CALCULADO"
+                    }
+                }
+            },
+            "ProblemDetail": {
+                "type": "object",
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "format": "uri"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "detail": {
+                        "type": "string"
+                    },
+                    "instance": {
+                        "type": "string",
+                        "format": "uri"
+                    },
+                    "properties": {
+                        "type": "object",
+                        "additionalProperties": {}
+                    }
+                }
+            },
+            "AliquotasEfetivasInput": {
+                "type": "object",
+                "properties": {
+                    "fatorR": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ],
+                        "description": "true = fator \"r\" igual ou superior a 28% (Anexo III para a atividade 09); false = inferior (Anexo V). Exigido quando algum item tem a atividade 09 (VSN-040)",
+                        "example": false
+                    },
+                    "impedimentoSublimite": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ],
+                        "description": "true = impedido de recolher IBS e ISS pelo Simples por exceder o sublimite (o IBS da linha vem nulo e os anexos III a V usam o par sem redistribui\u00e7\u00e3o do ISS). Padr\u00e3o false",
+                        "example": false
+                    },
+                    "anexoI": {
+                        "type": "null",
+                        "$ref": "#/components/schemas/AnexoParUnicoInput",
+                        "description": "Al\u00edquotas do Anexo I"
+                    },
+                    "anexoII": {
+                        "type": "null",
+                        "$ref": "#/components/schemas/AnexoParUnicoInput",
+                        "description": "Al\u00edquotas do Anexo II"
+                    },
+                    "anexoIII": {
+                        "type": "null",
+                        "$ref": "#/components/schemas/AnexoComIssInput",
+                        "description": "Al\u00edquotas do Anexo III, com o par sem redistribui\u00e7\u00e3o do ISS"
+                    },
+                    "anexoIV": {
+                        "type": "null",
+                        "$ref": "#/components/schemas/AnexoComIssInput",
+                        "description": "Al\u00edquotas do Anexo IV, com o par sem redistribui\u00e7\u00e3o do ISS"
+                    },
+                    "anexoV": {
+                        "type": "null",
+                        "$ref": "#/components/schemas/AnexoComIssInput",
+                        "description": "Al\u00edquotas do Anexo V, com o par sem redistribui\u00e7\u00e3o do ISS"
+                    }
+                }
+            },
+            "AnexoComIssInput": {
+                "type": "object",
+                "properties": {
+                    "pCBSSN": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Al\u00edquota efetiva da CBS com redistribui\u00e7\u00e3o do ISS, em pontos percentuais (texto)",
+                        "example": "2.3874"
+                    },
+                    "pIBSSN": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Al\u00edquota efetiva do IBS com redistribui\u00e7\u00e3o do ISS, em pontos percentuais (texto); nula com impedimento pelo sublimite",
+                        "example": "0.0263"
+                    },
+                    "semRedistribuicaoISS": {
+                        "type": "null",
+                        "$ref": "#/components/schemas/ParAliquotasInput",
+                        "description": "Par sem redistribui\u00e7\u00e3o do ISS (usado quando o ISS n\u00e3o entra no c\u00e1lculo do Simples). Ausente: vale o par com redistribui\u00e7\u00e3o, com aviso (os dois coincidem quando o ISS n\u00e3o passa do teto)"
+                    }
+                }
+            },
+            "AnexoParUnicoInput": {
+                "type": "object",
+                "properties": {
+                    "pCBSSN": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Al\u00edquota efetiva da CBS, em pontos percentuais (texto)",
+                        "example": "1.1612"
+                    },
+                    "pIBSSN": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Al\u00edquota efetiva do IBS, em pontos percentuais (texto); nula com impedimento pelo sublimite",
+                        "example": "0.0129"
+                    }
+                }
+            },
+            "ItemSimplesUnificadoInput": {
+                "type": "object",
+                "properties": {
+                    "numero": {
+                        "type": "integer",
+                        "format": "int32",
+                        "description": "N\u00famero do item na opera\u00e7\u00e3o (obrigat\u00f3rio, VSN-010)",
+                        "example": 1
+                    },
+                    "cAtivSN": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "C\u00f3digo oficial de Atividade do Simples Nacional (na DPS da NFS-e o campo se chama cAtvSN). Um \u00fanico d\u00edgito \u00e9 completado com zero \u00e0 esquerda (\"7\" \u21d2 \"07\"). Ausente, desconhecido, fora de vig\u00eancia ou n\u00e3o admitido no tpDoc: o item n\u00e3o \u00e9 calculado (estado NAO_CALCULADO), sem erro. N\u00e3o exigido no regime SOMENTE_RECEITA",
+                        "example": "12"
+                    },
+                    "cClassTrib": {
+                        "type": "string",
+                        "description": "C\u00f3digo de Classifica\u00e7\u00e3o Tribut\u00e1ria do IBS e da CBS (6 d\u00edgitos). Obrigat\u00f3rio: resolve internamente o Tipo de Receita Bruta do Simples Nacional (tpRBSN)",
+                        "example": "000001"
+                    },
+                    "nbs": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "C\u00f3digo da Nomenclatura Brasileira de Servi\u00e7os. A obrigatoriedade e a valida\u00e7\u00e3o dependem da classifica\u00e7\u00e3o tribut\u00e1ria e do tipo de documento; n\u00e3o pode ser informado junto com NCM",
+                        "example": "114051000"
+                    },
+                    "ncm": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "C\u00f3digo da Nomenclatura Comum do Mercosul. A obrigatoriedade e a valida\u00e7\u00e3o dependem da classifica\u00e7\u00e3o tribut\u00e1ria e do tipo de documento; n\u00e3o pode ser informado junto com NBS",
+                        "example": "22030000"
+                    },
+                    "baseCalculo": {
+                        "type": "string",
+                        "description": "Base de c\u00e1lculo do item, formato 13v2. Nos documentos com CRT: vProd + vFrete + vSeg + vOutro - vDesc, sem o vIS. Na NFS-e: o vReceitaBrutaSN (vServ - descIncond - vCalcAjusteBCIBSCBS - vCalcAjusteBCISSQN no profissional parceiro), calculado por quem chama",
+                        "example": "10000.00"
+                    },
+                    "valorImpostoSeletivo": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Valor do Imposto Seletivo j\u00e1 calculado (vIS), formato 13v2. Documentos com CRT: obrigat\u00f3rio (\"0.00\" quando n\u00e3o h\u00e1 IS), repassado na sa\u00edda. NFS-e: ausente ou zero (a NFS-e n\u00e3o tem IS; outro valor \u21d2 VSN-035)",
+                        "example": "0.00"
+                    },
+                    "tribISSQN": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "NFS-e: tributa\u00e7\u00e3o do ISSQN \u2014 1 opera\u00e7\u00e3o tribut\u00e1vel; 2 imunidade; 3 exporta\u00e7\u00e3o de servi\u00e7o; 4 n\u00e3o incid\u00eancia. Obrigat\u00f3rio nas atividades com ISS no Simples (07, 09, 10, 12, 13 e 14) quando o regime calcula tributos (VSN-036). Valores 2, 3 e 4 levam ao par sem redistribui\u00e7\u00e3o do ISS",
+                        "example": "1"
+                    },
+                    "tpRetISSQN": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "NFS-e: reten\u00e7\u00e3o do ISSQN \u2014 1 n\u00e3o retido; 2 retido pelo tomador; 3 retido pelo intermedi\u00e1rio. Obrigat\u00f3rio com tribISSQN = 1 nas mesmas atividades (VSN-037); com tribISSQN 2, 3 ou 4 \u00e9 desconsiderado, com aviso (E0580). Reten\u00e7\u00e3o (2 ou 3) leva ao par sem redistribui\u00e7\u00e3o (Cosit 298/2019)",
+                        "example": "1"
+                    },
+                    "tpBM": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "NFS-e: tipo de benef\u00edcio municipal do ISS \u2014 1 isen\u00e7\u00e3o; 2 redu\u00e7\u00e3o da base em %; 3 redu\u00e7\u00e3o da base em R$; 4 al\u00edquota diferenciada. Opcional: ausente = sem benef\u00edcio municipal. Fora do dom\u00ednio \u21d2 VSN-038. S\u00f3 vale nas atividades 12 e 13 (E0536); nas demais \u00e9 desconsiderado, com aviso. Isen\u00e7\u00e3o (1) leva ao par sem redistribui\u00e7\u00e3o",
+                        "example": "1"
+                    }
+                }
+            },
+            "OperacaoSimplesNaoAssistidaInput": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "description": "Identificador da opera\u00e7\u00e3o",
+                        "example": "op-1"
+                    },
+                    "versao": {
+                        "type": "string",
+                        "description": "Vers\u00e3o do payload",
+                        "example": "3.0.0"
+                    },
+                    "data": {
+                        "type": "string",
+                        "description": "Data do fato gerador (YYYY-MM-DD). Rege todas as vig\u00eancias",
+                        "example": "2027-03-15"
+                    },
+                    "tpDoc": {
+                        "type": "string",
+                        "description": "Tipo de documento fiscal: 55, 65, 57, 67, 63, 93 ou 62 (documentos com CRT) ou 91 (NFS-e). Habilita\u00e7\u00e3o, vocabul\u00e1rio do regime, precis\u00e3o da al\u00edquota, m\u00e1ximo de itens e Imposto Seletivo parametrizados em banco por documento",
+                        "example": "91"
+                    },
+                    "CRT": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Documentos com CRT: obrigat\u00f3rio, 1 (Simples), 2 (excesso de sublimite), 3 (regime normal) ou 4 (MEI). Proibido na NFS-e",
+                        "example": "1"
+                    },
+                    "tpRegimeIBSCBS": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Documentos com CRT: opcional, 1 (optou pelo regime regular do IBS e da CBS: SOMENTE_RECEITA com CRT 1 ou 2) ou 2 (op\u00e7\u00e3o pelo Simples pendente: PENDENTE com CRT 3). Proibido na NFS-e",
+                        "example": "2"
+                    },
+                    "opSimpNac": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "NFS-e: obrigat\u00f3rio, 1 (n\u00e3o optante), 2 (MEI), 3 (ME/EPP) ou 4 (op\u00e7\u00e3o pendente). Proibido nos documentos com CRT",
+                        "example": "3"
+                    },
+                    "regApIBSCBSSN": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "NFS-e: 1 (IBS e CBS pelo Simples), 2 (CBS pelo Simples e IBS pelo regime regular) ou 3 (os dois pelo regime regular). Obrigat\u00f3rio com opSimpNac 3 ou 4; proibido com 1 ou 2 (VSN-031)",
+                        "example": "1"
+                    },
+                    "regApTribSN": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "NFS-e: 1 (tributos federais e ISS pelo Simples), 2 (federais pelo Simples e ISS fora dele) ou 3 (federais e ISS fora). Obrigat\u00f3rio com opSimpNac 3 ou 4; proibido com 1 ou 2 (VSN-032). N\u00e3o muda o regime do IBS e da CBS: s\u00f3 entra na escolha do par de al\u00edquotas",
+                        "example": "1"
+                    },
+                    "tpEnteGov": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Tipo de ente governamental adquirente (compra governamental): 1 (Uni\u00e3o), 2 (Estado), 3 (Distrito Federal) ou 4 (Munic\u00edpio). Vale para a opera\u00e7\u00e3o inteira",
+                        "example": "2"
+                    },
+                    "aliquotasEfetivas": {
+                        "type": "null",
+                        "$ref": "#/components/schemas/AliquotasEfetivasInput",
+                        "description": "Linha de al\u00edquotas efetivas do contribuinte no per\u00edodo (pontos percentuais, texto). Obrigat\u00f3ria, exceto no regime SOMENTE_RECEITA (VSN-039)"
+                    },
+                    "itens": {
+                        "type": "array",
+                        "description": "Itens da opera\u00e7\u00e3o: 1 ou mais; na NFS-e, exatamente 1 (VSN-034)",
+                        "items": {
+                            "$ref": "#/components/schemas/ItemSimplesUnificadoInput"
+                        }
+                    }
+                }
+            },
+            "ParAliquotasInput": {
+                "type": "object",
+                "properties": {
+                    "pCBSSN": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Al\u00edquota efetiva da CBS, em pontos percentuais (texto)",
+                        "example": "2.3591"
+                    },
+                    "pIBSSN": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Al\u00edquota efetiva do IBS, em pontos percentuais (texto); nula com impedimento pelo sublimite",
+                        "example": "0.0260"
+                    }
+                }
+            },
+            "VersaoDomain": {
+                "type": "object",
+                "properties": {
+                    "versaoApp": {
+                        "type": "string",
+                        "description": "Vers\u00e3o do aplicativo",
+                        "example": "0.0.0-SNAPSHOT"
+                    },
+                    "versaoDb": {
+                        "type": "string",
+                        "description": "Vers\u00e3o do banco de dados",
+                        "example": "1.0.0"
+                    },
+                    "descricaoVersaoDb": {
+                        "type": "string",
+                        "description": "Descri\u00e7\u00e3o da vers\u00e3o do banco de dados",
+                        "example": "Vers\u00e3o de homologa\u00e7\u00e3o"
+                    },
+                    "dataVersaoDb": {
+                        "type": "string",
+                        "description": "Data da vers\u00e3o do banco de dados",
+                        "example": "2026-01-01"
+                    },
+                    "arquivoDb": {
+                        "type": "string",
+                        "description": "Arquivo do banco de dados em uso: calculadora-pro.db (vig\u00eancias corretas) ou calculadora-nonpro.db (vig\u00eancias retroativas)",
+                        "example": "calculadora-pro.db"
+                    },
+                    "ambiente": {
+                        "type": "string",
+                        "description": "Ambiente da aplica\u00e7\u00e3o",
+                        "example": "Online"
+                    }
+                }
+            },
+            "VersaoOfflineDomain": {
+                "type": "object",
+                "description": "Comparativo das vers\u00f5es locais e remotas da aplica\u00e7\u00e3o e do banco de dados",
+                "properties": {
+                    "aplicacaoAtualizada": {
+                        "type": "boolean",
+                        "description": "Indica se a vers\u00e3o da aplica\u00e7\u00e3o local est\u00e1 atualizada em rela\u00e7\u00e3o \u00e0 remota",
+                        "example": true
+                    },
+                    "dbAtualizada": {
+                        "type": "boolean",
+                        "description": "Indica se a vers\u00e3o do banco de dados local est\u00e1 atualizada em rela\u00e7\u00e3o \u00e0 remota",
+                        "example": true
+                    },
+                    "dataDbAtualizada": {
+                        "type": "boolean",
+                        "description": "Indica se a data do banco de dados local est\u00e1 atualizada em rela\u00e7\u00e3o \u00e0 remota",
+                        "example": true
+                    },
+                    "versaoAplicacaoLocal": {
+                        "type": "string",
+                        "description": "Vers\u00e3o da aplica\u00e7\u00e3o local",
+                        "example": "1.0.0"
+                    },
+                    "versaoAplicacaoRemota": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Vers\u00e3o da aplica\u00e7\u00e3o remota (nula quando indispon\u00edvel)",
+                        "example": "1.0.0"
+                    },
+                    "versaoDbLocal": {
+                        "type": "string",
+                        "description": "Vers\u00e3o do banco de dados local",
+                        "example": "1.0.0"
+                    },
+                    "versaoDbRemota": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Vers\u00e3o do banco de dados remoto (nula quando indispon\u00edvel)",
+                        "example": "1.0.0"
+                    },
+                    "dataDbLocal": {
+                        "type": "string",
+                        "description": "Data do banco de dados local",
+                        "example": "2026-01-01"
+                    },
+                    "dataDbRemota": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Data do banco de dados remoto (nula quando indispon\u00edvel)",
+                        "example": "2026-01-01"
+                    }
+                }
+            },
+            "AtividadeSimplesDomain": {
+                "type": "object",
+                "description": "Atividade do Simples Nacional e o(s) anexo(s) aplic\u00e1vel(is). N\u00e3o inclui al\u00edquotas.",
+                "properties": {
+                    "codigo": {
+                        "type": "string",
+                        "description": "C\u00f3digo oficial de Atividade do Simples Nacional do leiaute DF-e (tag cAtivSN, NT 2026.005): 2 caracteres com zero \u00e0 esquerda ('01'..'14' e '90'). \u00danico entre as linhas vigentes do cat\u00e1logo",
+                        "example": "09"
+                    },
+                    "ordem": {
+                        "type": "integer",
+                        "format": "int32",
+                        "description": "Ordem de exibi\u00e7\u00e3o (1..15; a 15 \u00e9 a linha do c\u00f3digo 90)",
+                        "example": 9
+                    },
+                    "descricao": {
+                        "type": "string",
+                        "description": "Descri\u00e7\u00e3o longa da atividade",
+                        "example": "Presta\u00e7\u00e3o de servi\u00e7os \u2014 Sujeitos ao Fator \"R\""
+                    },
+                    "anexoSemFatorR": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Anexo (romano puro) quando o fator r \u00e9 INFERIOR a 28%, ou quando a atividade n\u00e3o depende do fator r (\u00e9 ent\u00e3o o \u00fanico anexo). Para a atividade 09 \u00e9 o Anexo V (LC 123/2006, art. 18, \u00a7 5\u00ba-M). Null na linha do c\u00f3digo 90 (Opera\u00e7\u00f5es n\u00e3o Tribut\u00e1veis), que n\u00e3o possui anexo de apura\u00e7\u00e3o",
+                        "example": "V"
+                    },
+                    "anexoComFatorR": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Anexo (romano puro) quando o fator r \u00e9 IGUAL OU SUPERIOR a 28% (fator r atingido). Para a atividade 09 \u00e9 o Anexo III (LC 123/2006, art. 18, \u00a7 5\u00ba-J). Null quando a atividade n\u00e3o depende do fator r",
+                        "example": "III"
+                    },
+                    "sujeitaFatorR": {
+                        "type": "boolean",
+                        "description": "Indica se a atividade depende do Fator R (derivado: anexoComFatorR != null)",
+                        "example": true
+                    },
+                    "rotuloAnexo": {
+                        "type": "string",
+                        "description": "R\u00f3tulo informativo completo do anexo (badge), com ressalvas",
+                        "example": "III ou V"
+                    },
+                    "rotuloCurtoAnexo": {
+                        "type": "string",
+                        "description": "R\u00f3tulo curto do anexo (badge), apenas o(s) numeral(is) romano(s), sem ressalvas",
+                        "example": "III ou V"
+                    },
+                    "disponivel": {
+                        "type": "boolean",
+                        "description": "Indica se a atividade pode ser selecionada com os filtros informados na consulta (anexos configurados, documento fiscal e classifica\u00e7\u00e3o tribut\u00e1ria). A atividade sem anexo \u00e9 dispon\u00edvel pelo eixo dos anexos.",
+                        "example": true
+                    },
+                    "anexosFaltantes": {
+                        "type": "array",
+                        "description": "Anexos do conjunto poss\u00edvel da atividade que N\u00c3O est\u00e3o na configura\u00e7\u00e3o informada, ordenados por romano (I..V). Nunca null; [] quando nada falta.",
+                        "items": {
+                            "type": "string",
+                            "example": "III"
+                        }
+                    },
+                    "modoFatorR": {
+                        "type": "string",
+                        "description": "Estado da decis\u00e3o de Fator R da atividade, dada a configura\u00e7\u00e3o de anexos informada",
+                        "enum": [
+                            "NAO_APLICAVEL",
+                            "OPCIONAL",
+                            "INDISPONIVEL",
+                            "OBRIGATORIO"
+                        ],
+                        "example": "OBRIGATORIO"
+                    },
+                    "tpDocsAdmissiveis": {
+                        "type": "array",
+                        "description": "Tipos de documento fiscal (TPDF_TIPO: \"55\", \"65\", \"91\", ...) com v\u00ednculo vigente na data na associativa da atividade (whitelist). SEMPRE presente, tenha ou n\u00e3o sido informado o tpDoc na consulta. Lista vazia = nenhum documento publicado para a atividade \u2014 inadmiss\u00edvel em todos.",
+                        "items": {
+                            "type": "string",
+                            "example": "55"
+                        }
+                    },
+                    "admissivelNoDocumento": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ],
+                        "description": "Indica se a atividade \u00e9 admiss\u00edvel no documento fiscal informado no query param tpDoc. Presente SOMENTE quando tpDoc foi informado: true se e somente se o tpDoc est\u00e1 em tpDocsAdmissiveis (whitelist \u2014 sem v\u00ednculo vigente, n\u00e3o h\u00e1 permiss\u00e3o).",
+                        "example": true
+                    },
+                    "compativelComClassTrib": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ],
+                        "description": "Indica se a atividade \u00e9 compat\u00edvel com a classifica\u00e7\u00e3o tribut\u00e1ria informada no query param cClassTrib. Presente SOMENTE quando cClassTrib foi informado: false quando o tpRBSN da classifica\u00e7\u00e3o declara receita vedada para atividades n\u00e3o tribut\u00e1veis (espelho da regra UB14-90 da NT 2026.005, o mesmo erro VSN-023 do c\u00e1lculo).",
+                        "example": true
+                    }
+                }
+            },
+            "ErroDescricaoSimples": {
+                "type": "object",
+                "properties": {
+                    "codigo": {
+                        "type": "string"
+                    },
+                    "titulo": {
+                        "type": "string"
+                    },
+                    "descricao": {
+                        "type": "string"
+                    }
+                }
+            }
+        }
+    }
+}

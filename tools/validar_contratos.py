@@ -1,0 +1,315 @@
+#!/usr/bin/env python3
+"""
+Valida o código do banco contra os contratos OpenAPI das calculadoras.
+
+Confere:
+  1. Todo caminho C_PATH_* declarado em db/03_pacotes_spec.sql existe no
+     OpenAPI do serviço correspondente, com o método HTTP esperado.
+  2. Todo campo JSON que os pacotes montam ou leem (lista CAMPOS abaixo,
+     espelho dos comentários das specs) existe no schema do contrato.
+  3. Os domínios das colunas (CHECK) batem com os enums do contrato
+     (estadoItem, stc, modoFatorR, motivoEstado não é coluna CHECK).
+
+Uso:  python3 tools/validar_contratos.py      (código de saída 0 = tudo ok)
+"""
+import json
+import pathlib
+import re
+import sys
+
+RAIZ = pathlib.Path(__file__).resolve().parent.parent
+CONTRATOS = RAIZ / "docs" / "contratos"
+SPEC_SQL = (RAIZ / "db" / "03_pacotes_spec.sql").read_text(encoding="utf-8")
+TABELAS_SQL = (RAIZ / "db" / "01_tabelas.sql").read_text(encoding="utf-8")
+
+OPENAPI = {
+    "REGIME": json.loads((CONTRATOS / "openapi-regime-regular.json").read_text(encoding="utf-8")),
+    "SIMPLES": json.loads((CONTRATOS / "openapi-simples-nacional.json").read_text(encoding="utf-8")),
+    "DANFSE": json.loads((CONTRATOS / "openapi-danfse.json").read_text(encoding="utf-8")),
+}
+
+falhas = []
+
+
+def ok(msg):
+    print(f"OK     {msg}")
+
+
+def falha(msg):
+    print(f"FALHA  {msg}")
+    falhas.append(msg)
+
+
+# ---------------------------------------------------------------------------
+# 1. Caminhos
+# ---------------------------------------------------------------------------
+# constante -> (serviço, método)
+METODO = {
+    "c_path_regime_calculo": ("REGIME", "post"),
+    "c_path_regime_erro": ("REGIME", "get"),
+    "c_path_regime_versao": ("REGIME", "get"),
+    "c_path_simples_calculo": ("SIMPLES", "post"),
+    "c_path_simples_erro": ("SIMPLES", "get"),
+    "c_path_simples_atividades": ("SIMPLES", "get"),
+    "c_path_simples_versao": ("SIMPLES", "get"),
+    "c_path_danfse_gerar": ("DANFSE", "post"),
+    "c_path_danfse_ready": ("DANFSE", "get"),
+    "c_path_ufs": ("REGIME", "get"),
+    "c_path_municipios": ("REGIME", "get"),
+    "c_path_cst_cbs_ibs": ("REGIME", "get"),
+    "c_path_cst_is": ("REGIME", "get"),
+    "c_path_cclass_cbs_ibs": ("REGIME", "get"),
+    "c_path_cclass_is": ("REGIME", "get"),
+    "c_path_ncm_vigentes": ("REGIME", "get"),
+    "c_path_ncm_detalhe": ("REGIME", "get"),
+    "c_path_nbs_lista": ("REGIME", "get"),
+    "c_path_nbs_detalhe": ("REGIME", "get"),
+}
+
+declarados = dict(re.findall(r"(c_path_\w+)\s+constant\s+varchar2\(\d+\)\s*:=\s*'([^']+)'", SPEC_SQL, re.I))
+for const, caminho in sorted(declarados.items()):
+    if const not in METODO:
+        falha(f"{const} = {caminho}: constante sem mapeamento de serviço/método no validador")
+        continue
+    servico, metodo = METODO[const]
+    paths = OPENAPI[servico]["paths"]
+    if caminho not in paths:
+        falha(f"{const} = {caminho}: caminho não existe em {servico}")
+    elif metodo not in paths[caminho]:
+        falha(f"{const} = {caminho}: método {metodo.upper()} não existe em {servico}")
+    else:
+        ok(f"{servico:7} {metodo.upper():4} {caminho}")
+for const in METODO:
+    if const not in declarados:
+        falha(f"{const}: esperado no validador mas não declarado em 03_pacotes_spec.sql")
+
+# parâmetros de query usados pelos pacotes
+PARAMS = [
+    ("REGIME", "/calculadora/observabilidade/erros", "get", "codigo"),
+    ("REGIME", "/calculadora/dados-abertos/ufs/municipios", "get", "siglaUf"),
+    ("REGIME", "/calculadora/dados-abertos/situacoes-tributarias/cbs-ibs", "get", "data"),
+    ("REGIME", "/calculadora/dados-abertos/situacoes-tributarias/imposto-seletivo", "get", "data"),
+    ("REGIME", "/calculadora/dados-abertos/classificacoes-tributarias/cbs-ibs", "get", "data"),
+    ("REGIME", "/calculadora/dados-abertos/classificacoes-tributarias/imposto-seletivo", "get", "data"),
+    ("REGIME", "/calculadora/dados-abertos/ncm/vigentes", "get", "data"),
+    ("REGIME", "/calculadora/dados-abertos/ncm", "get", "ncm"),
+    ("REGIME", "/calculadora/dados-abertos/ncm", "get", "data"),
+    ("REGIME", "/calculadora/dados-abertos/nbs/lista", "get", "data"),
+    ("REGIME", "/calculadora/dados-abertos/nbs", "get", "nbs"),
+    ("REGIME", "/calculadora/dados-abertos/nbs", "get", "data"),
+    ("SIMPLES", "/calculadora/observabilidade/simples-nacional/erros", "get", "codigo"),
+    ("SIMPLES", "/calculadora/simples-nacional/atividades", "get", "data"),
+    ("DANFSE", "/api/danfse", "post", "stc"),
+    ("DANFSE", "/api/danfse", "post", "canhoto"),
+]
+for servico, caminho, metodo, nome in PARAMS:
+    op = OPENAPI[servico]["paths"].get(caminho, {}).get(metodo, {})
+    nomes = [p.get("name") for p in op.get("parameters", [])]
+    if nome in nomes:
+        ok(f"{servico:7} parâmetro {nome} em {metodo.upper()} {caminho}")
+    else:
+        falha(f"{servico}: parâmetro {nome} não existe em {metodo.upper()} {caminho} ({nomes})")
+
+
+# ---------------------------------------------------------------------------
+# 2. Campos JSON
+# ---------------------------------------------------------------------------
+def schema_de(servico, nome):
+    doc = OPENAPI[servico]
+    if "components" in doc:
+        return doc["components"]["schemas"][nome]
+    return doc["definitions"][nome]
+
+
+def resolver(servico, schema):
+    """Segue $ref, items e oneOf até chegar ao objeto com properties."""
+    for _ in range(10):
+        if "$ref" in schema:
+            schema = schema_de(servico, schema["$ref"].split("/")[-1])
+        elif schema.get("type") == "array" or "items" in schema:
+            schema = schema["items"]
+        elif "oneOf" in schema and "properties" not in schema:
+            schema = schema["oneOf"][0]
+        elif "allOf" in schema and "properties" not in schema:
+            schema = schema["allOf"][0]
+        else:
+            return schema
+    return schema
+
+
+def existe(servico, raiz, caminho):
+    schema = resolver(servico, schema_de(servico, raiz))
+    for parte in caminho.split("."):
+        props = schema.get("properties", {})
+        if parte not in props:
+            return False
+        schema = resolver(servico, props[parte])
+    return True
+
+
+# (serviço, schema raiz, caminho do campo)
+CAMPOS = [
+    # Regime Regular -> OperacaoInput (montar_requisicao_regime)
+    ("REGIME", "OperacaoInput", c) for c in [
+        "id", "versao", "dhFatoGerador", "municipio", "uf", "tpDoc",
+        "gCompraGov.tpEnteGov", "gCompraGov.tpOperGov",
+        "itens.numero", "itens.ncm", "itens.nbs", "itens.cst", "itens.cClassTrib",
+        "itens.baseCalculo", "itens.quantidade", "itens.unidade",
+        "itens.impostoSeletivo.cst", "itens.impostoSeletivo.cClassTrib",
+        "itens.impostoSeletivo.baseCalculo", "itens.impostoSeletivo.quantidade",
+        "itens.impostoSeletivo.unidade", "itens.impostoSeletivo.impostoInformado",
+        "itens.aliquotasNominais.cbs", "itens.aliquotasNominais.ibsEstadual",
+        "itens.aliquotasNominais.ibsMunicipal",
+        "itens.aliquotasNominais.impostoSeletivo.adValorem",
+        "itens.aliquotasNominais.impostoSeletivo.adRem",
+    ]
+] + [
+    # Regime Regular <- ObservabilidadeROCDomain (processar_resposta_regime)
+    ("REGIME", "ObservabilidadeROCDomain", c) for c in [
+        "objetos.nObj", "objetos.estadoItem",
+        "objetos.tribCalc.IBSCBS.CST", "objetos.tribCalc.IBSCBS.cClassTrib",
+        "objetos.tribCalc.IBSCBS.gIBSCBS.vBC",
+        "objetos.tribCalc.IBSCBS.gIBSCBS.gIBSUF.pIBSUF",
+        "objetos.tribCalc.IBSCBS.gIBSCBS.gIBSUF.gRed.pRedAliq",
+        "objetos.tribCalc.IBSCBS.gIBSCBS.gIBSUF.gRed.pAliqEfet",
+        "objetos.tribCalc.IBSCBS.gIBSCBS.gIBSUF.vIBSUF",
+        "objetos.tribCalc.IBSCBS.gIBSCBS.gIBSMun.pIBSMun",
+        "objetos.tribCalc.IBSCBS.gIBSCBS.gIBSMun.gRed.pAliqEfet",
+        "objetos.tribCalc.IBSCBS.gIBSCBS.gIBSMun.vIBSMun",
+        "objetos.tribCalc.IBSCBS.gIBSCBS.vIBS",
+        "objetos.tribCalc.IBSCBS.gIBSCBS.gCBS.pCBS",
+        "objetos.tribCalc.IBSCBS.gIBSCBS.gCBS.gRed.pAliqEfet",
+        "objetos.tribCalc.IBSCBS.gIBSCBS.gCBS.vCBS",
+        "objetos.tribCalc.IBSCBS.memoriaCalculo.cbs",
+        "objetos.tribCalc.IBSCBS.memoriaCalculo.ibsUF",
+        "objetos.tribCalc.IBSCBS.memoriaCalculo.ibsMun",
+        "objetos.tribCalc.IS.vBCIS", "objetos.tribCalc.IS.pIS", "objetos.tribCalc.IS.vIS",
+        "objetos.tribCalc.IS.memoriaCalculo",
+        "objetos.erros.type", "objetos.erros.title", "objetos.erros.code",
+        "objetos.erros.pointer", "objetos.erros.detail",
+        "total.tribCalc.ISTot.vIS",
+        "total.tribCalc.IBSCBSTot.vBCIBSCBS",
+        "total.tribCalc.IBSCBSTot.gIBS.vIBS",
+        "total.tribCalc.IBSCBSTot.gCBS.vCBS",
+    ]
+] + [
+    ("REGIME", "ErroDescricao", c) for c in ["codigo", "titulo", "descricao"]
+] + [
+    ("REGIME", "VersaoOutput", c) for c in ["versaoApp", "versaoDb", "dataVersaoDb", "descricaoVersaoDb", "ambiente"]
+] + [
+    ("REGIME", "ProblemDetail", c) for c in ["type", "title", "status", "detail", "instance"]
+] + [
+    # dados abertos (PKG_RTC_DADOS_ABERTOS)
+    ("REGIME", "UfDadosAbertosOutput", c) for c in ["sigla", "nome", "codigo"]
+] + [
+    ("REGIME", "MunicipioDadosAbertosOutput", c) for c in ["codigo", "nome"]
+] + [
+    ("REGIME", "SituacaoClassificacaoAninhadoOutput", c) for c in
+    ["id", "codigo", "descricao", "classificacoesTributarias.codigo", "classificacoesTributarias.descricao"]
+] + [
+    ("REGIME", "SituacaoTributariaDadosAbertosOutput", c) for c in ["id", "codigo", "descricao"]
+] + [
+    ("REGIME", "ClassificacaoTributariaDadosAbertosOutput", c) for c in [
+        "codigo", "descricao", "tipoAliquota", "nomenclatura", "descricaoTratamentoTributario",
+        "incompativelComSuspensao", "exigeGrupoDesoneracao", "possuiPercentualReducao",
+        "indicaApropriacaoCreditoAdquirenteCbs", "indicaApropriacaoCreditoAdquirenteIbs",
+        "indicaCreditoPresumidoFornecedor", "indicaCreditoPresumidoAdquirente",
+        "creditoOperacaoAntecedente", "percentualReducaoCbs", "percentualReducaoIbsUf",
+        "percentualReducaoIbsMun", "tipoReceitaBrutaSimplesNacional",
+        "tiposDfeClassificacao.tipo", "tiposDfeClassificacao.sigla",
+        "tiposDfeClassificacao.descricao", "dataAtualizacao",
+    ]
+] + [
+    ("REGIME", "NcmVigenciaOutput", c) for c in ["ncm", "descricao"]
+] + [
+    ("REGIME", "NbsListaDadosAbertosOutput", c) for c in ["codigo", "descricao"]
+] + [
+    # Simples Nacional -> OperacaoSimplesInput (montar_requisicao_simples)
+    ("SIMPLES", "OperacaoSimplesInput", c) for c in [
+        "id", "versao", "data", "tpDoc", "CRT", "tpRegimeIBSCBS", "tpEnteGov",
+        "itens.numero", "itens.cAtivSN", "itens.cClassTrib", "itens.nbs", "itens.ncm",
+        "itens.baseCalculo", "itens.valorImpostoSeletivo", "itens.pIBSSN", "itens.pCBSSN",
+    ]
+] + [
+    # Simples Nacional <- ObservabilidadeSimplesDomain (processar_resposta_simples)
+    ("SIMPLES", "ObservabilidadeSimplesDomain", c) for c in [
+        "objetos.nObj", "objetos.estadoItem",
+        "objetos.motivoEstado.codigo", "objetos.motivoEstado.descricao",
+        "objetos.tribCalc.vRBSNitem", "objetos.tribCalc.tpRBSN", "objetos.tribCalc.tpRBSNDescricao",
+        "objetos.tribCalc.vBC", "objetos.tribCalc.pIBSSN", "objetos.tribCalc.vIBSSN",
+        "objetos.tribCalc.vIBSPendSusp", "objetos.tribCalc.pCBSSN", "objetos.tribCalc.vCBSSN",
+        "objetos.tribCalc.vCBSPendSusp", "objetos.tribCalc.IS.valor", "objetos.tribCalc.totalItem",
+        "objetos.tribCalc.memoriaCalculo.cbs", "objetos.tribCalc.memoriaCalculo.ibs",
+        "objetos.erros.type", "objetos.erros.title", "objetos.erros.code",
+        "objetos.erros.pointer", "objetos.erros.detail",
+        "total.vRBSNtot", "total.vBC", "total.vIBSSNtot", "total.vIBSSNtotPendSusp",
+        "total.vCBSSNtot", "total.vCBSSNtotPendSusp", "total.totalIs", "total.totalTributos",
+    ]
+] + [
+    ("SIMPLES", "ErroDescricaoSimples", c) for c in ["codigo", "titulo", "descricao"]
+] + [
+    ("SIMPLES", "VersaoDomain", c) for c in ["versaoApp", "versaoDb", "dataVersaoDb", "descricaoVersaoDb", "ambiente"]
+] + [
+    ("SIMPLES", "AtividadeSimplesDomain", c) for c in [
+        "codigo", "ordem", "descricao", "anexoSemFatorR", "anexoComFatorR", "sujeitaFatorR",
+        "rotuloAnexo", "rotuloCurtoAnexo", "modoFatorR", "tpDocsAdmissiveis",
+    ]
+] + [
+    # DANFSe
+    ("DANFSE", "controller.ErroResponse", c) for c in ["sucesso", "mensagem"]
+] + [
+    ("DANFSE", "controller.HealthStatus", c) for c in ["status"]
+]
+
+for servico, raiz, caminho in CAMPOS:
+    if existe(servico, raiz, caminho):
+        ok(f"{servico:7} {raiz}.{caminho}")
+    else:
+        falha(f"{servico}: campo {raiz}.{caminho} não existe no contrato")
+
+
+# ---------------------------------------------------------------------------
+# 3. Domínios (CHECK x enum)
+# ---------------------------------------------------------------------------
+def enum(servico, raiz, campo):
+    schema = resolver(servico, schema_de(servico, raiz))
+    for parte in campo.split("."):
+        prop = schema["properties"][parte]
+        schema = resolver(servico, prop)
+    return set(prop.get("enum") or schema.get("enum") or [])
+
+
+def check_valores(constraint):
+    m = re.search(constraint + r"\s+check\s*\(\s*\w+\s+in\s*\((.*?)\)\)", TABELAS_SQL, re.I | re.S)
+    return set(re.findall(r"'([^']+)'", m.group(1))) if m else set()
+
+
+estados = enum("REGIME", "ObservabilidadeItemDomain", "estadoItem") | enum("SIMPLES", "ObjetoSimplesDomain", "estadoItem")
+check = check_valores("simulacao_item_estado_ck")
+if estados == check:
+    ok(f"SIMULACAO_ITEM.ESTADO_ITEM = união dos enums estadoItem ({len(estados)} valores)")
+else:
+    falha(f"ESTADO_ITEM diverge: contrato={sorted(estados)} check={sorted(check)}")
+
+modo = enum("SIMPLES", "AtividadeSimplesDomain", "modoFatorR")
+check = check_valores("rtc_da_atividade_sn_mf_ck")
+if modo == check:
+    ok("RTC_DA_ATIVIDADE_SN.MODO_FATOR_R = enum modoFatorR")
+else:
+    falha(f"MODO_FATOR_R diverge: contrato={sorted(modo)} check={sorted(check)}")
+
+stc = None
+for p in OPENAPI["DANFSE"]["paths"]["/api/danfse"]["post"]["parameters"]:
+    if p["name"] == "stc":
+        stc = set(p["enum"])
+check = check_valores("danfse_stc_ck")
+if stc == check:
+    ok("DANFSE.STC = enum stc (0, 1, 2)")
+else:
+    falha(f"DANFSE.STC diverge: contrato={stc} check={check}")
+
+print()
+if falhas:
+    print(f"{len(falhas)} falha(s).")
+    sys.exit(1)
+print(f"Contratos validados: {len(declarados)} caminhos, {len(PARAMS)} parâmetros, {len(CAMPOS)} campos, 3 domínios.")
