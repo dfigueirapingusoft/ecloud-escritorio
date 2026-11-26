@@ -42,11 +42,11 @@ português do Brasil.
 ## Estrutura
 
 ```
-db/        00_pre_requisitos.sql (DBA), 01_tabelas.sql, 02_vpd.sql,
+db/        00_pre_requisitos.sql e 00b_acesso_proxy.sql (DBA), 01_tabelas.sql, 02_vpd.sql,
            03_pacotes_spec.sql, 04_views.sql, 05_dados_iniciais.sql,
-           06_pacotes_body.sql, instalar.sql, testes/
+           06_pacotes_body.sql, 07_primeiro_admin.sql, instalar.sql, testes/
 apex/      fonte APEXlang 26.2 (fase 3): application.apx, shared-components/, pages/
-docs/      01-arquitetura.md, 02-app-apex.md, contratos/
+docs/      01-arquitetura.md, 02-app-apex.md, 03-deploy.md, contratos/
 tools/     validar_contratos.py, verificar_sql_apex.py
 ```
 
