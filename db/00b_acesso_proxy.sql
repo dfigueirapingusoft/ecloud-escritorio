@@ -21,6 +21,7 @@
 --------------------------------------------------------------------------------
 set serveroutput on
 set verify off
+whenever sqlerror exit failure
 define schema_app   = '&1'
 define usuario_proxy = '&2'
 
@@ -54,6 +55,8 @@ begin
     dbms_output.put_line('Proxy criado: ' || l_proxy || ' -> ' || l_schema);
 end;
 /
+
+whenever sqlerror continue
 
 -- Conferência
 select proxy, client, authentication, flags

@@ -7,11 +7,37 @@
 -- não gera erro.
 --
 -- Uso (SQLcl/SQL*Plus):
---   SQL> @db/00_pre_requisitos.sql ECLOUD
--- onde ECLOUD é o schema dono das tabelas (parsing schema do APEX).
+--   SQL> @db/00_pre_requisitos.sql WKSP_ECLOUD
+-- onde WKSP_ECLOUD é o schema dono das tabelas (parsing schema do APEX).
 --------------------------------------------------------------------------------
 set verify off
+set serveroutput on
+-- Para no primeiro erro (não mostra "privilégios concedidos" se algo falhou)
+whenever sqlerror exit failure
+
+prompt Schema da aplicação = parsing schema do workspace APEX (ex.: WKSP_ECLOUD).
+prompt Não é o e-mail/usuário de login; é o schema dono das tabelas.
 define schema_app = '&1'
+
+-- Confere o schema antes de conceder qualquer coisa
+declare
+    l_schema varchar2(128) := upper(trim('&schema_app'));
+    l_qtd    number;
+begin
+    if l_schema is null or not regexp_like(l_schema, '^[A-Z][A-Z0-9_$#]*$') then
+        raise_application_error(-20001,
+            'Informe o nome do schema da aplicação (ex.: WKSP_ECLOUD), não um e-mail. Recebido: &schema_app');
+    end if;
+    select count(*) into l_qtd from dba_users where username = l_schema;
+    if l_qtd = 0 then
+        raise_application_error(-20002, 'Schema ' || l_schema || ' não existe neste banco.');
+    end if;
+    select count(*) into l_qtd from apex_workspace_schemas where schema = l_schema;
+    if l_qtd = 0 then
+        dbms_output.put_line('Aviso: ' || l_schema || ' não é schema de nenhum workspace APEX.');
+    end if;
+end;
+/
 
 -- VPD: criação e manutenção das políticas (02_vpd.sql)
 grant execute on sys.dbms_rls to &schema_app;
@@ -24,6 +50,8 @@ grant create job to &schema_app;
 
 -- Objetos usados pela aplicação
 grant create table, create view, create procedure, create trigger, create sequence to &schema_app;
+
+whenever sqlerror continue
 
 --------------------------------------------------------------------------------
 -- ACL de rede para o APEX_WEB_SERVICE.
