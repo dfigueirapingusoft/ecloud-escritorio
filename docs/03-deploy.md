@@ -14,11 +14,11 @@ connect ADMIN@mxmyaump0i1yrh6r_high
 @db/00_pre_requisitos.sql WKSP_ECLOUD
 @db/00b_acesso_proxy.sql WKSP_ECLOUD DANIEL_FIGUEIRA@PINGUSOFT.COM.BR
 
--- O ID 100 do app é único na instância inteira. Se esta consulta trouxer
--- linha de outro workspace, use outro ID no passo 5 (-id).
+-- O app usa o ID 102 (definido pelo Daniel; fica em apex/deployments/default.json).
+-- O ID é único na instância inteira: esta consulta não deve trazer outro workspace.
 select application_id, workspace, application_name
   from apex_applications
- where application_id = 100;
+ where application_id = 102;
 ```
 
 ## 2. Pelo proxy: banco da aplicação
@@ -61,9 +61,9 @@ begin
   apex_application_install.set_auto_install_sup_obj(p_auto_install_sup_obj => true);
 end;
 /
-apex import -input apex
--- esperado: "Importing application ID: 100 into workspace: ECLOUD" e "Import successful."
--- Se o ID 100 estiver ocupado por outro workspace: apex import -input apex -id <outro_id>
+apex import -input apex -id 102
+-- esperado: "Importing application ID: 102 into workspace: ECLOUD" e "Import successful."
+-- (o -id é redundante com deployments/default.json, mas deixa o alvo explícito)
 ```
 
 ## 6. Pelo proxy: primeiro administrador
@@ -82,4 +82,4 @@ mesmo nome usado abaixo.
 3. Cache com status OK (se o passo 4 falhou, use **Sincronizar agora**).
 4. Cadastrar um cliente e fazer uma simulação de cada regime.
 
-Para atualizar o app depois: `git pull` e repetir o passo 5 (o import substitui o app 100).
+Para atualizar o app depois: `git pull` e repetir o passo 5 (o import substitui o app 102).

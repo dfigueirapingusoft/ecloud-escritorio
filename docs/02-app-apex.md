@@ -67,7 +67,7 @@ Com autorização do Daniel, o app foi importado **só no ambiente local de test
 Oracle 26ai Free + APEX 26.2.0 + ORDS 26.3.1 standalone, workspace `ECLOUD_TESTE`), com o
 script da skill `apexlang-deploy`. Não houve deploy em nenhum outro ambiente.
 
-* O ID do app fica fixo em `apex/deployments/default.json` (`"id": 100`, formato tirado de um
+* O ID do app fica fixo em `apex/deployments/default.json` (hoje `"id": 102`, o ID do app no workspace ECLOUD; no teste local foi 100, formato tirado de um
   `apex export -exptype APEXLANG`). Sem ele, cada import criava um app novo (101, 102...).
 * `db/testes/dados_demo.sql <workspace> <usuario> <senha>` cria escritório e clientes fictícios,
   a linha em `USUARIO` (Administrador + admin da plataforma) e a conta APEX do workspace. Idempotente; não usar em produção.
