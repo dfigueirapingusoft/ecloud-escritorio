@@ -26,25 +26,30 @@ define schema_app   = '&1'
 define usuario_proxy = '&2'
 
 declare
-    l_schema  dba_users.username%type := upper('&schema_app');
-    l_proxy   dba_users.username%type := upper('&usuario_proxy');
+    l_schema  all_users.username%type := upper('&schema_app');
+    l_proxy   all_users.username%type := upper('&usuario_proxy');
     l_qtd     number;
 begin
+    -- Quem roda precisa de ALTER USER (ADMIN no Autonomous, DBA on-premises)
+    select count(*) into l_qtd from session_privs where privilege = 'ALTER USER';
+    if l_qtd = 0 then
+        raise_application_error(-20003,
+            'Conectado como ' || user || ', sem ALTER USER. Conecte como ADMIN (Autonomous) ou DBA.');
+    end if;
+
     -- Os dois usuários precisam existir
-    select count(*) into l_qtd from dba_users where username = l_schema;
+    select count(*) into l_qtd from all_users where username = l_schema;
     if l_qtd = 0 then
         raise_application_error(-20001, 'Schema ' || l_schema || ' não existe.');
     end if;
-    select count(*) into l_qtd from dba_users where username = l_proxy;
+    select count(*) into l_qtd from all_users where username = l_proxy;
     if l_qtd = 0 then
         raise_application_error(-20002, 'Usuário ' || l_proxy || ' não existe.');
     end if;
 
     -- Já liberado?
-    select count(*) into l_qtd
-      from proxy_users
-     where proxy = l_proxy
-       and client = l_schema;
+    execute immediate 'select count(*) from proxy_users where proxy = :p and client = :c'
+        into l_qtd using l_proxy, l_schema;
     if l_qtd > 0 then
         dbms_output.put_line('Proxy já existe: ' || l_proxy || ' -> ' || l_schema);
         return;

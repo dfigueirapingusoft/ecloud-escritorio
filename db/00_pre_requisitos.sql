@@ -24,15 +24,23 @@ declare
     l_schema varchar2(128) := upper(trim('&schema_app'));
     l_qtd    number;
 begin
+    -- Quem roda precisa poder conceder privilégios (ADMIN no Autonomous, DBA on-premises)
+    select count(*) into l_qtd from session_privs where privilege = 'GRANT ANY PRIVILEGE';
+    if l_qtd = 0 then
+        raise_application_error(-20003,
+            'Conectado como ' || user || ', que não pode conceder privilégios. '
+            || 'Conecte como ADMIN (Autonomous) ou DBA e rode de novo.');
+    end if;
     if l_schema is null or not regexp_like(l_schema, '^[A-Z][A-Z0-9_$#]*$') then
         raise_application_error(-20001,
             'Informe o nome do schema da aplicação (ex.: WKSP_ECLOUD), não um e-mail. Recebido: &schema_app');
     end if;
-    select count(*) into l_qtd from dba_users where username = l_schema;
+    select count(*) into l_qtd from all_users where username = l_schema;
     if l_qtd = 0 then
         raise_application_error(-20002, 'Schema ' || l_schema || ' não existe neste banco.');
     end if;
-    select count(*) into l_qtd from apex_workspace_schemas where schema = l_schema;
+    execute immediate 'select count(*) from apex_workspace_schemas where schema = :s'
+        into l_qtd using l_schema;
     if l_qtd = 0 then
         dbms_output.put_line('Aviso: ' || l_schema || ' não é schema de nenhum workspace APEX.');
     end if;
