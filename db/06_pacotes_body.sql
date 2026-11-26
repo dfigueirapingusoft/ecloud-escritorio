@@ -131,6 +131,33 @@ as
     begin
         return case lower(p_valor) when 'true' then 'S' when 'false' then 'N' end;
     end booleano_sn;
+
+    function tratar_erro_apex(p_error in apex_error.t_error) return apex_error.t_error_result is
+        l_result apex_error.t_error_result;
+    begin
+        l_result := apex_error.init_error_result(p_error => p_error);
+        if p_error.ora_sqlcode between -20999 and -20000 then
+            -- Mensagem de regra de negócio dos pacotes, sem o código ORA
+            l_result.message := apex_error.get_first_ora_error_text(p_error => p_error);
+            l_result.additional_info := null;
+        elsif p_error.ora_sqlcode = -1 then
+            l_result.message := 'Já existe um registro com estes dados (' ||
+                                apex_error.extract_constraint_name(p_error => p_error) || ').';
+            l_result.additional_info := null;
+        elsif p_error.ora_sqlcode = -2292 then
+            l_result.message := 'Não é possível excluir: há registros que dependem deste.';
+            l_result.additional_info := null;
+        elsif p_error.ora_sqlcode = -2291 then
+            l_result.message := 'Valor informado não encontrado no cadastro relacionado (' ||
+                                apex_error.extract_constraint_name(p_error => p_error) || ').';
+            l_result.additional_info := null;
+        end if;
+        -- Associa o erro ao campo da página quando a constraint tiver item ligado
+        if l_result.page_item_name is null and l_result.column_alias is null then
+            apex_error.auto_set_associated_item(p_error => p_error, p_error_result => l_result);
+        end if;
+        return l_result;
+    end tratar_erro_apex;
 end pkg_ecloud_util;
 /
 

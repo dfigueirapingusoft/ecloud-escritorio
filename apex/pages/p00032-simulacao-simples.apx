@@ -217,7 +217,7 @@ page 32 (
         }
         default {
             type: expression
-            plsqlExpression: trunc(sysdate)
+            plsqlExpression: trunc(current_date)
         }
     )
 
@@ -441,7 +441,7 @@ page 32 (
             ]
         }
         advanced {
-            savedReportMappingIdentifier: 3400353623
+            savedReportMappingIdentifier: 3346027955
         }
         serverSideCondition {
             type: itemIsNotNull
@@ -1420,7 +1420,10 @@ page 32 (
         appearance {
             buttonTemplate: @/text-with-icon
             icon: fa-copy
-            templateOptions: #DEFAULT#
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
         }
         behavior {
             warnOnUnsavedChanges: doNotCheck
@@ -1488,7 +1491,10 @@ page 32 (
             buttonTemplate: @/text-with-icon
             icon: fa-calculator
             hot: true
-            templateOptions: #DEFAULT#
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
         }
         behavior {
             warnOnUnsavedChanges: doNotCheck
@@ -1519,7 +1525,7 @@ page 32 (
             sequence: 5
         }
         advanced {
-            executionMappingIdentifier: 2982735526
+            executionMappingIdentifier: 1595885815
         }
         serverSideCondition {
             type: requestIsContainedInValue
@@ -1585,7 +1591,7 @@ page 32 (
             sequence: 30
         }
         advanced {
-            executionMappingIdentifier: 1227437305
+            executionMappingIdentifier: 4469138783
         }
         successMessage {
             successMessage: Cálculo concluído. Situação: &P32_STATUS.
@@ -1608,7 +1614,7 @@ page 32 (
             sequence: 40
         }
         advanced {
-            executionMappingIdentifier: 3474225989
+            executionMappingIdentifier: 4189903888
         }
         successMessage {
             successMessage: Simulação duplicada. Você está editando a cópia.

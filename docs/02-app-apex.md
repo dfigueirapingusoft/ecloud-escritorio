@@ -13,6 +13,8 @@ editável e gráficos seguem o `example-1`.
 | Autenticação | Contas do Oracle APEX do workspace. O procedimento pós-login `pos_autenticacao` chama `pkg_ecloud_ctx.definir_contexto(p_registrar_acesso => true)`. |
 | Contexto VPD | *Initialization PL/SQL Code* do app: `pkg_ecloud_ctx.definir_contexto` em toda requisição; *Cleanup*: `limpar_contexto`. |
 | Suporte multi-escritório | O administrador da plataforma escolhe outro escritório na página Escritórios; o item de aplicação `F_ESCRITORIO_ATIVO` (protegido) é aplicado com `trocar_escritorio` no Initialization Code. |
+| Erros | `errorHandlingFunctionName` = `pkg_ecloud_util.tratar_erro_apex`: mensagens de regra (-20000..-20999) aparecem sem "ORA-20xxx:"; chave única e FK viram texto amigável. |
+| Fuso horário | `autoTimeZone: true`: a sessão usa o fuso do navegador (data/hora do fato gerador e "processada em" no horário local). |
 | Autorização do app | `usuario-cadastrado`: só entra quem tem linha ativa em `USUARIO` (o nome do usuário é o mesmo da conta APEX). |
 | Perfis | `administrador` (Administrador ou admin da plataforma), `contador-ou-administrador`, `admin-plataforma`. Assistente usa as páginas de simulação, DANFSe e consultas, sem editar clientes. |
 | HTTP | Nenhuma página chama a API diretamente: processos chamam `pkg_rtc_calc.calcular`, `pkg_rtc_danfse.registrar_upload/regerar`, `pkg_rtc_http.testar_conexao` e `pkg_rtc_dados_abertos.sincronizar_tudo`. A chave fica só na Web Credential `RTC_API_KEY`. |
@@ -58,5 +60,38 @@ sql ECLOUD@base @/tmp/verificar.sql                                   # esperado
 ```
 
 Os dois passos foram executados com sucesso (SQLcl 26.3.1; Oracle AI Database 26ai Free com APEX 26.2.0 e o banco da fase 2).
+
+## 5. Teste num APEX local (26/11/2026)
+
+Com autorização do Daniel, o app foi importado **só no ambiente local de teste** (container
+Oracle 26ai Free + APEX 26.2.0 + ORDS 26.3.1 standalone, workspace `ECLOUD_TESTE`), com o
+script da skill `apexlang-deploy`. Não houve deploy em nenhum outro ambiente.
+
+* O ID do app fica fixo em `apex/deployments/default.json` (`"id": 100`, formato tirado de um
+  `apex export -exptype APEXLANG`). Sem ele, cada import criava um app novo (101, 102...).
+* `db/testes/dados_demo.sql <workspace> <usuario> <senha>` cria escritório e clientes fictícios,
+  a linha em `USUARIO` (Administrador + admin da plataforma) e a conta APEX do workspace. Idempotente; não usar em produção.
+* Navegação automatizada (Playwright) com o usuário de demonstração:
+  * todas as páginas abrem sem erro; os modais (11, 13, 21, 41) foram abertos pelos botões das páginas-mãe;
+  * Regime Regular: cabeçalho, 3 itens na grade, **Calcular** → `PROCESSADA_COM_PENDENCIAS`, CBS R$ 42,24, IBS R$ 0,48, REG-011 no item 3 (igual ao teste de integração);
+  * Simples Nacional: 2 itens → CBS R$ 26,12, IBS R$ 11,88, IS R$ 50,00; atividade 99 não calculada com o motivo da API;
+  * DANFSe: upload de XML válido do padrão nacional → status Gerado, download do PDF;
+  * cliente novo pelo modal; **Testar conexão** mostra versão do serviço e da base das três APIs;
+  * Painel com gráficos e erros mais frequentes; erro de regra aparece sem "ORA-".
+
+Correções feitas a partir do teste:
+
+| Problema | Correção |
+|---|---|
+| Import falhou: `executionMappingIdentifier` repetido entre páginas 31 e 32 | Identificadores únicos no app inteiro (não só na página), incluindo `savedReportMappingIdentifier`. |
+| Gráficos do Painel com ORA-00932 (`:P1_DATA_FIM + 1`) | `to_date(:P1_DATA_FIM, 'DD/MM/YYYY') + 1` (item de página chega como texto no gráfico). |
+| Data/hora padrão do fato gerador (`systimestamp`) recusada ao salvar | Padrão `to_char(current_timestamp, 'DD/MM/YYYY HH24:MI')` e `autoTimeZone`. |
+| Grade do Regime Regular sem alíquotas nominais (REG-037 para fato gerador a partir de 2027) | Colunas `ALIQ_CBS`, `ALIQ_IBS_UF`, `ALIQ_IBS_MUN`, `ALIQ_IS_AD_VALOREM`, `ALIQ_IS_AD_REM`, `IS_IMPOSTO_INFORMADO`. |
+| Mensagens com "ORA-20042:" | Função de tratamento de erros do app. |
+| Botões com ícone dos dois lados; páginas sem título; eixo dos gráficos com 0, 1, 1, 2... | `t-Button--iconLeft`; entradas no breadcrumb; `majorTicks.minStep: 1`. |
+
+Observação: textos internos do APEX ("Row created.", "Actions", "Add Row", "1 error has occurred")
+saem em inglês porque o APEX local não tem o idioma pt-br instalado. No ambiente alvo, instale a
+tradução pt-br do APEX (`builder/pt-br/load_pt-br.sql`) para esses textos saírem em português.
 
 O deploy (`apexlang-deploy`) é a fase 4 e só será feito com sua autorização e o ambiente alvo informado.

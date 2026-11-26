@@ -205,7 +205,10 @@ page 60 (
         appearance {
             buttonTemplate: @/text-with-icon
             icon: fa-plug
-            templateOptions: #DEFAULT#
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
         }
         behavior {
             executeValidations: false
@@ -514,7 +517,10 @@ page 60 (
         appearance {
             buttonTemplate: @/text-with-icon
             icon: fa-refresh
-            templateOptions: #DEFAULT#
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
         }
         behavior {
             executeValidations: false

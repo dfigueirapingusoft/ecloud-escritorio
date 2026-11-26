@@ -62,9 +62,14 @@ python3 tools/verificar_sql_apex.py /tmp/v.sql && sql ECLOUD@base @/tmp/v.sql
 ```
 
 * APEXlang 26.2: templates do tema assinado como `@/nome` (`@/standard`, `@/modal-dialog`);
-  todo processo leva `advanced.executionMappingIdentifier` único; coluna de IR
+  todo processo leva `advanced.executionMappingIdentifier` único **no app inteiro** (o import
+  recusa repetido entre páginas; vale também para `savedReportMappingIdentifier`); coluna de IR
   só aceita dataType varchar2/number/date/clob (converta timestamp com `cast(... as date)`);
   switch com valores próprios exige `useDefaults: false`.
+* ID do app fixo em `apex/deployments/default.json` (`"app": {"id": 100, ...}`); sem ele cada import cria app novo.
+* Item de data em SQL de gráfico chega como texto: use `to_date(:ITEM, 'DD/MM/YYYY')`. Padrão de item
+  data/hora: devolva texto na máscara (`to_char(current_timestamp, 'DD/MM/YYYY HH24:MI')`).
+* Teste local do app: `db/testes/dados_demo.sql <workspace> <usuario> <senha>` cria usuário e dados fictícios.
 * No PL/SQL, `JSON_VALUE` nativo ignora item methods (`type()`, `size()`): use SQL.
 * Função privada de pacote não pode ser usada dentro de SQL (PLS-00231): torne-a
   pública (ex.: `PKG_ECLOUD_UTIL`) ou calcule antes em variável.

@@ -221,7 +221,7 @@ page 31 (
         }
         default {
             type: expression
-            plsqlExpression: systimestamp
+            plsqlExpression: to_char(current_timestamp, 'DD/MM/YYYY HH24:MI')
         }
     )
 
@@ -917,6 +917,138 @@ page 31 (
                 dataType: varchar2
             }
         )
+        column ALIQ_CBS (
+            type: numberField
+            heading {
+                heading: Alíq. nominal CBS (%)
+                alignment: end
+            }
+            settings {
+                numberAlignment: end
+                virtualKeyboard: decimal
+            }
+            layout {
+                sequence: 125
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 990D0000
+            }
+            source {
+                databaseColumn: ALIQ_CBS
+                dataType: number
+            }
+        )
+        column ALIQ_IBS_UF (
+            type: numberField
+            heading {
+                heading: Alíq. nominal IBS UF (%)
+                alignment: end
+            }
+            settings {
+                numberAlignment: end
+                virtualKeyboard: decimal
+            }
+            layout {
+                sequence: 126
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 990D0000
+            }
+            source {
+                databaseColumn: ALIQ_IBS_UF
+                dataType: number
+            }
+        )
+        column ALIQ_IBS_MUN (
+            type: numberField
+            heading {
+                heading: Alíq. nominal IBS mun. (%)
+                alignment: end
+            }
+            settings {
+                numberAlignment: end
+                virtualKeyboard: decimal
+            }
+            layout {
+                sequence: 127
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 990D0000
+            }
+            source {
+                databaseColumn: ALIQ_IBS_MUN
+                dataType: number
+            }
+        )
+        column ALIQ_IS_AD_VALOREM (
+            type: numberField
+            heading {
+                heading: IS: alíq. ad valorem (%)
+                alignment: end
+            }
+            settings {
+                numberAlignment: end
+                virtualKeyboard: decimal
+            }
+            layout {
+                sequence: 175
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 990D0000
+            }
+            source {
+                databaseColumn: ALIQ_IS_AD_VALOREM
+                dataType: number
+            }
+        )
+        column ALIQ_IS_AD_REM (
+            type: numberField
+            heading {
+                heading: IS: alíq. ad rem
+                alignment: end
+            }
+            settings {
+                numberAlignment: end
+                virtualKeyboard: decimal
+            }
+            layout {
+                sequence: 176
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G990D0000
+            }
+            source {
+                databaseColumn: ALIQ_IS_AD_REM
+                dataType: number
+            }
+        )
+        column IS_IMPOSTO_INFORMADO (
+            type: numberField
+            heading {
+                heading: IS: imposto informado
+                alignment: end
+            }
+            settings {
+                numberAlignment: end
+                virtualKeyboard: decimal
+            }
+            layout {
+                sequence: 177
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: FML999G999G999G990D00
+            }
+            source {
+                databaseColumn: IS_IMPOSTO_INFORMADO
+                dataType: number
+            }
+        )
     )
 
     region salve-antes (
@@ -1529,7 +1661,10 @@ page 31 (
         appearance {
             buttonTemplate: @/text-with-icon
             icon: fa-copy
-            templateOptions: #DEFAULT#
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
         }
         behavior {
             warnOnUnsavedChanges: doNotCheck
@@ -1597,7 +1732,10 @@ page 31 (
             buttonTemplate: @/text-with-icon
             icon: fa-calculator
             hot: true
-            templateOptions: #DEFAULT#
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
         }
         behavior {
             warnOnUnsavedChanges: doNotCheck

@@ -478,7 +478,10 @@ page 40 (
             buttonTemplate: @/text-with-icon
             icon: fa-upload
             hot: true
-            templateOptions: #DEFAULT#
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
         }
         behavior {
             action: redirectThisApp

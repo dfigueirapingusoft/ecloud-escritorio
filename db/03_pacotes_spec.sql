@@ -59,6 +59,11 @@ as
 
     -- Converte booleano JSON lido como texto ('true'/'false') em 'S'/'N'.
     function booleano_sn(p_valor in varchar2) return varchar2 deterministic;
+
+    -- Função de tratamento de erros do app APEX (errorHandlingFunctionName).
+    -- Erros de regra (raise_application_error -20000..-20999) aparecem sem o
+    -- prefixo "ORA-20xxx:"; violação de chave única/FK vira texto amigável.
+    function tratar_erro_apex(p_error in apex_error.t_error) return apex_error.t_error_result;
 end pkg_ecloud_util;
 /
 

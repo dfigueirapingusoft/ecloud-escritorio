@@ -68,7 +68,7 @@ page 1 (
         }
         default {
             type: expression
-            plsqlExpression: add_months(trunc(sysdate, 'MM'), -5)
+            plsqlExpression: add_months(trunc(current_date, 'MM'), -5)
         }
         sessionState {
             storage: session
@@ -98,7 +98,7 @@ page 1 (
         }
         default {
             type: expression
-            plsqlExpression: trunc(sysdate)
+            plsqlExpression: trunc(current_date)
         }
         sessionState {
             storage: session
@@ -196,8 +196,8 @@ page 1 (
                        count(distinct s.cliente_id) as clientes,
                        sum(s.tot_tributos) as tributos_simulados
                   from simulacao s
-                 where cast(s.criado_em as date) >= :P1_DATA_INICIO
-                   and cast(s.criado_em as date) < :P1_DATA_FIM + 1
+                 where cast(s.criado_em as date) >= to_date(:P1_DATA_INICIO, 'DD/MM/YYYY')
+                   and cast(s.criado_em as date) < to_date(:P1_DATA_FIM, 'DD/MM/YYYY') + 1
                    and (:P1_REGIME is null or s.regime = :P1_REGIME)
                    and (:P1_CLIENTE_ID is null or s.cliente_id = :P1_CLIENTE_ID)
                 ```
@@ -349,8 +349,8 @@ page 1 (
                     select to_char(trunc(cast(s.criado_em as date), 'MM'), 'MM/YYYY') as mes,
                            count(*) as qtd
                       from simulacao s
-                     where cast(s.criado_em as date) >= :P1_DATA_INICIO
-                       and cast(s.criado_em as date) < :P1_DATA_FIM + 1
+                     where cast(s.criado_em as date) >= to_date(:P1_DATA_INICIO, 'DD/MM/YYYY')
+                       and cast(s.criado_em as date) < to_date(:P1_DATA_FIM, 'DD/MM/YYYY') + 1
                        and (:P1_REGIME is null or s.regime = :P1_REGIME)
                        and (:P1_CLIENTE_ID is null or s.cliente_id = :P1_CLIENTE_ID)
                      group by trunc(cast(s.criado_em as date), 'MM')
@@ -382,6 +382,7 @@ page 1 (
             }
             majorTicks {
                 show: auto
+                minStep: 1
             }
         )
 
@@ -431,8 +432,8 @@ page 1 (
                     select case s.regime when 'REGULAR' then 'Regime Regular' else 'Simples Nacional' end as regime,
                            count(*) as qtd
                       from simulacao s
-                     where cast(s.criado_em as date) >= :P1_DATA_INICIO
-                       and cast(s.criado_em as date) < :P1_DATA_FIM + 1
+                     where cast(s.criado_em as date) >= to_date(:P1_DATA_INICIO, 'DD/MM/YYYY')
+                       and cast(s.criado_em as date) < to_date(:P1_DATA_FIM, 'DD/MM/YYYY') + 1
                        and (:P1_REGIME is null or s.regime = :P1_REGIME)
                        and (:P1_CLIENTE_ID is null or s.cliente_id = :P1_CLIENTE_ID)
                      group by s.regime
@@ -494,8 +495,8 @@ page 1 (
                       from simulacao s
                       join cliente c
                         on c.cliente_id = s.cliente_id
-                     where cast(s.criado_em as date) >= :P1_DATA_INICIO
-                       and cast(s.criado_em as date) < :P1_DATA_FIM + 1
+                     where cast(s.criado_em as date) >= to_date(:P1_DATA_INICIO, 'DD/MM/YYYY')
+                       and cast(s.criado_em as date) < to_date(:P1_DATA_FIM, 'DD/MM/YYYY') + 1
                        and (:P1_REGIME is null or s.regime = :P1_REGIME)
                        and (:P1_CLIENTE_ID is null or s.cliente_id = :P1_CLIENTE_ID)
                      group by c.razao_social
@@ -528,6 +529,7 @@ page 1 (
             }
             majorTicks {
                 show: auto
+                minStep: 1
             }
         )
 
@@ -552,8 +554,8 @@ page 1 (
                     on s.simulacao_id = e.simulacao_id
                   left join rtc_erro_catalogo cat
                     on cat.codigo = e.codigo
-                 where cast(s.criado_em as date) >= :P1_DATA_INICIO
-                   and cast(s.criado_em as date) < :P1_DATA_FIM + 1
+                 where cast(s.criado_em as date) >= to_date(:P1_DATA_INICIO, 'DD/MM/YYYY')
+                   and cast(s.criado_em as date) < to_date(:P1_DATA_FIM, 'DD/MM/YYYY') + 1
                    and (:P1_REGIME is null or s.regime = :P1_REGIME)
                    and (:P1_CLIENTE_ID is null or s.cliente_id = :P1_CLIENTE_ID)
                  group by e.codigo

@@ -17,5 +17,5 @@ dashboard por escritório.
 |---|---|---|
 | 1 | Arquitetura, DDL, constraints, índices, VPD, specs dos pacotes | aprovada em 26/11/2026 |
 | 2 | Package bodies + testes (offline e integração com as calculadoras) | aprovada em 26/11/2026 |
-| 3 | App em APEXlang (a partir do example-0), validado com apexlang-compile | entregue, aguardando aprovação |
+| 3 | App em APEXlang (a partir do example-0), validado com apexlang-compile e testado num APEX 26.2 local | entregue, aguardando aprovação |
 | 4 | Deploy com apexlang-deploy (só com autorização) | – |

@@ -36,6 +36,7 @@ app ECLOUD (
     globalization {
         primaryLanguage: pt-br
         documentDirection: leftToRight
+        autoTimeZone: true
     }
     appFormatMasks {
         date: DD/MM/YYYY
@@ -54,6 +55,9 @@ app ECLOUD (
             end if;
             ```
         cleanupPlsqlCode: pkg_ecloud_ctx.limpar_contexto;
+    }
+    errorHandling {
+        errorHandlingFunctionName: pkg_ecloud_util.tratar_erro_apex
     }
     authentication {
         scheme: @oracle-apex-accounts

@@ -14,4 +14,186 @@ breadcrumb breadcrumb (
         }
     )
 
+    entry escritorios (
+        name: Escritórios
+        pageNumber: 10
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 10
+            }
+        }
+    )
+
+    entry usuarios (
+        name: Usuários
+        pageNumber: 12
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 12
+            }
+        }
+    )
+
+    entry clientes (
+        name: Clientes
+        pageNumber: 20
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 20
+            }
+        }
+    )
+
+    entry simulacoes (
+        name: Simulações
+        pageNumber: 30
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 30
+            }
+        }
+    )
+
+    entry simulacao-regime (
+        name: Simulação - Regime Regular
+        pageNumber: 31
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 31
+            }
+        }
+    )
+
+    entry simulacao-simples (
+        name: Simulação - Simples Nacional
+        pageNumber: 32
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 32
+            }
+        }
+    )
+
+    entry danfse (
+        name: DANFSe
+        pageNumber: 40
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 40
+            }
+        }
+    )
+
+    entry cclasstrib (
+        name: cClassTrib
+        pageNumber: 50
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 50
+            }
+        }
+    )
+
+    entry cst (
+        name: CST
+        pageNumber: 51
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 51
+            }
+        }
+    )
+
+    entry ncm (
+        name: NCM
+        pageNumber: 52
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 52
+            }
+        }
+    )
+
+    entry nbs (
+        name: NBS
+        pageNumber: 53
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 53
+            }
+        }
+    )
+
+    entry atividades-sn (
+        name: Atividades do Simples
+        pageNumber: 54
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 54
+            }
+        }
+    )
+
+    entry configuracao (
+        name: Configuração das APIs
+        pageNumber: 60
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 60
+            }
+        }
+    )
+
+    entry log-chamadas (
+        name: Log de chamadas
+        pageNumber: 61
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 61
+            }
+        }
+    )
+
 )

@@ -256,7 +256,10 @@ page 41 (
         appearance {
             buttonTemplate: @/text-with-icon
             icon: fa-download
-            templateOptions: #DEFAULT#
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
         }
         behavior {
             action: redirectThisApp
@@ -286,7 +289,10 @@ page 41 (
             buttonTemplate: @/text-with-icon
             icon: fa-refresh
             hot: true
-            templateOptions: #DEFAULT#
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
         }
         behavior {
             warnOnUnsavedChanges: doNotCheck
@@ -309,7 +315,10 @@ page 41 (
             buttonTemplate: @/text-with-icon
             icon: fa-file-pdf-o
             hot: true
-            templateOptions: #DEFAULT#
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
         }
         behavior {
             warnOnUnsavedChanges: doNotCheck
