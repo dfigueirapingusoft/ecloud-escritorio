@@ -41,15 +41,24 @@ as
     function municipio_valido(p_uf in varchar2, p_municipio_ibge in number) return boolean;
 
     -- Converte string decimal da API ("1200.00") em NUMBER, independente de NLS.
+    -- Valor inválido devolve nulo.
     function para_numero(p_valor in varchar2) return number deterministic;
 
     -- Converte NUMBER em string decimal com ponto e escala fixa ("950.00"),
     -- formato exigido em ItemSimplesInput.baseCalculo / valorImpostoSeletivo (13v2).
+    -- p_casas nulo = todas as casas significativas (pIBSSN/pCBSSN: "1.25").
     function para_decimal_api(p_valor in number, p_casas in pls_integer default 2) return varchar2 deterministic;
 
     -- Formata data/hora com fuso no padrão ISO 8601 aceito em
     -- OperacaoInput.dhFatoGerador (ex.: 2027-03-10T10:00:00-03:00).
     function para_iso8601(p_valor in timestamp with time zone) return varchar2 deterministic;
+
+    -- Lê data/hora ISO 8601 vinda da API (com ou sem fração de segundo).
+    -- Valor inválido devolve nulo.
+    function de_iso8601(p_valor in varchar2) return timestamp with time zone deterministic;
+
+    -- Converte booleano JSON lido como texto ('true'/'false') em 'S'/'N'.
+    function booleano_sn(p_valor in varchar2) return varchar2 deterministic;
 end pkg_ecloud_util;
 /
 
@@ -71,6 +80,7 @@ as
     c_log_retencao_dias       constant varchar2(60) := 'LOG_RETENCAO_DIAS';
     c_log_max_body_bytes      constant varchar2(60) := 'LOG_MAX_BODY_BYTES';
     c_cache_data_referencia   constant varchar2(60) := 'CACHE_DATA_REFERENCIA';
+    c_apex_workspace          constant varchar2(60) := 'APEX_WORKSPACE';
 
     -- Valor da chave; ORA-20010 se a chave não existir e p_obrigatorio = true.
     function valor(p_chave in varchar2, p_obrigatorio in boolean default true) return varchar2;
@@ -82,8 +92,10 @@ as
     -- Static ID da Web Credential do APEX (padrão RTC_API_KEY).
     function credencial_static_id return varchar2;
 
-    -- Grava (MERGE) uma chave. Exige ADMIN_PLATAFORMA (ORA-20011) e valida
-    -- URLs (https://, sem barra final) para tipo URL (ORA-20012).
+    -- Grava (MERGE) uma chave. Exige ADMIN_PLATAFORMA ou contexto de sistema
+    -- (ORA-20011). Valida o valor pelo tipo da chave (ORA-20012): URL começa
+    -- com http:// ou https:// (produção usa https) e não termina em barra;
+    -- NUMERO precisa ser numérico.
     procedure definir(p_chave in varchar2, p_valor in varchar2);
 end pkg_rtc_config;
 /
@@ -132,6 +144,9 @@ end pkg_rtc_log;
 -- PKG_RTC_HTTP: única porta de saída HTTP. Usa APEX_WEB_SERVICE com
 -- p_credential_static_id => PKG_RTC_CONFIG.credencial_static_id
 -- ('RTC_API_KEY', tipo HTTP Header com X-API-Key). Registra tudo em PKG_RTC_LOG.
+-- Fora de uma sessão APEX (jobs, SQLcl) define o workspace com
+-- APEX_UTIL.SET_WORKSPACE(RTC_CONFIG.APEX_WORKSPACE), exigido pela Web Credential.
+-- Nunca levanta exceção por falha de rede: devolve http_status nulo e erro.
 --------------------------------------------------------------------------------
 create or replace package pkg_rtc_http
 authid definer
@@ -170,7 +185,8 @@ as
         chamada_id         number,
         versao_app         varchar2(30),  -- X-CALC-APP-VERSION
         versao_db          varchar2(30),  -- X-CALC-DB-VERSION
-        dados_simulados    number         -- x-warning-dados-simulados (1..6)
+        dados_simulados    number,        -- x-warning-dados-simulados (1..6)
+        erro               varchar2(4000) -- erro Oracle (rede, ACL, TLS, timeout); http_status fica nulo
     );
 
     -- Resultado do "testar conexão"

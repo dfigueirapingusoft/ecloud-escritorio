@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- 01_tabelas.sql
--- Modelo de dados do app Ecloud Escritórios (nome provisório).
+-- Modelo de dados do app Ecloud - Escritório Cloud.
 --
 -- Conteúdo:
 --   1. Tabelas globais (sem ESCRITORIO_ID): configuração, catálogo de erros,

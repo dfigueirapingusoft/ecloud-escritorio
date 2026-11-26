@@ -1,4 +1,4 @@
-# CLAUDE.md – Ecloud Escritórios (nome provisório)
+# CLAUDE.md – Ecloud - Escritório Cloud
 
 App Oracle APEX para escritórios de contabilidade, integrado às calculadoras
 da Reforma Tributária do Consumo (RTC) da Receita Federal. Responda em
@@ -28,16 +28,23 @@ português do Brasil.
    Antes de qualquer trabalho de APEX leia as skills oficiais
    (`github.com/oracle/skills`, pasta `apex/`): `apexlang-router` →
    `apexlang-MAJOR-MINOR-inventory` e `-example-applications` da versão de
-   `.apex/apexlang.json` (`mmdVersion`); nunca misture versões. Valide com
+   `.apex/apexlang.json` (`mmdVersion`); nunca misture versões. Versão alvo:
+   **APEX 26.2** (decisão do Daniel em 26/11/2026). Valide com
    `apexlang-compile` até "Validation successful". `apexlang-deploy` só com
    pedido explícito e ambiente informado. Se faltar skill, pare e avise.
+
+## Decisões aprovadas (fase 1)
+
+* Perfil extra `USUARIO.ADMIN_PLATAFORMA`: só ele edita a Configuração global (URLs) e os escritórios.
+* Cache dos dados abertos sincronizado por `PKG_RTC_DADOS_ABERTOS` (com log) e `DBMS_SCHEDULER`;
+  REST Data Sources do APEX apenas para consultas de detalhe.
 
 ## Estrutura
 
 ```
 db/        00_pre_requisitos.sql (DBA), 01_tabelas.sql, 02_vpd.sql,
            03_pacotes_spec.sql, 04_views.sql, 05_dados_iniciais.sql,
-           instalar.sql, testes/
+           06_pacotes_body.sql, instalar.sql, testes/
 apex/      fonte APEXlang (fase 3)
 docs/      01-arquitetura.md, contratos/
 tools/     validar_contratos.py
@@ -47,8 +54,15 @@ tools/     validar_contratos.py
 
 ```bash
 cd db && sql ECLOUD@base @instalar.sql && sql ECLOUD@base @testes/fase1_vpd.sql
+sql ECLOUD@base @testes/fase2_offline.sql      # sem HTTP, usa respostas reais embutidas
+sql ECLOUD@base @testes/fase2_integracao.sql   # HTTP real; precisa de APEX + credencial + RTC_CONFIG
 python3 tools/validar_contratos.py
 ```
+
+* No PL/SQL, `JSON_VALUE` nativo ignora item methods (`type()`, `size()`): use SQL.
+* Função privada de pacote não pode ser usada dentro de SQL (PLS-00231): torne-a
+  pública (ex.: `PKG_ECLOUD_UTIL`) ou calcule antes em variável.
+* `APEX_CREDENTIAL` é de direitos do invocador: rode como o schema da aplicação, não como SYS.
 
 ## Fatos do contrato que já causaram dúvida
 

@@ -1,4 +1,4 @@
-# Ecloud Escritórios (nome provisório)
+# Ecloud - Escritório Cloud
 
 Sistema Oracle APEX para escritórios de contabilidade, integrado às
 calculadoras da Reforma Tributária do Consumo (RTC) da Receita Federal:
@@ -14,7 +14,7 @@ dashboard por escritório.
 
 | Fase | Conteúdo | Situação |
 |---|---|---|
-| 1 | Arquitetura, DDL, constraints, índices, VPD, specs dos pacotes | entregue, aguardando aprovação |
-| 2 | Package bodies + testes | – |
+| 1 | Arquitetura, DDL, constraints, índices, VPD, specs dos pacotes | aprovada em 26/11/2026 |
+| 2 | Package bodies + testes (offline e integração com as calculadoras) | entregue, aguardando aprovação |
 | 3 | App em APEXlang (a partir do example-0), validado com apexlang-compile | – |
 | 4 | Deploy com apexlang-deploy (só com autorização) | – |

@@ -1,8 +1,8 @@
 # Arquitetura – Fase 1
 
 App para escritórios de contabilidade integrado às calculadoras da Reforma
-Tributária do Consumo (RTC). Nome provisório: **Ecloud Escritórios** (o nome
-definitivo ainda não foi definido).
+Tributária do Consumo (RTC). Nome do app: **Ecloud - Escritório Cloud**.
+APEX alvo: **26.2** (skills `apexlang-26-2-*`).
 
 ## 1. Visão geral
 
@@ -10,7 +10,7 @@ definitivo ainda não foi definido).
  Navegador (contador, assistente, administrador)
         │ HTTPS
         ▼
- ┌──────────────────────────── Oracle APEX 26.x (app em APEXlang, fase 3) ─────────────────────────────┐
+ ┌──────────────────────────── Oracle APEX 26.2 (app em APEXlang, fase 3) ─────────────────────────────┐
  │  Initialization PL/SQL: pkg_ecloud_ctx.definir_contexto   Cleanup: pkg_ecloud_ctx.limpar_contexto    │
  │  Authorization schemes: ADMINISTRADOR | CONTADOR | ASSISTENTE | ADMIN_PLATAFORMA (pkg_ecloud_ctx)    │
  │                                                                                                      │
@@ -53,9 +53,9 @@ definitivo ainda não foi definido).
 | 1 | Todo HTTP passa por `PKG_RTC_HTTP` (APEX_WEB_SERVICE + Web Credential `RTC_API_KEY`). Os demais pacotes nunca chamam a rede. | Um ponto só para credencial, timeout, headers e log. A chave nunca aparece em código. |
 | 2 | URLs base em `RTC_CONFIG` (`REGIME_BASE_URL`, `SIMPLES_BASE_URL`, `DANFSE_BASE_URL`), editadas na página Configuração. | Trocar de ambiente sem novo deploy. |
 | 3 | Log de toda chamada em `RTC_CHAMADA_LOG` por transação autônoma: URL, request, response (truncado em 1 MiB; PDF só o tamanho), status, tempo, usuário, escritório, página APEX. | Regra 3 do projeto; o log sobrevive a rollback. |
-| 4 | Cache dos dados abertos em tabelas `RTC_DA_*`, sincronizadas por `PKG_RTC_DADOS_ABERTOS` e agendadas no `DBMS_SCHEDULER`. Na fase 3, REST Data Sources do APEX apontam para os mesmos GETs para as consultas de detalhe sob demanda (NCM, NBS, cClassTrib), com as LOVs lendo o cache. | A sincronização em pacote cumpre as regras 1 e 3 (HTTP só em pacote e com log); a REST Data Source fica para consulta pontual. **Ponto para sua aprovação.** |
+| 4 | Cache dos dados abertos em tabelas `RTC_DA_*`, sincronizadas por `PKG_RTC_DADOS_ABERTOS` e agendadas no `DBMS_SCHEDULER`. Na fase 3, REST Data Sources do APEX apontam para os mesmos GETs para as consultas de detalhe sob demanda (NCM, NBS, cClassTrib), com as LOVs lendo o cache. | A sincronização em pacote cumpre as regras 1 e 3 (HTTP só em pacote e com log); a REST Data Source fica para consulta pontual. **Aprovado em 26/11/2026.** |
 | 5 | Multi-escritório por VPD com contexto de sessão `CTX_ECLOUD`, `update_check` ligado e falha fechada (sem contexto, nenhuma linha). FKs compostas `(cliente_id, escritorio_id)` impedem referência cruzada mesmo para o sistema. | Regra 5; testado em `db/testes/fase1_vpd.sql`. |
-| 6 | Perfis do escritório: ADMINISTRADOR, CONTADOR, ASSISTENTE. Além disso, `USUARIO.ADMIN_PLATAFORMA = 'S'` para quem gerencia todos os escritórios e a Configuração global das APIs. | As URLs e a credencial são comuns a todos os escritórios; um administrador de escritório não deve poder mudá-las para os outros. **Ponto para sua aprovação.** |
+| 6 | Perfis do escritório: ADMINISTRADOR, CONTADOR, ASSISTENTE. Além disso, `USUARIO.ADMIN_PLATAFORMA = 'S'` para quem gerencia todos os escritórios e a Configuração global das APIs. | As URLs e a credencial são comuns a todos os escritórios; um administrador de escritório não deve poder mudá-las para os outros. **Aprovado em 26/11/2026.** |
 | 7 | Uma tabela `SIMULACAO`/`SIMULACAO_ITEM` para os dois regimes, com colunas de entrada específicas de cada contrato e CHECKs condicionais por regime. Totais e resultados unificados (`tot_ibs`, `r_v_ibs`...) para o dashboard. | Mesmo formato de tela e dashboard para os dois regimes, sem perder campos de cada contrato. |
 | 8 | JSON em `CLOB ... CHECK (IS JSON)`; montagem com `JSON_OBJECT/JSON_ARRAYAGG ... ABSENT ON NULL`; leitura com `JSON_TABLE`. | Funciona em 19c e 23ai. |
 | 9 | CNPJ alfanumérico aceito (IN RFB 2.229/2024, a partir de jul/2026): `[0-9A-Z]{12}[0-9]{2}`. | Clientes novos já podem ter CNPJ com letras. |
@@ -158,11 +158,37 @@ python3 tools/validar_contratos.py             # esperado: "Contratos validados:
 
 Os quatro passos foram executados num Oracle AI Database 26ai Free (23.26.4) com sucesso.
 
-## 7. Próximas fases
+## 7. Como testar a fase 2
 
-* **Fase 2:** bodies dos pacotes, jobs, testes com blocos anônimos usando as
-  respostas de `docs/contratos/exemplos-respostas.txt`. Para testar as chamadas
-  reais, o banco de teste precisa de APEX (APEX_WEB_SERVICE) e da Web Credential.
+`instalar.sql` já inclui `06_pacotes_body.sql` (bodies de todos os pacotes).
+
+```bash
+cd db
+# 1) Testes offline: sem HTTP, com as respostas reais das calculadoras embutidas.
+#    Montagem do JSON (JSON_EQUAL com o exemplo oficial), leitura dos resultados,
+#    totais, erros por item/pointer, 422, duplicar, validação do XML da DANFSe.
+sql ECLOUD@base @testes/fase2_offline.sql      # esperado: 48 OK e "fase2_offline: SUCESSO" (rollback no fim)
+
+# 2) Integração com HTTP real. Em produção basta a Web Credential RTC_API_KEY
+#    (cadastrada no APEX com a chave real) e as URLs em RTC_CONFIG.
+#    Em teste local, com as calculadoras rodando em <host>:8083/8084/8085:
+sql SYS@base as sysdba @testes/preparar_ambiente_teste.sql <host>   # ACL + workspace ECLOUD_TESTE
+sql ECLOUD@base @testes/configurar_ambiente_teste.sql <host>        # credencial fictícia + RTC_CONFIG
+sql ECLOUD@base @testes/fase2_integracao.sql   # esperado: 32 OK e "fase2_integracao: SUCESSO"
+```
+
+O teste de integração cobre: testar conexão dos 3 serviços (versão 1.7.2 / 1.0.2,
+base V0073), sincronização de todos os caches (incluindo município de 9 dígitos),
+cálculo Regime e Simples, busca do erro REG-011 na API para o catálogo, log
+completo sem a chave, 422 REG-020, PDF da DANFSe e regravação com stc/canhoto,
+XML ABRASF recusado sem chamar a API, falha de rede (status `FALHA`), bloqueio de
+configuração para o perfil Contador e criação dos jobs.
+
+Executado em Oracle AI Database 26ai Free + APEX 26.2.0 com as calculadoras
+oficiais (Regime 1.7.2, Simples 1.0.2, DANFSe 1.0.0) rodando localmente.
+
+## 8. Próximas fases
+
 * **Fase 3:** app em APEXlang a partir do `example-0`, validado com
   `apexlang-compile` (SQLcl 26.3 `apex validate`).
 * **Fase 4:** deploy com `apexlang-deploy`, somente com sua autorização e o ambiente alvo.

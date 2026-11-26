@@ -28,6 +28,8 @@ using (
            'Dias de retenção do log de chamadas HTTP' from dual union all
     select 'LOG_MAX_BODY_BYTES', '1048576', 'NUMERO',
            'Tamanho máximo de request/response gravado no log (o excedente é truncado)' from dual union all
+    select 'APEX_WORKSPACE', null, 'TEXTO',
+           'Workspace APEX dono da Web Credential RTC_API_KEY (usado por jobs e scripts fora do APEX)' from dual union all
     select 'CACHE_DATA_REFERENCIA', null, 'TEXTO',
            'Data (AAAA-MM-DD) das consultas de dados abertos. Vazio = maior entre hoje e 2027-01-01' from dual
 ) o

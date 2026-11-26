@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- instalar.sql
--- Instala/atualiza o banco da aplicação (fase 1). Todos os scripts são
+-- Instala/atualiza o banco da aplicação (fases 1 e 2). Todos os scripts são
 -- idempotentes. Executar conectado como o schema da aplicação, depois de um
 -- DBA ter rodado 00_pre_requisitos.sql.
 --
@@ -20,6 +20,8 @@ prompt == 04_views.sql
 @@04_views.sql
 prompt == 05_dados_iniciais.sql
 @@05_dados_iniciais.sql
+prompt == 06_pacotes_body.sql
+@@06_pacotes_body.sql
 
 prompt == Objetos inválidos (esperado: nenhum)
 select object_type, object_name, status
