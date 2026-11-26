@@ -1,0 +1,25 @@
+lov stc (
+    name: SITUACAO_NFSE
+    source {
+        location: staticValues
+    }
+
+    entry stc-1 (
+        sequence: 1
+        display: 0 - Válida
+        return: 0
+    )
+
+    entry stc-2 (
+        sequence: 2
+        display: 1 - Substituída
+        return: 1
+    )
+
+    entry stc-3 (
+        sequence: 3
+        display: 2 - Cancelada
+        return: 2
+    )
+
+)

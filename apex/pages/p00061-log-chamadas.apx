@@ -1,0 +1,334 @@
+page 61 (
+    name: Log de chamadas
+    alias: LOG-CHAMADAS
+    title: Log de chamadas às APIs
+    pageGroup: @administracao
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+    security {
+        authorizationScheme: @administrador
+    }
+
+    region breadcrumb (
+        name: Breadcrumb
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region log (
+        name: Log de chamadas às APIs
+        type: interactiveReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select l.chamada_id,
+                       cast(l.inicio_em as date) as inicio_em,
+                       l.servico,
+                       l.operacao,
+                       l.metodo,
+                       l.url,
+                       l.http_status,
+                       l.sucesso,
+                       l.tempo_ms,
+                       l.usuario,
+                       l.referencia_tipo,
+                       l.referencia_id,
+                       l.erro_oracle
+                  from rtc_chamada_log l
+                ```
+        }
+        layout {
+            sequence: 20
+            slot: body
+        }
+        link {
+            linkColumn: customTarget
+            target: {
+                page: 62
+                items: {
+                    P62_CHAMADA_ID: \#CHAMADA_ID#\
+                }
+                action: resetPagination
+            }
+            linkIcon: <span aria-label="Editar"><span class="fa fa-edit" aria-hidden="true" title="Editar"></span></span>
+        }
+        pagination {
+            type: rowRangesXToY
+        }
+        messages {
+            whenNoDataFound: Nenhum registro encontrado.
+        }
+        actionsMenu {
+            subscription: false
+        }
+
+        column CHAMADA_ID (
+            type: plainText
+            heading {
+                heading: Nº
+            }
+            layout {
+                sequence: 1
+            }
+            source {
+                dataType: number
+            }
+        )
+
+        column INICIO_EM (
+            type: plainText
+            heading {
+                heading: Início
+            }
+            layout {
+                sequence: 2
+            }
+            appearance {
+                formatMask: DD/MM/YYYY HH24:MI:SS
+            }
+            source {
+                dataType: date
+            }
+        )
+
+        column SERVICO (
+            type: plainText
+            heading {
+                heading: Serviço
+            }
+            layout {
+                sequence: 3
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        column OPERACAO (
+            type: plainText
+            heading {
+                heading: Operação
+            }
+            layout {
+                sequence: 4
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        column METODO (
+            type: plainText
+            heading {
+                heading: Método
+            }
+            layout {
+                sequence: 5
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        column URL (
+            type: plainText
+            heading {
+                heading: URL
+            }
+            layout {
+                sequence: 6
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        column HTTP_STATUS (
+            type: plainText
+            heading {
+                heading: HTTP
+                alignment: end
+            }
+            layout {
+                sequence: 7
+                columnAlignment: end
+            }
+            source {
+                dataType: number
+            }
+        )
+
+        column SUCESSO (
+            type: plainTextBasedOnLov
+            heading {
+                heading: Sucesso
+            }
+            lov {
+                lov: @sim-nao
+            }
+            layout {
+                sequence: 8
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        column TEMPO_MS (
+            type: plainText
+            heading {
+                heading: Tempo (ms)
+                alignment: end
+            }
+            layout {
+                sequence: 9
+                columnAlignment: end
+            }
+            source {
+                dataType: number
+            }
+        )
+
+        column USUARIO (
+            type: plainText
+            heading {
+                heading: Usuário
+            }
+            layout {
+                sequence: 10
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        column REFERENCIA_TIPO (
+            type: plainText
+            heading {
+                heading: Referência
+            }
+            layout {
+                sequence: 11
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        column REFERENCIA_ID (
+            type: plainText
+            heading {
+                heading: Nº da referência
+            }
+            layout {
+                sequence: 12
+            }
+            source {
+                dataType: number
+            }
+        )
+
+        column ERRO_ORACLE (
+            type: plainText
+            heading {
+                heading: Erro
+            }
+            layout {
+                sequence: 13
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        savedReport 810940920 (
+            visibility: primaryDefault
+            view {
+                rowsPerPage: 50
+            }
+
+            displayColumn CHAMADA_ID (
+                sequence: 1
+            )
+
+            displayColumn INICIO_EM (
+                sequence: 2
+            )
+
+            displayColumn SERVICO (
+                sequence: 3
+            )
+
+            displayColumn OPERACAO (
+                sequence: 4
+            )
+
+            displayColumn METODO (
+                sequence: 5
+            )
+
+            displayColumn URL (
+                sequence: 6
+            )
+
+            displayColumn HTTP_STATUS (
+                sequence: 7
+            )
+
+            displayColumn SUCESSO (
+                sequence: 8
+            )
+
+            displayColumn TEMPO_MS (
+                sequence: 9
+            )
+
+            displayColumn USUARIO (
+                sequence: 10
+            )
+
+            displayColumn REFERENCIA_TIPO (
+                sequence: 11
+            )
+
+            displayColumn REFERENCIA_ID (
+                sequence: 12
+            )
+
+            displayColumn ERRO_ORACLE (
+                sequence: 13
+            )
+
+            sort (
+                column: CHAMADA_ID
+                sort {
+                    sequence: 1
+                    direction: desc
+                }
+            )
+
+        )
+    )
+
+)

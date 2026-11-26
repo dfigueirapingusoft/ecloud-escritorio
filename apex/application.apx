@@ -1,0 +1,80 @@
+app ECLOUD (
+    name: Ecloud - Escritório Cloud
+    version: Release 1.0
+    logo {
+        type: text
+        text: Ecloud - Escritório Cloud
+    }
+    navigation {
+        homeUrl: {
+            page: 1
+        }
+        loginUrl: {
+            page: LOGIN
+        }
+    }
+    navigationMenu {
+        listTemplate: @/side-navigation-menu
+        templateOptions: [
+            #DEFAULT#
+            t-TreeNav--styleA
+            js-navCollapsed--hidden
+        ]
+        list: @navigation-menu
+    }
+    navigationBar {
+        list: @navigation-bar
+        listTemplate: @/navigation-bar
+        templateOptions: #DEFAULT#
+    }
+    userInterface {
+        currentTheme: @universal-theme
+        globalPage: 0
+        addBuiltWithApexToFooter: false
+        autoDismissSuccessMessages: true
+    }
+    globalization {
+        primaryLanguage: pt-br
+        documentDirection: leftToRight
+    }
+    appFormatMasks {
+        date: DD/MM/YYYY
+        dateTime: DD/MM/YYYY HH24:MI
+        timestamp: DD/MM/YYYY HH24:MI:SS
+        timestampTimeZone: DD/MM/YYYY HH24:MI:SS TZR
+    }
+    databaseSession {
+        initPlsqlCode:
+            ```plsql
+            -- Contexto VPD (CTX_ECLOUD) a cada requisição: escritório, perfil e usuário.
+            pkg_ecloud_ctx.definir_contexto;
+            -- Administrador da plataforma operando em outro escritório (suporte).
+            if v('F_ESCRITORIO_ATIVO') is not null and pkg_ecloud_ctx.is_admin_plataforma then
+                pkg_ecloud_ctx.trocar_escritorio(to_number(v('F_ESCRITORIO_ATIVO')));
+            end if;
+            ```
+        cleanupPlsqlCode: pkg_ecloud_ctx.limpar_contexto;
+    }
+    authentication {
+        scheme: @oracle-apex-accounts
+    }
+    authorization {
+        scheme: @usuario-cadastrado
+    }
+    sessionManagement {
+        sessionStateCommits: endOfRequest
+    }
+    reportPrinting {
+        type: useInstanceSettings
+    }
+    runtime {
+        allowFeedback: false
+    }
+
+    substitution APP_NAME (
+        value {
+            staticValue: Ecloud - Escritório Cloud
+        }
+    )
+
+)

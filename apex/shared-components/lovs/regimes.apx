@@ -1,0 +1,19 @@
+lov regimes (
+    name: REGIMES
+    source {
+        location: staticValues
+    }
+
+    entry regimes-1 (
+        sequence: 1
+        display: Regime Regular
+        return: REGULAR
+    )
+
+    entry regimes-2 (
+        sequence: 2
+        display: Simples Nacional
+        return: SIMPLES
+    )
+
+)

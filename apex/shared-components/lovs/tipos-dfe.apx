@@ -1,0 +1,16 @@
+lov tipos-dfe (
+    name: TIPOS_DFE
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select distinct tipo_dfe || ' - ' || sigla_dfe d, tipo_dfe r
+              from rtc_da_cclasstrib_dfe
+             order by r
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)

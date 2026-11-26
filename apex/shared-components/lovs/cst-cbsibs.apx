@@ -1,0 +1,17 @@
+lov cst-cbsibs (
+    name: CST_CBSIBS
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select codigo || ' - ' || descricao d, codigo r
+              from rtc_da_cst
+             where tributo = 'CBSIBS'
+             order by codigo
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)

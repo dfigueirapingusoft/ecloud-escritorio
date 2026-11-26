@@ -1,0 +1,622 @@
+page 60 (
+    name: Configuração das APIs
+    alias: CONFIGURACAO
+    title: Configuração das APIs
+    pageGroup: @administracao
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+    security {
+        authorizationScheme: @admin-plataforma
+    }
+
+    region breadcrumb (
+        name: Breadcrumb
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region urls (
+        name: URLs das APIs
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                <p>Endereços base das calculadoras. A chave de acesso (header X-API-Key) não fica aqui:
+                ela é guardada na Web Credential <strong>RTC_API_KEY</strong> do workspace APEX.</p>
+                ```
+        }
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P60_REGIME_BASE_URL (
+        type: textField
+        label {
+            label: Regime Regular (CBS/IBS/IS)
+            alignment: right
+        }
+        layout {
+            sequence: 10
+            region: @urls
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+            width: 80
+        }
+        validation {
+            valueRequired: true
+            maxLength: 4000
+        }
+        source {
+            type: expression
+            plsqlExpression: pkg_rtc_config.valor('REGIME_BASE_URL', false)
+            used: always
+        }
+        sessionState {
+            storage: request
+        }
+    )
+
+    pageItem P60_SIMPLES_BASE_URL (
+        type: textField
+        label {
+            label: Simples Nacional
+            alignment: right
+        }
+        layout {
+            sequence: 20
+            region: @urls
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+            width: 80
+        }
+        validation {
+            valueRequired: true
+            maxLength: 4000
+        }
+        source {
+            type: expression
+            plsqlExpression: pkg_rtc_config.valor('SIMPLES_BASE_URL', false)
+            used: always
+        }
+        sessionState {
+            storage: request
+        }
+    )
+
+    pageItem P60_DANFSE_BASE_URL (
+        type: textField
+        label {
+            label: Gerador de DANFSe
+            alignment: right
+        }
+        layout {
+            sequence: 30
+            region: @urls
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+            width: 80
+        }
+        validation {
+            valueRequired: true
+            maxLength: 4000
+        }
+        source {
+            type: expression
+            plsqlExpression: pkg_rtc_config.valor('DANFSE_BASE_URL', false)
+            used: always
+        }
+        sessionState {
+            storage: request
+        }
+    )
+
+    pageItem P60_HTTP_TIMEOUT_SEG (
+        type: numberField
+        label {
+            label: Tempo limite das chamadas (segundos)
+            alignment: right
+        }
+        layout {
+            sequence: 40
+            region: @urls
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        source {
+            type: expression
+            plsqlExpression: pkg_rtc_config.valor('HTTP_TIMEOUT_SEG', false)
+            used: always
+        }
+        sessionState {
+            storage: request
+        }
+    )
+
+    button salvar (
+        buttonName: SALVAR
+        label: Salvar
+        layout {
+            sequence: 10
+            region: @urls
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button testar (
+        buttonName: TESTAR
+        label: Testar conexão
+        layout {
+            sequence: 20
+            region: @urls
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text-with-icon
+            icon: fa-plug
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    region teste-conexao (
+        name: Resultado do teste de conexão
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select c001 as servico,
+                       c002 as url,
+                       c003 as situacao,
+                       n001 as http_status,
+                       n002 as tempo_ms,
+                       c004 as versao_app,
+                       c005 as versao_base,
+                       c006 as data_versao_base,
+                       c007 as mensagem
+                  from apex_collections
+                 where collection_name = 'RTC_TESTE_CONEXAO'
+                 order by seq_id
+                ```
+        }
+        layout {
+            sequence: 20
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        reportLayout {
+            numberOfRows: 500
+        }
+        componentAppearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+            ]
+        }
+        messages {
+            whenNoDataFound: Nenhum registro.
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery: select 1 from apex_collections where collection_name = 'RTC_TESTE_CONEXAO'
+        }
+
+        column SERVICO (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Serviço
+            }
+            layout {
+                sequence: 1
+            }
+        )
+
+        column URL (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: URL testada
+            }
+            layout {
+                sequence: 2
+            }
+        )
+
+        column SITUACAO (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Situação
+            }
+            layout {
+                sequence: 3
+            }
+        )
+
+        column HTTP_STATUS (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: HTTP
+                alignment: end
+            }
+            layout {
+                sequence: 4
+                columnAlignment: end
+            }
+        )
+
+        column TEMPO_MS (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Tempo (ms)
+                alignment: end
+            }
+            layout {
+                sequence: 5
+                columnAlignment: end
+            }
+        )
+
+        column VERSAO_APP (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Versão do serviço
+            }
+            layout {
+                sequence: 6
+            }
+        )
+
+        column VERSAO_BASE (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Versão da base
+            }
+            layout {
+                sequence: 7
+            }
+        )
+
+        column DATA_VERSAO_BASE (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Data da base
+            }
+            layout {
+                sequence: 8
+            }
+        )
+
+        column MENSAGEM (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: Mensagem
+            }
+            layout {
+                sequence: 9
+            }
+        )
+
+    )
+
+    region cache (
+        name: Cache dos dados abertos
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select descricao,
+                       cast(ultima_sincronizacao as date) as ultima_sincronizacao,
+                       data_referencia,
+                       qtd_registros,
+                       status,
+                       mensagem
+                  from rtc_cache_controle
+                 order by recurso
+                ```
+        }
+        layout {
+            sequence: 30
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        reportLayout {
+            numberOfRows: 500
+        }
+        componentAppearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+            ]
+        }
+        messages {
+            whenNoDataFound: Nenhum registro.
+        }
+
+        column DESCRICAO (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Recurso
+            }
+            layout {
+                sequence: 1
+            }
+        )
+
+        column ULTIMA_SINCRONIZACAO (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Última sincronização
+            }
+            layout {
+                sequence: 2
+            }
+            appearance {
+                formatMask: DD/MM/YYYY HH24:MI
+            }
+        )
+
+        column DATA_REFERENCIA (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Data de referência
+            }
+            layout {
+                sequence: 3
+            }
+            appearance {
+                formatMask: DD/MM/YYYY
+            }
+        )
+
+        column QTD_REGISTROS (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Registros
+                alignment: end
+            }
+            layout {
+                sequence: 4
+                columnAlignment: end
+            }
+        )
+
+        column STATUS (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Status
+            }
+            layout {
+                sequence: 5
+            }
+        )
+
+        column MENSAGEM (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Mensagem
+            }
+            layout {
+                sequence: 6
+            }
+        )
+
+    )
+
+    region cache-acoes (
+        name: Sincronização
+        type: staticContent
+        layout {
+            sequence: 35
+            slot: body
+        }
+        appearance {
+            template: @/buttons-container
+            templateOptions: [
+                #DEFAULT#
+                t-ButtonRegion--noPadding
+                t-ButtonRegion--noUI
+            ]
+        }
+    )
+
+    button sincronizar (
+        buttonName: SINCRONIZAR
+        label: Sincronizar agora
+        layout {
+            sequence: 10
+            region: @cache-acoes
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text-with-icon
+            icon: fa-refresh
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: Sincronizar todos os caches agora? A operação pode levar alguns minutos.
+            style: information
+        }
+    )
+
+    process salvar (
+        name: Salvar URLs
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                pkg_rtc_config.definir('REGIME_BASE_URL',  :P60_REGIME_BASE_URL);
+                pkg_rtc_config.definir('SIMPLES_BASE_URL', :P60_SIMPLES_BASE_URL);
+                pkg_rtc_config.definir('DANFSE_BASE_URL',  :P60_DANFSE_BASE_URL);
+                pkg_rtc_config.definir('HTTP_TIMEOUT_SEG', :P60_HTTP_TIMEOUT_SEG);
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 1943909900
+        }
+        successMessage {
+            successMessage: Configuração salva.
+        }
+        serverSideCondition {
+            whenButtonPressed: @salvar
+        }
+    )
+
+    process testar (
+        name: Testar conexão
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                declare
+                    l_teste pkg_rtc_http.t_teste_conexao;
+                begin
+                    -- Chama o endpoint de versão de cada serviço (DANFSe: /health/ready) por
+                    -- PKG_RTC_HTTP, com log, e guarda o resultado numa coleção para o relatório.
+                    apex_collection.create_or_truncate_collection('RTC_TESTE_CONEXAO');
+                    for s in (select column_value as servico
+                                from table(apex_t_varchar2('REGIME', 'SIMPLES', 'DANFSE'))) loop
+                        l_teste := pkg_rtc_http.testar_conexao(s.servico);
+                        apex_collection.add_member(
+                            p_collection_name => 'RTC_TESTE_CONEXAO',
+                            p_c001            => case s.servico when 'REGIME' then 'Regime Regular'
+                                                                when 'SIMPLES' then 'Simples Nacional'
+                                                                else 'Gerador de DANFSe' end,
+                            p_c002            => l_teste.url,
+                            p_c003            => case when l_teste.ok then 'OK' else 'Falhou' end,
+                            p_c004            => coalesce(l_teste.versao_app, l_teste.status_danfse),
+                            p_c005            => l_teste.versao_db,
+                            p_c006            => l_teste.data_versao_db,
+                            p_c007            => l_teste.mensagem,
+                            p_n001            => l_teste.http_status,
+                            p_n002            => l_teste.tempo_ms);
+                    end loop;
+                end;
+                ```
+        }
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 1160114295
+        }
+        serverSideCondition {
+            whenButtonPressed: @testar
+        }
+    )
+
+    process sincronizar (
+        name: Sincronizar caches
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                pkg_rtc_dados_abertos.sincronizar_tudo;
+                ```
+        }
+        execution {
+            sequence: 30
+        }
+        advanced {
+            executionMappingIdentifier: 3972868647
+        }
+        successMessage {
+            successMessage: Sincronização concluída. Confira o status de cada recurso.
+        }
+        serverSideCondition {
+            whenButtonPressed: @sincronizar
+        }
+    )
+
+)

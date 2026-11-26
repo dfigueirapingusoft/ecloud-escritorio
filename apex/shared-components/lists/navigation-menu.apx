@@ -1,0 +1,291 @@
+list navigation-menu (
+    name: Navigation Menu
+
+    entry painel (
+        label: Painel
+        icon {
+            imageIconCssClasses: fa-dashboard
+        }
+        layout {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 1
+            }
+        }
+    )
+
+    entry simulacoes (
+        label: Simulações
+        icon {
+            imageIconCssClasses: fa-calculator
+        }
+        layout {
+            sequence: 20
+        }
+        isCurrent {
+            type: pages
+            pages: [
+                30
+                31
+                32
+            ]
+        }
+        link {
+            target: {
+                page: 30
+            }
+        }
+    )
+
+    entry danfse (
+        label: DANFSe
+        icon {
+            imageIconCssClasses: fa-file-pdf-o
+        }
+        layout {
+            sequence: 30
+        }
+        isCurrent {
+            type: pages
+            pages: [
+                40
+                41
+            ]
+        }
+        link {
+            target: {
+                page: 40
+            }
+        }
+    )
+
+    entry clientes (
+        label: Clientes
+        icon {
+            imageIconCssClasses: fa-building-o
+        }
+        layout {
+            sequence: 40
+        }
+        isCurrent {
+            type: pages
+            pages: [
+                20
+                21
+            ]
+        }
+        link {
+            target: {
+                page: 20
+            }
+        }
+    )
+
+    entry consultas (
+        label: Consultas
+        icon {
+            imageIconCssClasses: fa-search
+        }
+        layout {
+            sequence: 50
+        }
+        link {
+            target: {
+                type: url
+                url: #
+            }
+        }
+    )
+
+    entry cclasstrib (
+        label: cClassTrib
+        icon {
+            imageIconCssClasses: fa-table
+        }
+        layout {
+            sequence: 60
+            parentEntry: @consultas
+        }
+        link {
+            target: {
+                page: 50
+            }
+        }
+    )
+
+    entry cst (
+        label: CST
+        icon {
+            imageIconCssClasses: fa-table
+        }
+        layout {
+            sequence: 70
+            parentEntry: @consultas
+        }
+        link {
+            target: {
+                page: 51
+            }
+        }
+    )
+
+    entry ncm (
+        label: NCM
+        icon {
+            imageIconCssClasses: fa-table
+        }
+        layout {
+            sequence: 80
+            parentEntry: @consultas
+        }
+        link {
+            target: {
+                page: 52
+            }
+        }
+    )
+
+    entry nbs (
+        label: NBS
+        icon {
+            imageIconCssClasses: fa-table
+        }
+        layout {
+            sequence: 90
+            parentEntry: @consultas
+        }
+        link {
+            target: {
+                page: 53
+            }
+        }
+    )
+
+    entry atividades-sn (
+        label: Atividades do Simples
+        icon {
+            imageIconCssClasses: fa-table
+        }
+        layout {
+            sequence: 100
+            parentEntry: @consultas
+        }
+        link {
+            target: {
+                page: 54
+            }
+        }
+    )
+
+    entry administracao (
+        label: Administração
+        icon {
+            imageIconCssClasses: fa-cog
+        }
+        layout {
+            sequence: 110
+        }
+        link {
+            target: {
+                type: url
+                url: #
+            }
+        }
+        security {
+            authorizationScheme: @administrador
+        }
+    )
+
+    entry usuarios (
+        label: Usuários
+        icon {
+            imageIconCssClasses: fa-users
+        }
+        layout {
+            sequence: 120
+            parentEntry: @administracao
+        }
+        isCurrent {
+            type: pages
+            pages: [
+                12
+                13
+            ]
+        }
+        link {
+            target: {
+                page: 12
+            }
+        }
+        security {
+            authorizationScheme: @administrador
+        }
+    )
+
+    entry escritorios (
+        label: Escritórios
+        icon {
+            imageIconCssClasses: fa-sitemap
+        }
+        layout {
+            sequence: 130
+            parentEntry: @administracao
+        }
+        isCurrent {
+            type: pages
+            pages: [
+                10
+                11
+            ]
+        }
+        link {
+            target: {
+                page: 10
+            }
+        }
+        security {
+            authorizationScheme: @admin-plataforma
+        }
+    )
+
+    entry configuracao (
+        label: Configuração das APIs
+        icon {
+            imageIconCssClasses: fa-plug
+        }
+        layout {
+            sequence: 140
+            parentEntry: @administracao
+        }
+        link {
+            target: {
+                page: 60
+            }
+        }
+        security {
+            authorizationScheme: @admin-plataforma
+        }
+    )
+
+    entry log-chamadas (
+        label: Log de chamadas
+        icon {
+            imageIconCssClasses: fa-list-alt
+        }
+        layout {
+            sequence: 150
+            parentEntry: @administracao
+        }
+        link {
+            target: {
+                page: 61
+            }
+        }
+        security {
+            authorizationScheme: @administrador
+        }
+    )
+
+)

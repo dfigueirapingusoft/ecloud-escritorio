@@ -1,0 +1,19 @@
+lov tp-oper-gov (
+    name: TP_OPER_GOV
+    source {
+        location: staticValues
+    }
+
+    entry tp-oper-gov-1 (
+        sequence: 1
+        display: 1 - Fornecimento
+        return: 1
+    )
+
+    entry tp-oper-gov-2 (
+        sequence: 2
+        display: 2 - Recebimento do pagamento
+        return: 2
+    )
+
+)

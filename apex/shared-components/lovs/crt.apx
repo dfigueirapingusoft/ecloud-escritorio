@@ -1,0 +1,31 @@
+lov crt (
+    name: CRT
+    source {
+        location: staticValues
+    }
+
+    entry crt-1 (
+        sequence: 1
+        display: 1 - Simples Nacional
+        return: 1
+    )
+
+    entry crt-2 (
+        sequence: 2
+        display: 2 - Simples Nacional, excesso de sublimite
+        return: 2
+    )
+
+    entry crt-3 (
+        sequence: 3
+        display: 3 - Regime Normal
+        return: 3
+    )
+
+    entry crt-4 (
+        sequence: 4
+        display: 4 - MEI
+        return: 4
+    )
+
+)

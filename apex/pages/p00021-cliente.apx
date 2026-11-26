@@ -1,0 +1,611 @@
+page 21 (
+    name: Cliente
+    alias: CLIENTE
+    title: Cliente
+    pageGroup: @cadastros
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @/modal-dialog
+        templateOptions: #DEFAULT#
+    }
+    dialog {
+        chained: false
+        resizable: false
+    }
+
+    region buttons (
+        name: Botões
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: dialogFooter
+        }
+        appearance {
+            template: @/buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region cliente (
+        name: Cliente
+        type: form
+        source {
+            location: localDatabase
+            tableName: CLIENTE
+        }
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @/blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        edit {
+            enabled: true
+            allowedOperations: [
+                add
+                update
+                delete
+            ]
+        }
+    )
+
+    pageItem P21_CLIENTE_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @cliente
+            slot: regionBody
+        }
+        source {
+            formRegion: @cliente
+            column: CLIENTE_ID
+            dataType: number
+            primaryKey: true
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P21_CNPJ (
+        type: textField
+        label {
+            label: CNPJ
+            alignment: right
+        }
+        layout {
+            sequence: 20
+            region: @cliente
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+            maxLength: 18
+        }
+        source {
+            formRegion: @cliente
+            column: CNPJ
+            dataType: varchar2
+        }
+        help {
+            inlineHelpText: Numérico ou alfanumérico; a máscara é opcional.
+        }
+    )
+
+    pageItem P21_RAZAO_SOCIAL (
+        type: textField
+        label {
+            label: Razão social
+            alignment: right
+        }
+        layout {
+            sequence: 30
+            region: @cliente
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+            maxLength: 150
+        }
+        source {
+            formRegion: @cliente
+            column: RAZAO_SOCIAL
+            dataType: varchar2
+        }
+    )
+
+    pageItem P21_NOME_FANTASIA (
+        type: textField
+        label {
+            label: Nome fantasia
+            alignment: right
+        }
+        layout {
+            sequence: 40
+            region: @cliente
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 150
+        }
+        source {
+            formRegion: @cliente
+            column: NOME_FANTASIA
+            dataType: varchar2
+        }
+    )
+
+    pageItem P21_UF (
+        type: selectList
+        label {
+            label: UF
+            alignment: right
+        }
+        layout {
+            sequence: 50
+            region: @cliente
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        lov {
+            type: sharedComponent
+            lov: @ufs
+            displayNullValue: true
+            nullDisplayValue: - Selecione -
+        }
+        source {
+            formRegion: @cliente
+            column: UF
+            dataType: varchar2
+        }
+    )
+
+    pageItem P21_MUNICIPIO_IBGE (
+        type: popupLov
+        label {
+            label: Município (IBGE)
+            alignment: right
+        }
+        layout {
+            sequence: 60
+            region: @cliente
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select nome || ' (' || codigo || ')' d, codigo r
+                  from rtc_da_municipio
+                 where sigla_uf = :P21_UF
+                 order by nome
+                ```
+        }
+        source {
+            formRegion: @cliente
+            column: MUNICIPIO_IBGE
+            dataType: number
+        }
+        cascadingLov {
+            parentItems: P21_UF
+        }
+    )
+
+    pageItem P21_REGIME (
+        type: radioGroup
+        label {
+            label: Regime
+            alignment: right
+        }
+        layout {
+            sequence: 70
+            region: @cliente
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        lov {
+            type: sharedComponent
+            lov: @regimes
+        }
+        source {
+            formRegion: @cliente
+            column: REGIME
+            dataType: varchar2
+        }
+        default {
+            type: static
+            staticValue: REGULAR
+        }
+    )
+
+    pageItem P21_CRT (
+        type: selectList
+        label {
+            label: CRT (Código de Regime Tributário)
+            alignment: right
+        }
+        layout {
+            sequence: 80
+            region: @cliente
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        lov {
+            type: sharedComponent
+            lov: @crt
+            displayNullValue: true
+            nullDisplayValue: - Não informado -
+        }
+        source {
+            formRegion: @cliente
+            column: CRT
+            dataType: varchar2
+        }
+    )
+
+    pageItem P21_EMAIL (
+        type: textField
+        label {
+            label: E-mail
+            alignment: right
+        }
+        layout {
+            sequence: 90
+            region: @cliente
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 255
+        }
+        source {
+            formRegion: @cliente
+            column: EMAIL
+            dataType: varchar2
+        }
+    )
+
+    pageItem P21_TELEFONE (
+        type: textField
+        label {
+            label: Telefone
+            alignment: right
+        }
+        layout {
+            sequence: 100
+            region: @cliente
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 20
+        }
+        source {
+            formRegion: @cliente
+            column: TELEFONE
+            dataType: varchar2
+        }
+    )
+
+    pageItem P21_OBSERVACAO (
+        type: textarea
+        label {
+            label: Observação
+            alignment: right
+        }
+        layout {
+            sequence: 110
+            region: @cliente
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 4000
+        }
+        source {
+            formRegion: @cliente
+            column: OBSERVACAO
+            dataType: varchar2
+        }
+    )
+
+    pageItem P21_ATIVO (
+        type: switch
+        label {
+            label: Ativo
+            alignment: right
+        }
+        layout {
+            sequence: 120
+            region: @cliente
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            useDefaults: false
+            onValue: S
+            offValue: N
+        }
+        source {
+            formRegion: @cliente
+            column: ATIVO
+            dataType: varchar2
+        }
+        default {
+            type: static
+            staticValue: S
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Cancelar
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button delete (
+        buttonName: DELETE
+        label: Excluir
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: delete
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: [
+                #DEFAULT#
+                t-Button--danger
+                t-Button--simple
+            ]
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: delete
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: &APP_TEXT$DELETE_MSG!RAW.
+            style: danger
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P21_CLIENTE_ID
+        }
+        security {
+            authorizationScheme: @contador-ou-administrador
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Salvar alterações
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: update
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P21_CLIENTE_ID
+        }
+        security {
+            authorizationScheme: @contador-ou-administrador
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Criar
+        layout {
+            sequence: 40
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: insert
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P21_CLIENTE_ID
+        }
+        security {
+            authorizationScheme: @contador-ou-administrador
+        }
+    )
+
+    validation cnpj-valido (
+        name: CNPJ válido
+        validation {
+            type: functionBodyReturningBoolean
+            plsqlFunctionBody:
+                ```plsql
+                return pkg_ecloud_util.cnpj_valido(:P21_CNPJ);
+                ```
+        }
+        error {
+            errorMessage: CNPJ inválido: confira os dígitos verificadores.
+            associatedItem: @P21_CNPJ
+        }
+        execution {
+            sequence: 10
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE
+        }
+    )
+
+    validation municipio-da-uf (
+        name: Município pertence à UF
+        validation {
+            type: functionBodyReturningBoolean
+            plsqlFunctionBody:
+                ```plsql
+                return pkg_ecloud_util.municipio_valido(:P21_UF, to_number(:P21_MUNICIPIO_IBGE));
+                ```
+        }
+        error {
+            errorMessage: O município informado não pertence à UF.
+            associatedItem: @P21_MUNICIPIO_IBGE
+        }
+        execution {
+            sequence: 20
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancelar diálogo
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    process initialize-form (
+        name: Inicializar formulário
+        type: formInitialization
+        formRegion: @cliente
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 4066995115
+        }
+    )
+
+    process process-form (
+        name: Gravar formulário
+        type: formAutoRowProcessing
+        formRegion: @cliente
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 3464554397
+        }
+    )
+
+    process close-dialog (
+        name: Fechar diálogo
+        type: closeDialog
+        settings {
+            showSuccessMessages: false
+        }
+        execution {
+            sequence: 50
+        }
+        advanced {
+            executionMappingIdentifier: 4698360966
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE,DELETE
+        }
+    )
+
+)

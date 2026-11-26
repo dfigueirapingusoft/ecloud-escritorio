@@ -1,0 +1,422 @@
+page 41 (
+    name: Gerar DANFSe
+    alias: GERAR-DANFSE
+    title: Gerar DANFSe
+    pageGroup: @danfse
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @/modal-dialog
+        templateOptions: #DEFAULT#
+    }
+    dialog {
+        chained: false
+        resizable: false
+        width: 720
+    }
+
+    region buttons (
+        name: Botões
+        type: staticContent
+        layout {
+            sequence: 30
+            slot: dialogFooter
+        }
+        appearance {
+            template: @/buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region envio (
+        name: Envio do XML
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @/blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region situacao (
+        name: Situação
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: contentBody
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P41_DANFSE_ID
+        }
+    )
+
+    pageItem P41_DANFSE_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @envio
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P41_CLIENTE_ID (
+        type: popupLov
+        label {
+            label: Cliente
+            alignment: right
+        }
+        layout {
+            sequence: 20
+            region: @envio
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        lov {
+            type: sharedComponent
+            lov: @clientes
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P41_DANFSE_ID
+        }
+    )
+
+    pageItem P41_ARQUIVO (
+        type: fileUpload
+        label {
+            label: XML da NFS-e (Padrão Nacional, até 5 MiB)
+            alignment: right
+        }
+        layout {
+            sequence: 30
+            region: @envio
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P41_DANFSE_ID
+        }
+        display {
+            displayAs: inlineDropzone
+            dropzoneTitle: Arraste o XML da NFS-e
+            dropzoneDesc: ou clique para escolher o arquivo
+        }
+        storage {
+            type: appTempFiles
+            purgeFileAt: endOfRequest
+            fileTypes: .xml,text/xml,application/xml
+            maxFileSize: 5120
+        }
+    )
+
+    pageItem P41_STC (
+        type: radioGroup
+        label {
+            label: Situação da NFS-e no DANFSe
+            alignment: right
+        }
+        layout {
+            sequence: 40
+            region: @envio
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        lov {
+            type: sharedComponent
+            lov: @stc
+        }
+        source {
+            type: sqlQuerySingleValue
+            sqlQuery: select stc from danfse where danfse_id = :P41_DANFSE_ID
+        }
+        default {
+            type: static
+            staticValue: 0
+        }
+    )
+
+    pageItem P41_CANHOTO (
+        type: switch
+        label {
+            label: Imprimir canhoto
+            alignment: right
+        }
+        layout {
+            sequence: 50
+            region: @envio
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            useDefaults: false
+            onValue: S
+            offValue: N
+        }
+        source {
+            type: sqlQuerySingleValue
+            sqlQuery: select canhoto from danfse where danfse_id = :P41_DANFSE_ID
+        }
+        default {
+            type: static
+            staticValue: S
+        }
+    )
+
+    pageItem P41_SITUACAO (
+        type: displayOnly
+        label {
+            label: Situação
+            alignment: right
+        }
+        layout {
+            sequence: 10
+            region: @situacao
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        source {
+            type: sqlQuerySingleValue
+            sqlQuery:
+                ```sql
+                select c.razao_social || ' - ' || d.nome_arquivo || ' - status ' || d.status
+                       || case when d.mensagem_erro is not null then ': ' || d.mensagem_erro end
+                  from danfse d
+                  join cliente c
+                    on c.cliente_id = d.cliente_id
+                 where d.danfse_id = :P41_DANFSE_ID
+                ```
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Fechar
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button baixar (
+        buttonName: BAIXAR
+        label: Baixar PDF
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text-with-icon
+            icon: fa-download
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 42
+                items: {
+                    P42_DANFSE_ID: &P41_DANFSE_ID.
+                }
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery: select 1 from danfse where danfse_id = :P41_DANFSE_ID and status = 'GERADO'
+        }
+    )
+
+    button regerar (
+        buttonName: REGERAR
+        label: Gerar novamente
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text-with-icon
+            icon: fa-refresh
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P41_DANFSE_ID
+        }
+    )
+
+    button gerar (
+        buttonName: GERAR
+        label: Gerar DANFSe
+        layout {
+            sequence: 40
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text-with-icon
+            icon: fa-file-pdf-o
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P41_DANFSE_ID
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Fechar diálogo
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    process gerar (
+        name: Validar XML e gerar o PDF
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                -- Valida o XML (Padrão Nacional, XMLEXISTS, até 5 MiB) e chama o gerador de
+                -- DANFSe por PKG_RTC_HTTP. XML recusado ou falha ficam registrados com a
+                -- mensagem amigável e a página reabre mostrando a situação.
+                :P41_DANFSE_ID := pkg_rtc_danfse.registrar_upload(
+                                      p_cliente_id     => :P41_CLIENTE_ID,
+                                      p_temp_file_name => :P41_ARQUIVO,
+                                      p_stc            => :P41_STC,
+                                      p_canhoto        => coalesce(:P41_CANHOTO, 'N'));
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 3030352580
+        }
+        serverSideCondition {
+            whenButtonPressed: @gerar
+        }
+    )
+
+    process regerar (
+        name: Gerar novamente
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                pkg_rtc_danfse.regerar(:P41_DANFSE_ID, :P41_STC, coalesce(:P41_CANHOTO, 'N'));
+                ```
+        }
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 3628786760
+        }
+        serverSideCondition {
+            whenButtonPressed: @regerar
+        }
+    )
+
+    process close-dialog (
+        name: Fechar quando o PDF foi gerado
+        type: closeDialog
+        execution {
+            sequence: 50
+        }
+        advanced {
+            executionMappingIdentifier: 3514836136
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery: select 1 from danfse where danfse_id = :P41_DANFSE_ID and status = 'GERADO'
+        }
+    )
+
+    branch reabrir (
+        name: Reabrir mostrando a situação
+        execution {
+            sequence: 10
+        }
+        behavior {
+            type: pageOrUrl
+            target: {
+                page: 41
+                items: {
+                    P41_DANFSE_ID: &P41_DANFSE_ID.
+                }
+            }
+        }
+    )
+
+)

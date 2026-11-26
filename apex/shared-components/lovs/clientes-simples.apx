@@ -1,0 +1,18 @@
+lov clientes-simples (
+    name: CLIENTES_SIMPLES
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select razao_social || ' (' || pkg_ecloud_util.formatar_cnpj(cnpj) || ')' d, cliente_id r
+              from cliente
+             where ativo = 'S'
+               and regime = 'SIMPLES'
+             order by razao_social
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)

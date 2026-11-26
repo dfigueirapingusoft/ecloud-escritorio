@@ -1,0 +1,77 @@
+page 42 (
+    name: Baixar DANFSe
+    alias: BAIXAR-DANFSE
+    title: Baixar DANFSe
+    pageGroup: @danfse
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+
+    region download (
+        name: Download
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                <p>Preparando o download...</p>
+                ```
+        }
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P42_DANFSE_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @download
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    process baixar-pdf (
+        name: Baixar PDF
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                declare
+                    l_pdf  blob;
+                    l_nome danfse.pdf_nome%type;
+                begin
+                    -- VPD: só devolve DANFSe do escritório do usuário.
+                    select d.pdf, coalesce(d.pdf_nome, 'danfse-' || d.danfse_id || '.pdf')
+                      into l_pdf, l_nome
+                      from danfse d
+                     where d.danfse_id = :P42_DANFSE_ID
+                       and d.pdf is not null;
+                    apex_http.download(
+                        p_blob         => l_pdf,
+                        p_content_type => 'application/pdf',
+                        p_filename     => l_nome);
+                exception
+                    when no_data_found then
+                        raise_application_error(-20050, 'PDF não encontrado para este DANFSe.');
+                end;
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 2985732307
+        }
+    )
+
+)

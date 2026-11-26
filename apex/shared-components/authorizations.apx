@@ -1,0 +1,43 @@
+authorization usuario-cadastrado (
+    name: Usuário cadastrado
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody: return pkg_ecloud_ctx.usuario_id is not null and pkg_ecloud_ctx.escritorio_id is not null;
+    }
+    error {
+        errorMessage: Seu usuário não está cadastrado ou ativo em nenhum escritório. Procure o administrador do seu escritório.
+    }
+)
+
+authorization administrador (
+    name: Administrador do escritório
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody: return pkg_ecloud_ctx.tem_perfil('ADMINISTRADOR') or pkg_ecloud_ctx.is_admin_plataforma;
+    }
+    error {
+        errorMessage: Acesso restrito ao perfil Administrador.
+    }
+)
+
+authorization contador-ou-administrador (
+    name: Contador ou administrador
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody: return pkg_ecloud_ctx.tem_perfil('ADMINISTRADOR,CONTADOR') or pkg_ecloud_ctx.is_admin_plataforma;
+    }
+    error {
+        errorMessage: Acesso restrito aos perfis Administrador e Contador.
+    }
+)
+
+authorization admin-plataforma (
+    name: Administrador da plataforma
+    type: plSqlFunctionBody
+    settings {
+        plsqlFunctionBody: return pkg_ecloud_ctx.is_admin_plataforma;
+    }
+    error {
+        errorMessage: Acesso restrito ao administrador da plataforma.
+    }
+)

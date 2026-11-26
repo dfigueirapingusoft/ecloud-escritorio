@@ -1,0 +1,31 @@
+lov tp-ente-gov (
+    name: TP_ENTE_GOV
+    source {
+        location: staticValues
+    }
+
+    entry tp-ente-gov-1 (
+        sequence: 1
+        display: 1 - União
+        return: 1
+    )
+
+    entry tp-ente-gov-2 (
+        sequence: 2
+        display: 2 - Estado
+        return: 2
+    )
+
+    entry tp-ente-gov-3 (
+        sequence: 3
+        display: 3 - Distrito Federal
+        return: 3
+    )
+
+    entry tp-ente-gov-4 (
+        sequence: 4
+        display: 4 - Município
+        return: 4
+    )
+
+)

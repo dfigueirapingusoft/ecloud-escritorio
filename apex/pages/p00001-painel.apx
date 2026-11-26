@@ -1,0 +1,663 @@
+page 1 (
+    name: Painel
+    alias: PAINEL
+    title: Painel do escritório
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+
+    region breadcrumb (
+        name: Breadcrumb
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region filtros (
+        name: Filtros
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+            ]
+        }
+    )
+
+    pageItem P1_DATA_INICIO (
+        type: datePicker
+        label {
+            label: De
+            alignment: right
+        }
+        layout {
+            sequence: 10
+            region: @filtros
+            slot: regionBody
+            columnSpan: 3
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        default {
+            type: expression
+            plsqlExpression: add_months(trunc(sysdate, 'MM'), -5)
+        }
+        sessionState {
+            storage: session
+        }
+    )
+
+    pageItem P1_DATA_FIM (
+        type: datePicker
+        label {
+            label: Até
+            alignment: right
+        }
+        layout {
+            sequence: 20
+            region: @filtros
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 3
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        default {
+            type: expression
+            plsqlExpression: trunc(sysdate)
+        }
+        sessionState {
+            storage: session
+        }
+    )
+
+    pageItem P1_REGIME (
+        type: selectList
+        label {
+            label: Regime
+            alignment: right
+        }
+        layout {
+            sequence: 30
+            region: @filtros
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 2
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        lov {
+            type: sharedComponent
+            lov: @regimes
+            displayNullValue: true
+            nullDisplayValue: - Todos -
+        }
+        sessionState {
+            storage: session
+        }
+    )
+
+    pageItem P1_CLIENTE_ID (
+        type: popupLov
+        label {
+            label: Cliente
+            alignment: right
+        }
+        layout {
+            sequence: 40
+            region: @filtros
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        lov {
+            type: sharedComponent
+            lov: @clientes
+            displayNullValue: true
+            nullDisplayValue: - Todos -
+        }
+        sessionState {
+            storage: session
+        }
+    )
+
+    button aplicar (
+        buttonName: APLICAR
+        label: Aplicar filtros
+        layout {
+            sequence: 10
+            region: @filtros
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    region resumo (
+        name: Resumo do período
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select count(*) as simulacoes,
+                       count(case when s.status = 'PROCESSADA' then 1 end) as processadas,
+                       count(case when s.status = 'PROCESSADA_COM_PENDENCIAS' then 1 end) as com_pendencias,
+                       count(case when s.status in ('REJEITADA', 'FALHA') then 1 end) as com_erro,
+                       count(distinct s.cliente_id) as clientes,
+                       sum(s.tot_tributos) as tributos_simulados
+                  from simulacao s
+                 where cast(s.criado_em as date) >= :P1_DATA_INICIO
+                   and cast(s.criado_em as date) < :P1_DATA_FIM + 1
+                   and (:P1_REGIME is null or s.regime = :P1_REGIME)
+                   and (:P1_CLIENTE_ID is null or s.cliente_id = :P1_CLIENTE_ID)
+                ```
+            pageItemsToSubmit: P1_DATA_INICIO,P1_DATA_FIM,P1_REGIME,P1_CLIENTE_ID
+        }
+        layout {
+            sequence: 20
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        reportLayout {
+            numberOfRows: 500
+        }
+        componentAppearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+            ]
+        }
+        messages {
+            whenNoDataFound: Nenhum registro.
+        }
+
+        column SIMULACOES (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Simulações
+                alignment: end
+            }
+            layout {
+                sequence: 1
+                columnAlignment: end
+            }
+        )
+
+        column PROCESSADAS (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Processadas
+                alignment: end
+            }
+            layout {
+                sequence: 2
+                columnAlignment: end
+            }
+        )
+
+        column COM_PENDENCIAS (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Com pendências
+                alignment: end
+            }
+            layout {
+                sequence: 3
+                columnAlignment: end
+            }
+        )
+
+        column COM_ERRO (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Rejeitadas ou com falha
+                alignment: end
+            }
+            layout {
+                sequence: 4
+                columnAlignment: end
+            }
+        )
+
+        column CLIENTES (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Clientes
+                alignment: end
+            }
+            layout {
+                sequence: 5
+                columnAlignment: end
+            }
+        )
+
+        column TRIBUTOS_SIMULADOS (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Tributos simulados
+                alignment: end
+            }
+            layout {
+                sequence: 6
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: FML999G999G999G990D00
+            }
+        )
+
+    )
+
+    region por-periodo (
+        name: Simulações por mês
+        type: chart
+        layout {
+            sequence: 30
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
+        }
+        chart {
+            type: bar
+        }
+        performance {
+            lazyLoading: true
+        }
+        legend {
+            show: false
+        }
+        messages {
+            whenNoDataFound: Sem dados no período.
+        }
+
+        series series (
+            name: Simulações
+            execution {
+                sequence: 10
+            }
+            source {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    select to_char(trunc(cast(s.criado_em as date), 'MM'), 'MM/YYYY') as mes,
+                           count(*) as qtd
+                      from simulacao s
+                     where cast(s.criado_em as date) >= :P1_DATA_INICIO
+                       and cast(s.criado_em as date) < :P1_DATA_FIM + 1
+                       and (:P1_REGIME is null or s.regime = :P1_REGIME)
+                       and (:P1_CLIENTE_ID is null or s.cliente_id = :P1_CLIENTE_ID)
+                     group by trunc(cast(s.criado_em as date), 'MM')
+                     order by trunc(cast(s.criado_em as date), 'MM')
+                    ```
+                pageItemsToSubmit: P1_DATA_INICIO,P1_DATA_FIM,P1_REGIME,P1_CLIENTE_ID
+            }
+            columnMapping {
+                label: MES
+                value: QTD
+            }
+            label {
+                show: true
+            }
+        )
+
+        axis x (
+            name: x
+            majorTicks {
+                show: auto
+            }
+        )
+
+        axis y (
+            name: y
+            value {
+                format: decimal
+                decimalPlaces: 0
+            }
+            majorTicks {
+                show: auto
+            }
+        )
+
+    )
+
+    region por-regime (
+        name: Simulações por regime
+        type: chart
+        layout {
+            sequence: 40
+            slot: body
+            startNewRow: false
+        }
+        appearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
+        }
+        chart {
+            type: donut
+        }
+        performance {
+            lazyLoading: true
+        }
+        value {
+            format: decimal
+            decimalPlaces: 0
+        }
+        legend {
+            show: true
+        }
+        messages {
+            whenNoDataFound: Sem dados no período.
+        }
+
+        series series (
+            name: Simulações
+            execution {
+                sequence: 10
+            }
+            source {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    select case s.regime when 'REGULAR' then 'Regime Regular' else 'Simples Nacional' end as regime,
+                           count(*) as qtd
+                      from simulacao s
+                     where cast(s.criado_em as date) >= :P1_DATA_INICIO
+                       and cast(s.criado_em as date) < :P1_DATA_FIM + 1
+                       and (:P1_REGIME is null or s.regime = :P1_REGIME)
+                       and (:P1_CLIENTE_ID is null or s.cliente_id = :P1_CLIENTE_ID)
+                     group by s.regime
+                    ```
+                pageItemsToSubmit: P1_DATA_INICIO,P1_DATA_FIM,P1_REGIME,P1_CLIENTE_ID
+            }
+            columnMapping {
+                label: REGIME
+                value: QTD
+            }
+            label {
+                show: true
+            }
+        )
+
+    )
+
+    region por-cliente (
+        name: Simulações por cliente (10 maiores)
+        type: chart
+        layout {
+            sequence: 50
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
+        }
+        chart {
+            type: bar
+        }
+        chartAppearance {
+            orientation: horizontal
+        }
+        performance {
+            lazyLoading: true
+        }
+        legend {
+            show: false
+        }
+        messages {
+            whenNoDataFound: Sem dados no período.
+        }
+
+        series series (
+            name: Simulações
+            execution {
+                sequence: 10
+            }
+            source {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    select c.razao_social as cliente,
+                           count(*) as qtd
+                      from simulacao s
+                      join cliente c
+                        on c.cliente_id = s.cliente_id
+                     where cast(s.criado_em as date) >= :P1_DATA_INICIO
+                       and cast(s.criado_em as date) < :P1_DATA_FIM + 1
+                       and (:P1_REGIME is null or s.regime = :P1_REGIME)
+                       and (:P1_CLIENTE_ID is null or s.cliente_id = :P1_CLIENTE_ID)
+                     group by c.razao_social
+                     order by 2 desc
+                     fetch first 10 rows only
+                    ```
+                pageItemsToSubmit: P1_DATA_INICIO,P1_DATA_FIM,P1_REGIME,P1_CLIENTE_ID
+            }
+            columnMapping {
+                label: CLIENTE
+                value: QTD
+            }
+            label {
+                show: true
+            }
+        )
+
+        axis x (
+            name: x
+            majorTicks {
+                show: auto
+            }
+        )
+
+        axis y (
+            name: y
+            value {
+                format: decimal
+                decimalPlaces: 0
+            }
+            majorTicks {
+                show: auto
+            }
+        )
+
+    )
+
+    region erros-frequentes (
+        name: Erros mais frequentes
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select e.codigo,
+                       coalesce(max(cat.titulo), max(e.titulo)) as titulo,
+                       max(cat.orientacao) as orientacao,
+                       count(*) as ocorrencias,
+                       count(distinct e.simulacao_id) as simulacoes,
+                       count(distinct s.cliente_id) as clientes
+                  from simulacao_item_erro e
+                  join simulacao s
+                    on s.simulacao_id = e.simulacao_id
+                  left join rtc_erro_catalogo cat
+                    on cat.codigo = e.codigo
+                 where cast(s.criado_em as date) >= :P1_DATA_INICIO
+                   and cast(s.criado_em as date) < :P1_DATA_FIM + 1
+                   and (:P1_REGIME is null or s.regime = :P1_REGIME)
+                   and (:P1_CLIENTE_ID is null or s.cliente_id = :P1_CLIENTE_ID)
+                 group by e.codigo
+                 order by ocorrencias desc
+                 fetch first 10 rows only
+                ```
+            pageItemsToSubmit: P1_DATA_INICIO,P1_DATA_FIM,P1_REGIME,P1_CLIENTE_ID
+        }
+        layout {
+            sequence: 60
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        reportLayout {
+            numberOfRows: 500
+        }
+        componentAppearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+            ]
+        }
+        messages {
+            whenNoDataFound: Nenhum erro no período.
+        }
+
+        column CODIGO (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Código
+            }
+            layout {
+                sequence: 1
+            }
+        )
+
+        column TITULO (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Erro
+            }
+            layout {
+                sequence: 2
+            }
+        )
+
+        column ORIENTACAO (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Como corrigir
+            }
+            layout {
+                sequence: 3
+            }
+        )
+
+        column OCORRENCIAS (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Ocorrências
+                alignment: end
+            }
+            layout {
+                sequence: 4
+                columnAlignment: end
+            }
+        )
+
+        column SIMULACOES (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Simulações
+                alignment: end
+            }
+            layout {
+                sequence: 5
+                columnAlignment: end
+            }
+        )
+
+        column CLIENTES (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Clientes
+                alignment: end
+            }
+            layout {
+                sequence: 6
+                columnAlignment: end
+            }
+        )
+
+    )
+
+)

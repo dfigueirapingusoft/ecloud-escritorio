@@ -1,0 +1,1763 @@
+page 31 (
+    name: Simulação - Regime Regular
+    alias: SIMULACAO-REGIME
+    title: Simulação - Regime Regular
+    pageGroup: @simulacoes
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+    help {
+        helpText:
+            ```html
+            <p>Preencha o cabeçalho e salve. Depois inclua os itens na grade e clique em <strong>Calcular</strong>.
+            A calculadora da Reforma Tributária devolve o resultado por item; erros aparecem com a indicação do item e do campo.</p>
+            ```
+    }
+
+    region breadcrumb (
+        name: Breadcrumb
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region buttons (
+        name: Ações
+        type: staticContent
+        layout {
+            sequence: 5
+            slot: body
+        }
+        appearance {
+            template: @/buttons-container
+            templateOptions: [
+                #DEFAULT#
+                t-ButtonRegion--noPadding
+                t-ButtonRegion--noUI
+            ]
+        }
+    )
+
+    region simulacao (
+        name: Cabeçalho da operação
+        type: form
+        source {
+            location: localDatabase
+            tableName: SIMULACAO
+        }
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        edit {
+            enabled: true
+            allowedOperations: [
+                add
+                update
+                delete
+            ]
+        }
+    )
+
+    pageItem P31_SIMULACAO_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @simulacao
+            slot: regionBody
+        }
+        source {
+            formRegion: @simulacao
+            column: SIMULACAO_ID
+            dataType: number
+            primaryKey: true
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P31_REGIME (
+        type: hidden
+        layout {
+            sequence: 20
+            region: @simulacao
+            slot: regionBody
+        }
+        source {
+            formRegion: @simulacao
+            column: REGIME
+            dataType: varchar2
+        }
+        default {
+            type: static
+            staticValue: REGULAR
+        }
+    )
+
+    pageItem P31_VERSAO_LEIAUTE (
+        type: hidden
+        layout {
+            sequence: 30
+            region: @simulacao
+            slot: regionBody
+        }
+        source {
+            formRegion: @simulacao
+            column: VERSAO_LEIAUTE
+            dataType: varchar2
+        }
+        default {
+            type: expression
+            plsqlExpression: pkg_rtc_config.valor('VERSAO_LEIAUTE_REGIME')
+        }
+    )
+
+    pageItem P31_CLIENTE_ID (
+        type: popupLov
+        label {
+            label: Cliente
+            alignment: right
+        }
+        layout {
+            sequence: 40
+            region: @simulacao
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        lov {
+            type: sharedComponent
+            lov: @clientes-regular
+        }
+        source {
+            formRegion: @simulacao
+            column: CLIENTE_ID
+            dataType: number
+        }
+    )
+
+    pageItem P31_DESCRICAO (
+        type: textField
+        label {
+            label: Descrição
+            alignment: right
+        }
+        layout {
+            sequence: 50
+            region: @simulacao
+            slot: regionBody
+            startNewRow: false
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 200
+        }
+        source {
+            formRegion: @simulacao
+            column: DESCRICAO
+            dataType: varchar2
+        }
+    )
+
+    pageItem P31_DH_FATO_GERADOR (
+        type: datePicker
+        label {
+            label: Data e hora do fato gerador
+            alignment: right
+        }
+        layout {
+            sequence: 60
+            region: @simulacao
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+            formatMask: DD/MM/YYYY HH24:MI
+        }
+        settings {
+            showTime: true
+        }
+        validation {
+            valueRequired: true
+        }
+        source {
+            formRegion: @simulacao
+            column: DH_FATO_GERADOR
+            dataType: timestampWithTimeZone
+        }
+        default {
+            type: expression
+            plsqlExpression: systimestamp
+        }
+    )
+
+    pageItem P31_UF (
+        type: selectList
+        label {
+            label: UF da operação
+            alignment: right
+        }
+        layout {
+            sequence: 70
+            region: @simulacao
+            slot: regionBody
+            startNewRow: false
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        lov {
+            type: sharedComponent
+            lov: @ufs
+            displayNullValue: true
+            nullDisplayValue: - Do cliente -
+        }
+        source {
+            formRegion: @simulacao
+            column: UF
+            dataType: varchar2
+        }
+        help {
+            inlineHelpText: Em branco: usa a UF do cliente.
+        }
+    )
+
+    pageItem P31_MUNICIPIO_IBGE (
+        type: popupLov
+        label {
+            label: Município da operação (IBGE)
+            alignment: right
+        }
+        layout {
+            sequence: 80
+            region: @simulacao
+            slot: regionBody
+            startNewRow: false
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select nome || ' (' || codigo || ')' d, codigo r
+                  from rtc_da_municipio
+                 where sigla_uf = :P31_UF
+                 order by nome
+                ```
+        }
+        source {
+            formRegion: @simulacao
+            column: MUNICIPIO_IBGE
+            dataType: number
+        }
+        help {
+            inlineHelpText: Em branco: usa o município do cliente.
+        }
+        cascadingLov {
+            parentItems: P31_UF
+            parentRequired: false
+        }
+    )
+
+    pageItem P31_TP_DOC (
+        type: selectList
+        label {
+            label: Tipo de documento (opcional)
+            alignment: right
+        }
+        layout {
+            sequence: 90
+            region: @simulacao
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        lov {
+            type: sharedComponent
+            lov: @tipos-dfe
+            displayNullValue: true
+            nullDisplayValue: - Não informado -
+        }
+        source {
+            formRegion: @simulacao
+            column: TP_DOC
+            dataType: number
+        }
+    )
+
+    pageItem P31_TP_ENTE_GOV (
+        type: selectList
+        label {
+            label: Compra governamental: ente
+            alignment: right
+        }
+        layout {
+            sequence: 100
+            region: @simulacao
+            slot: regionBody
+            startNewRow: false
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        lov {
+            type: sharedComponent
+            lov: @tp-ente-gov
+            displayNullValue: true
+            nullDisplayValue: - Não é compra governamental -
+        }
+        source {
+            formRegion: @simulacao
+            column: TP_ENTE_GOV
+            dataType: number
+        }
+    )
+
+    pageItem P31_TP_OPER_GOV (
+        type: selectList
+        label {
+            label: Compra governamental: operação
+            alignment: right
+        }
+        layout {
+            sequence: 110
+            region: @simulacao
+            slot: regionBody
+            startNewRow: false
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        lov {
+            type: sharedComponent
+            lov: @tp-oper-gov
+            displayNullValue: true
+            nullDisplayValue: - Não informado -
+        }
+        source {
+            formRegion: @simulacao
+            column: TP_OPER_GOV
+            dataType: number
+        }
+    )
+
+    pageItem P31_STATUS (
+        type: displayOnly
+        label {
+            label: Situação
+            alignment: right
+        }
+        layout {
+            sequence: 120
+            region: @simulacao
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        source {
+            formRegion: @simulacao
+            column: STATUS
+            dataType: varchar2
+            queryOnly: true
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P31_SIMULACAO_ID
+        }
+    )
+
+    pageItem P31_MENSAGEM_ERRO (
+        type: displayOnly
+        label {
+            label: Mensagem da calculadora
+            alignment: right
+        }
+        layout {
+            sequence: 130
+            region: @simulacao
+            slot: regionBody
+            startNewRow: false
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        source {
+            formRegion: @simulacao
+            column: MENSAGEM_ERRO
+            dataType: varchar2
+            queryOnly: true
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P31_MENSAGEM_ERRO
+        }
+    )
+
+    region itens (
+        name: Itens
+        type: interactiveGrid
+        source {
+            location: localDatabase
+            tableName: SIMULACAO_ITEM
+            whereClause: simulacao_id = :P31_SIMULACAO_ID
+            orderByClause: numero
+            pageItemsToSubmit: P31_SIMULACAO_ID
+        }
+        layout {
+            sequence: 20
+            slot: body
+        }
+        appearance {
+            template: @/interactive-report
+            templateOptions: #DEFAULT#
+        }
+        edit {
+            enabled: true
+            allowedOperations: [
+                add
+                update
+                delete
+            ]
+        }
+        pagination {
+            type: page
+        }
+        toolbar {
+            controls: [
+                searchCol
+                searchField
+                actionsMenu
+                resetButton
+            ]
+        }
+        advanced {
+            savedReportMappingIdentifier: 3400353623
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P31_SIMULACAO_ID
+        }
+
+        savedReport 590568295 (
+            visibility: primary
+            view {
+                default: grid
+                rowsPerPage: 50
+            }
+
+            displayColumn (
+                column: @APEX$ROW_ACTION
+                layout {
+                    sequence: 0
+                }
+            )
+            displayColumn (
+                column: @ITEM_ID
+                layout {
+                    sequence: 1
+                }
+            )
+            displayColumn (
+                column: @SIMULACAO_ID
+                layout {
+                    sequence: 2
+                }
+            )
+            displayColumn (
+                column: @NUMERO
+                layout {
+                    sequence: 3
+                }
+            )
+            displayColumn (
+                column: @NCM
+                layout {
+                    sequence: 4
+                }
+            )
+            displayColumn (
+                column: @NBS
+                layout {
+                    sequence: 5
+                }
+            )
+            displayColumn (
+                column: @CST
+                layout {
+                    sequence: 6
+                }
+            )
+            displayColumn (
+                column: @CCLASSTRIB
+                layout {
+                    sequence: 7
+                }
+            )
+            displayColumn (
+                column: @BASE_CALCULO
+                layout {
+                    sequence: 8
+                }
+            )
+            displayColumn (
+                column: @QUANTIDADE
+                layout {
+                    sequence: 9
+                }
+            )
+            displayColumn (
+                column: @UNIDADE
+                layout {
+                    sequence: 10
+                }
+            )
+            displayColumn (
+                column: @IS_CST
+                layout {
+                    sequence: 11
+                }
+            )
+            displayColumn (
+                column: @IS_CCLASSTRIB
+                layout {
+                    sequence: 12
+                }
+            )
+            displayColumn (
+                column: @IS_BASE_CALCULO
+                layout {
+                    sequence: 13
+                }
+            )
+            displayColumn (
+                column: @IS_QUANTIDADE
+                layout {
+                    sequence: 14
+                }
+            )
+            displayColumn (
+                column: @IS_UNIDADE
+                layout {
+                    sequence: 15
+                }
+            )
+
+        )
+
+
+        column APEX$ROW_ACTION (
+            type: actionsMenu
+            layout {
+                sequence: 20
+            }
+        )
+        column APEX$ROW_SELECTOR (
+            type: rowSelector
+            layout {
+                sequence: 10
+            }
+        )
+        column ITEM_ID (
+            type: hidden
+            heading {
+                heading: ID
+            }
+            layout {
+                sequence: 30
+            }
+            source {
+                databaseColumn: ITEM_ID
+                dataType: number
+                primaryKey: true
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+        column SIMULACAO_ID (
+            type: hidden
+            heading {
+                heading: Simulação
+            }
+            layout {
+                sequence: 40
+            }
+            source {
+                databaseColumn: SIMULACAO_ID
+                dataType: number
+            }
+            default {
+                type: item
+                item: P31_SIMULACAO_ID
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+        column NUMERO (
+            type: numberField
+            heading {
+                heading: Nº
+                alignment: end
+            }
+            settings {
+                numberAlignment: end
+                virtualKeyboard: decimal
+            }
+            layout {
+                sequence: 50
+                columnAlignment: end
+            }
+            validation {
+                valueRequired: true
+            }
+            appearance {
+                formatMask: 990
+            }
+            source {
+                databaseColumn: NUMERO
+                dataType: number
+            }
+        )
+        column NCM (
+            type: popupLov
+            heading {
+                heading: NCM
+            }
+            layout {
+                sequence: 60
+            }
+            lov {
+                type: sharedComponent
+                lov: @ncm
+                displayNullValue: true
+            }
+            source {
+                databaseColumn: NCM
+                dataType: varchar2
+            }
+            columnFilter {
+                lovType: none
+            }
+        )
+        column NBS (
+            type: popupLov
+            heading {
+                heading: NBS
+            }
+            layout {
+                sequence: 70
+            }
+            lov {
+                type: sharedComponent
+                lov: @nbs
+                displayNullValue: true
+            }
+            source {
+                databaseColumn: NBS
+                dataType: varchar2
+            }
+            columnFilter {
+                lovType: none
+            }
+        )
+        column CST (
+            type: selectList
+            heading {
+                heading: CST
+            }
+            layout {
+                sequence: 80
+            }
+            lov {
+                type: sharedComponent
+                lov: @cst-cbsibs
+                displayNullValue: true
+            }
+            source {
+                databaseColumn: CST
+                dataType: varchar2
+            }
+            columnFilter {
+                lovType: none
+            }
+        )
+        column CCLASSTRIB (
+            type: popupLov
+            heading {
+                heading: cClassTrib
+            }
+            layout {
+                sequence: 90
+            }
+            validation {
+                valueRequired: true
+            }
+            lov {
+                type: sharedComponent
+                lov: @cclasstrib-cbsibs
+                displayNullValue: true
+            }
+            source {
+                databaseColumn: CCLASSTRIB
+                dataType: varchar2
+            }
+            columnFilter {
+                lovType: none
+            }
+        )
+        column BASE_CALCULO (
+            type: numberField
+            heading {
+                heading: Base de cálculo
+                alignment: end
+            }
+            settings {
+                numberAlignment: end
+                virtualKeyboard: decimal
+            }
+            layout {
+                sequence: 100
+                columnAlignment: end
+            }
+            validation {
+                valueRequired: true
+            }
+            appearance {
+                formatMask: FML999G999G999G990D00
+            }
+            source {
+                databaseColumn: BASE_CALCULO
+                dataType: number
+            }
+        )
+        column QUANTIDADE (
+            type: numberField
+            heading {
+                heading: Quantidade
+                alignment: end
+            }
+            settings {
+                numberAlignment: end
+                virtualKeyboard: decimal
+            }
+            layout {
+                sequence: 110
+                columnAlignment: end
+            }
+            source {
+                databaseColumn: QUANTIDADE
+                dataType: number
+            }
+        )
+        column UNIDADE (
+            type: textField
+            heading {
+                heading: Unidade
+            }
+            layout {
+                sequence: 120
+            }
+            validation {
+                maxLength: 6
+            }
+            source {
+                databaseColumn: UNIDADE
+                dataType: varchar2
+            }
+        )
+        column IS_CST (
+            type: selectList
+            heading {
+                heading: IS: CST
+            }
+            layout {
+                sequence: 130
+            }
+            lov {
+                type: sharedComponent
+                lov: @cst-is
+                displayNullValue: true
+            }
+            source {
+                databaseColumn: IS_CST
+                dataType: varchar2
+            }
+            columnFilter {
+                lovType: none
+            }
+        )
+        column IS_CCLASSTRIB (
+            type: popupLov
+            heading {
+                heading: IS: cClassTrib
+            }
+            layout {
+                sequence: 140
+            }
+            lov {
+                type: sharedComponent
+                lov: @cclasstrib-is
+                displayNullValue: true
+            }
+            source {
+                databaseColumn: IS_CCLASSTRIB
+                dataType: varchar2
+            }
+            columnFilter {
+                lovType: none
+            }
+        )
+        column IS_BASE_CALCULO (
+            type: numberField
+            heading {
+                heading: IS: base
+                alignment: end
+            }
+            settings {
+                numberAlignment: end
+                virtualKeyboard: decimal
+            }
+            layout {
+                sequence: 150
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: FML999G999G999G990D00
+            }
+            source {
+                databaseColumn: IS_BASE_CALCULO
+                dataType: number
+            }
+        )
+        column IS_QUANTIDADE (
+            type: numberField
+            heading {
+                heading: IS: quantidade
+                alignment: end
+            }
+            settings {
+                numberAlignment: end
+                virtualKeyboard: decimal
+            }
+            layout {
+                sequence: 160
+                columnAlignment: end
+            }
+            source {
+                databaseColumn: IS_QUANTIDADE
+                dataType: number
+            }
+        )
+        column IS_UNIDADE (
+            type: textField
+            heading {
+                heading: IS: unidade
+            }
+            layout {
+                sequence: 170
+            }
+            validation {
+                maxLength: 6
+            }
+            source {
+                databaseColumn: IS_UNIDADE
+                dataType: varchar2
+            }
+        )
+    )
+
+    region salve-antes (
+        name: Itens
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                <p>Salve o cabeçalho para incluir os itens da operação.</p>
+                ```
+        }
+        layout {
+            sequence: 21
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P31_SIMULACAO_ID
+        }
+    )
+
+    region totais (
+        name: Totais
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select qtd_itens,
+                       qtd_itens_pendentes,
+                       tot_base_calculo,
+                       tot_cbs,
+                       tot_ibs,
+                       tot_is,
+                       tot_tributos,
+                       versao_app_calc || ' / ' || versao_db_calc as versao_calculadora,
+                       case when warning_dados_simulados is not null
+                            then 'Sim (' || warning_dados_simulados || ')' else 'Não' end as dados_simulados,
+                       cast(processada_em as date) as processada_em
+                  from simulacao
+                 where simulacao_id = :P31_SIMULACAO_ID
+                ```
+            pageItemsToSubmit: P31_SIMULACAO_ID
+        }
+        layout {
+            sequence: 30
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        reportLayout {
+            numberOfRows: 500
+        }
+        componentAppearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+            ]
+        }
+        messages {
+            whenNoDataFound: Nenhum registro.
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P31_STATUS is not null and :P31_STATUS <> 'RASCUNHO'
+        }
+
+        column QTD_ITENS (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Itens
+                alignment: end
+            }
+            layout {
+                sequence: 1
+                columnAlignment: end
+            }
+        )
+
+        column QTD_ITENS_PENDENTES (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Itens com pendência
+                alignment: end
+            }
+            layout {
+                sequence: 2
+                columnAlignment: end
+            }
+        )
+
+        column TOT_BASE_CALCULO (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Base de cálculo
+                alignment: end
+            }
+            layout {
+                sequence: 3
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: FML999G999G999G990D00
+            }
+        )
+
+        column TOT_CBS (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: CBS
+                alignment: end
+            }
+            layout {
+                sequence: 4
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: FML999G999G999G990D00
+            }
+        )
+
+        column TOT_IBS (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: IBS
+                alignment: end
+            }
+            layout {
+                sequence: 5
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: FML999G999G999G990D00
+            }
+        )
+
+        column TOT_IS (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Imposto Seletivo
+                alignment: end
+            }
+            layout {
+                sequence: 6
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: FML999G999G999G990D00
+            }
+        )
+
+        column TOT_TRIBUTOS (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Total de tributos
+                alignment: end
+            }
+            layout {
+                sequence: 7
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: FML999G999G999G990D00
+            }
+        )
+
+        column VERSAO_CALCULADORA (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Versão da calculadora / base
+            }
+            layout {
+                sequence: 8
+            }
+        )
+
+        column DADOS_SIMULADOS (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: Dados simulados
+            }
+            layout {
+                sequence: 9
+            }
+        )
+
+        column PROCESSADA_EM (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            heading {
+                heading: Processada em
+            }
+            layout {
+                sequence: 10
+            }
+            appearance {
+                formatMask: DD/MM/YYYY HH24:MI
+            }
+        )
+
+    )
+
+    region resultado (
+        name: Resultado por item
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select i.numero,
+                       coalesce(i.ncm, i.nbs) as ncm_nbs,
+                       i.cclasstrib,
+                       i.estado_item,
+                       i.r_vbc,
+                       i.r_p_red_aliq,
+                       i.r_p_aliq_efet_cbs,
+                       i.r_v_cbs,
+                       coalesce(i.r_p_aliq_efet_ibs_uf, 0) + coalesce(i.r_p_aliq_efet_ibs_mun, 0) as p_aliq_efet_ibs,
+                       i.r_v_ibs,
+                       i.r_v_is,
+                       i.r_total_item
+                  from simulacao_item i
+                 where i.simulacao_id = :P31_SIMULACAO_ID
+                 order by i.numero
+                ```
+            pageItemsToSubmit: P31_SIMULACAO_ID
+        }
+        layout {
+            sequence: 40
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        reportLayout {
+            numberOfRows: 500
+        }
+        componentAppearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+            ]
+        }
+        messages {
+            whenNoDataFound: Nenhum registro.
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :P31_STATUS is not null and :P31_STATUS <> 'RASCUNHO'
+        }
+
+        column NUMERO (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Nº
+                alignment: end
+            }
+            layout {
+                sequence: 1
+                columnAlignment: end
+            }
+        )
+
+        column NCM_NBS (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: NCM/NBS
+            }
+            layout {
+                sequence: 2
+            }
+        )
+
+        column CCLASSTRIB (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: cClassTrib
+            }
+            layout {
+                sequence: 3
+            }
+        )
+
+        column ESTADO_ITEM (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Situação do item
+            }
+            layout {
+                sequence: 4
+            }
+        )
+
+        column R_VBC (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Base (vBC)
+                alignment: end
+            }
+            layout {
+                sequence: 5
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: FML999G999G999G990D00
+            }
+        )
+
+        column R_P_RED_ALIQ (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: % redução
+                alignment: end
+            }
+            layout {
+                sequence: 6
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 990D0000
+            }
+        )
+
+        column R_P_ALIQ_EFET_CBS (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Alíq. efetiva CBS
+                alignment: end
+            }
+            layout {
+                sequence: 7
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 990D0000
+            }
+        )
+
+        column R_V_CBS (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: CBS
+                alignment: end
+            }
+            layout {
+                sequence: 8
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: FML999G999G999G990D00
+            }
+        )
+
+        column P_ALIQ_EFET_IBS (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: Alíq. efetiva IBS
+                alignment: end
+            }
+            layout {
+                sequence: 9
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 990D0000
+            }
+        )
+
+        column R_V_IBS (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            heading {
+                heading: IBS
+                alignment: end
+            }
+            layout {
+                sequence: 10
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: FML999G999G999G990D00
+            }
+        )
+
+        column R_V_IS (
+            reportColumnQueryId: 11
+            derivedColumn: N
+            heading {
+                heading: Imposto Seletivo
+                alignment: end
+            }
+            layout {
+                sequence: 11
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: FML999G999G999G990D00
+            }
+        )
+
+        column R_TOTAL_ITEM (
+            reportColumnQueryId: 12
+            derivedColumn: N
+            heading {
+                heading: Total do item
+                alignment: end
+            }
+            layout {
+                sequence: 12
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: FML999G999G999G990D00
+            }
+        )
+
+    )
+
+    region erros (
+        name: Erros e pendências
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select e.numero_item,
+                       e.codigo,
+                       e.mensagem_amigavel,
+                       c.orientacao
+                  from simulacao_item_erro e
+                  left join rtc_erro_catalogo c
+                    on c.codigo = e.codigo
+                 where e.simulacao_id = :P31_SIMULACAO_ID
+                 order by e.numero_item nulls first, e.erro_id
+                ```
+            pageItemsToSubmit: P31_SIMULACAO_ID
+        }
+        layout {
+            sequence: 50
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        reportLayout {
+            numberOfRows: 500
+        }
+        componentAppearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+                t-Report--inline
+            ]
+        }
+        messages {
+            whenNoDataFound: Nenhum registro.
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery: select 1 from simulacao_item_erro where simulacao_id = :P31_SIMULACAO_ID
+        }
+
+        column NUMERO_ITEM (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Item
+                alignment: end
+            }
+            layout {
+                sequence: 1
+                columnAlignment: end
+            }
+        )
+
+        column CODIGO (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Código
+            }
+            layout {
+                sequence: 2
+            }
+        )
+
+        column MENSAGEM_AMIGAVEL (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: O que aconteceu
+            }
+            layout {
+                sequence: 3
+            }
+        )
+
+        column ORIENTACAO (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Como corrigir
+            }
+            layout {
+                sequence: 4
+            }
+        )
+
+    )
+
+    button voltar (
+        buttonName: VOLTAR
+        label: Voltar
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: previous
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 30
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button delete (
+        buttonName: DELETE
+        label: Excluir
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: delete
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: [
+                #DEFAULT#
+                t-Button--danger
+                t-Button--simple
+            ]
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: delete
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: &APP_TEXT$DELETE_MSG!RAW.
+            style: danger
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P31_SIMULACAO_ID
+        }
+    )
+
+    button duplicar (
+        buttonName: DUPLICAR
+        label: Duplicar
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text-with-icon
+            icon: fa-copy
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P31_SIMULACAO_ID
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Salvar cabeçalho
+        layout {
+            sequence: 40
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: insert
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P31_SIMULACAO_ID
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Salvar
+        layout {
+            sequence: 50
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: update
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P31_SIMULACAO_ID
+        }
+    )
+
+    button calcular (
+        buttonName: CALCULAR
+        label: Calcular
+        layout {
+            sequence: 60
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text-with-icon
+            icon: fa-calculator
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: update
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P31_SIMULACAO_ID
+        }
+    )
+
+    process preencher-do-cliente (
+        name: Preencher dados do cliente
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                -- UF e município da operação: quando em branco, usa os do cliente.
+                if :P31_UF is null or :P31_MUNICIPIO_IBGE is null then
+                    select coalesce(:P31_UF, c.uf),
+                           coalesce(to_number(:P31_MUNICIPIO_IBGE), c.municipio_ibge)
+                      into :P31_UF, :P31_MUNICIPIO_IBGE
+                      from cliente c
+                     where c.cliente_id = :P31_CLIENTE_ID;
+                end if;
+                ```
+        }
+        execution {
+            sequence: 5
+        }
+        advanced {
+            executionMappingIdentifier: 2982735526
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE,CALCULAR
+        }
+    )
+
+    process initialize-form (
+        name: Inicializar formulário
+        type: formInitialization
+        formRegion: @simulacao
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 4330189854
+        }
+    )
+
+    process process-form (
+        name: Gravar cabeçalho
+        type: formAutoRowProcessing
+        formRegion: @simulacao
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 1637871695
+        }
+    )
+
+    process save-itens (
+        name: Gravar itens
+        type: interactiveGridAutoRowProcessing
+        editableRegion: @itens
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 2371818652
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: SAVE,CALCULAR
+        }
+    )
+
+    process calcular (
+        name: Calcular na calculadora da RTC
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                -- Monta o JSON, chama a calculadora (PKG_RTC_HTTP com a Web Credential
+                -- RTC_API_KEY), grava o log e o resultado por item. Erros da API viram
+                -- mensagens amigáveis em SIMULACAO_ITEM_ERRO; a página mostra a situação.
+                pkg_rtc_calc.calcular(:P31_SIMULACAO_ID);
+                select status into :P31_STATUS from simulacao where simulacao_id = :P31_SIMULACAO_ID;
+                ```
+        }
+        execution {
+            sequence: 30
+        }
+        advanced {
+            executionMappingIdentifier: 1227437305
+        }
+        successMessage {
+            successMessage: Cálculo concluído. Situação: &P31_STATUS.
+        }
+        serverSideCondition {
+            whenButtonPressed: @calcular
+        }
+    )
+
+    process duplicar (
+        name: Duplicar simulação
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                :P31_SIMULACAO_ID := pkg_rtc_calc.duplicar(:P31_SIMULACAO_ID);
+                ```
+        }
+        execution {
+            sequence: 40
+        }
+        advanced {
+            executionMappingIdentifier: 3474225989
+        }
+        successMessage {
+            successMessage: Simulação duplicada. Você está editando a cópia.
+        }
+        serverSideCondition {
+            whenButtonPressed: @duplicar
+        }
+    )
+
+    branch voltar-lista (
+        name: Voltar para a lista após excluir
+        execution {
+            sequence: 10
+        }
+        behavior {
+            type: pageOrUrl
+            target: {
+                page: 30
+            }
+        }
+        serverSideCondition {
+            whenButtonPressed: @delete
+        }
+    )
+
+    branch reabrir (
+        name: Reabrir a simulação
+        execution {
+            sequence: 20
+        }
+        behavior {
+            type: pageOrUrl
+            target: {
+                page: 31
+                items: {
+                    P31_SIMULACAO_ID: &P31_SIMULACAO_ID.
+                }
+            }
+        }
+    )
+
+)

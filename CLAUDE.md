@@ -45,9 +45,9 @@ português do Brasil.
 db/        00_pre_requisitos.sql (DBA), 01_tabelas.sql, 02_vpd.sql,
            03_pacotes_spec.sql, 04_views.sql, 05_dados_iniciais.sql,
            06_pacotes_body.sql, instalar.sql, testes/
-apex/      fonte APEXlang (fase 3)
-docs/      01-arquitetura.md, contratos/
-tools/     validar_contratos.py
+apex/      fonte APEXlang 26.2 (fase 3): application.apx, shared-components/, pages/
+docs/      01-arquitetura.md, 02-app-apex.md, contratos/
+tools/     validar_contratos.py, verificar_sql_apex.py
 ```
 
 ## Testar
@@ -57,8 +57,14 @@ cd db && sql ECLOUD@base @instalar.sql && sql ECLOUD@base @testes/fase1_vpd.sql
 sql ECLOUD@base @testes/fase2_offline.sql      # sem HTTP, usa respostas reais embutidas
 sql ECLOUD@base @testes/fase2_integracao.sql   # HTTP real; precisa de APEX + credencial + RTC_CONFIG
 python3 tools/validar_contratos.py
+$SKILLS/apex/apexlang-compile/scripts/validate-apex-app.sh apex   # SQLCL_BIN definido
+python3 tools/verificar_sql_apex.py /tmp/v.sql && sql ECLOUD@base @/tmp/v.sql
 ```
 
+* APEXlang 26.2: templates do tema assinado como `@/nome` (`@/standard`, `@/modal-dialog`);
+  todo processo leva `advanced.executionMappingIdentifier` único; coluna de IR
+  só aceita dataType varchar2/number/date/clob (converta timestamp com `cast(... as date)`);
+  switch com valores próprios exige `useDefaults: false`.
 * No PL/SQL, `JSON_VALUE` nativo ignora item methods (`type()`, `size()`): use SQL.
 * Função privada de pacote não pode ser usada dentro de SQL (PLS-00231): torne-a
   pública (ex.: `PKG_ECLOUD_UTIL`) ou calcule antes em variável.

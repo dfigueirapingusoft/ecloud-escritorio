@@ -1,0 +1,19 @@
+lov tp-regime-ibscbs (
+    name: TP_REGIME_IBSCBS
+    source {
+        location: staticValues
+    }
+
+    entry tp-regime-ibscbs-1 (
+        sequence: 1
+        display: 1 - Regular
+        return: 1
+    )
+
+    entry tp-regime-ibscbs-2 (
+        sequence: 2
+        display: 2 - Simples Nacional
+        return: 2
+    )
+
+)

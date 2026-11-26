@@ -1,0 +1,17 @@
+lov cclasstrib-is (
+    name: CCLASSTRIB_IS
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select exibicao d, codigo r
+              from vw_cclasstrib_lov
+             where tributo = 'IS'
+             order by codigo
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)

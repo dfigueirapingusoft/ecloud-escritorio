@@ -1,0 +1,16 @@
+lov nbs (
+    name: NBS
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select codigo || ' - ' || substr(descricao, 1, 200) d, codigo r
+              from rtc_da_nbs
+             order by codigo
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)

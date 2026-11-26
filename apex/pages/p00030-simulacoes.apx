@@ -1,0 +1,486 @@
+page 30 (
+    name: Simulações
+    alias: SIMULACOES
+    title: Simulações
+    pageGroup: @simulacoes
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+
+    region breadcrumb (
+        name: Breadcrumb
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region simulacoes (
+        name: Simulações
+        type: interactiveReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select s.simulacao_id,
+                       s.regime,
+                       case s.regime when 'REGULAR' then 31 else 32 end as pagina,
+                       s.cliente_razao_social,
+                       pkg_ecloud_util.formatar_cnpj(s.cliente_cnpj) as cliente_cnpj,
+                       s.descricao,
+                       s.status,
+                       s.qtd_itens,
+                       s.qtd_itens_pendentes,
+                       s.tot_base_calculo,
+                       s.tot_cbs,
+                       s.tot_ibs,
+                       s.tot_is,
+                       s.tot_tributos,
+                       s.data_fato_gerador,
+                       cast(s.criado_em as date) as criado_em,
+                       s.criado_por,
+                       apex_page.get_url(p_page => case s.regime when 'REGULAR' then 31 else 32 end,
+                                         p_items => 'P' || case s.regime when 'REGULAR' then 31 else 32 end || '_SIMULACAO_ID',
+                                         p_values => s.simulacao_id) as url_abrir
+                  from vw_simulacao_resumo s
+                ```
+        }
+        layout {
+            sequence: 20
+            slot: body
+        }
+        link {
+            linkColumn: customTarget
+            target: {
+                type: url
+                url: #URL_ABRIR#
+            }
+            linkIcon: <span aria-label="Abrir"><span class="fa fa-edit" aria-hidden="true" title="Abrir"></span></span>
+        }
+        pagination {
+            type: rowRangesXToY
+        }
+        messages {
+            whenNoDataFound: Nenhum registro encontrado.
+        }
+        actionsMenu {
+            subscription: false
+        }
+
+        column SIMULACAO_ID (
+            type: plainText
+            heading {
+                heading: Nº
+            }
+            layout {
+                sequence: 1
+            }
+            source {
+                dataType: number
+            }
+        )
+
+        column REGIME (
+            type: plainTextBasedOnLov
+            heading {
+                heading: Regime
+            }
+            lov {
+                lov: @regimes
+            }
+            layout {
+                sequence: 2
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        column PAGINA (
+            type: hidden
+            heading {
+                heading: Página
+            }
+            layout {
+                sequence: 3
+            }
+            source {
+                dataType: number
+            }
+        )
+
+        column CLIENTE_RAZAO_SOCIAL (
+            type: plainText
+            heading {
+                heading: Cliente
+            }
+            layout {
+                sequence: 4
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        column CLIENTE_CNPJ (
+            type: plainText
+            heading {
+                heading: CNPJ
+            }
+            layout {
+                sequence: 5
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        column DESCRICAO (
+            type: plainText
+            heading {
+                heading: Descrição
+            }
+            layout {
+                sequence: 6
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        column STATUS (
+            type: plainTextBasedOnLov
+            heading {
+                heading: Situação
+            }
+            lov {
+                lov: @status-simulacao
+            }
+            layout {
+                sequence: 7
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        column QTD_ITENS (
+            type: plainText
+            heading {
+                heading: Itens
+                alignment: end
+            }
+            layout {
+                sequence: 8
+                columnAlignment: end
+            }
+            source {
+                dataType: number
+            }
+        )
+
+        column QTD_ITENS_PENDENTES (
+            type: plainText
+            heading {
+                heading: Pendentes
+                alignment: end
+            }
+            layout {
+                sequence: 9
+                columnAlignment: end
+            }
+            source {
+                dataType: number
+            }
+        )
+
+        column TOT_BASE_CALCULO (
+            type: plainText
+            heading {
+                heading: Base de cálculo
+                alignment: end
+            }
+            layout {
+                sequence: 10
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: FML999G999G999G990D00
+            }
+            source {
+                dataType: number
+            }
+        )
+
+        column TOT_CBS (
+            type: plainText
+            heading {
+                heading: CBS
+                alignment: end
+            }
+            layout {
+                sequence: 11
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: FML999G999G999G990D00
+            }
+            source {
+                dataType: number
+            }
+        )
+
+        column TOT_IBS (
+            type: plainText
+            heading {
+                heading: IBS
+                alignment: end
+            }
+            layout {
+                sequence: 12
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: FML999G999G999G990D00
+            }
+            source {
+                dataType: number
+            }
+        )
+
+        column TOT_IS (
+            type: plainText
+            heading {
+                heading: IS
+                alignment: end
+            }
+            layout {
+                sequence: 13
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: FML999G999G999G990D00
+            }
+            source {
+                dataType: number
+            }
+        )
+
+        column TOT_TRIBUTOS (
+            type: plainText
+            heading {
+                heading: Total de tributos
+                alignment: end
+            }
+            layout {
+                sequence: 14
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: FML999G999G999G990D00
+            }
+            source {
+                dataType: number
+            }
+        )
+
+        column DATA_FATO_GERADOR (
+            type: plainText
+            heading {
+                heading: Fato gerador
+            }
+            layout {
+                sequence: 15
+            }
+            source {
+                dataType: date
+            }
+        )
+
+        column CRIADO_EM (
+            type: plainText
+            heading {
+                heading: Criada em
+            }
+            layout {
+                sequence: 16
+            }
+            appearance {
+                formatMask: DD/MM/YYYY HH24:MI
+            }
+            source {
+                dataType: date
+            }
+        )
+
+        column CRIADO_POR (
+            type: plainText
+            heading {
+                heading: Criada por
+            }
+            layout {
+                sequence: 17
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        column URL_ABRIR (
+            type: hidden
+            heading {
+                heading: URL
+            }
+            layout {
+                sequence: 18
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        savedReport 321088351 (
+            visibility: primaryDefault
+            view {
+                rowsPerPage: 50
+            }
+
+            displayColumn SIMULACAO_ID (
+                sequence: 1
+            )
+
+            displayColumn REGIME (
+                sequence: 2
+            )
+
+            displayColumn CLIENTE_RAZAO_SOCIAL (
+                sequence: 3
+            )
+
+            displayColumn CLIENTE_CNPJ (
+                sequence: 4
+            )
+
+            displayColumn DESCRICAO (
+                sequence: 5
+            )
+
+            displayColumn STATUS (
+                sequence: 6
+            )
+
+            displayColumn QTD_ITENS (
+                sequence: 7
+            )
+
+            displayColumn QTD_ITENS_PENDENTES (
+                sequence: 8
+            )
+
+            displayColumn TOT_BASE_CALCULO (
+                sequence: 9
+            )
+
+            displayColumn TOT_CBS (
+                sequence: 10
+            )
+
+            displayColumn TOT_IBS (
+                sequence: 11
+            )
+
+            displayColumn TOT_IS (
+                sequence: 12
+            )
+
+            displayColumn TOT_TRIBUTOS (
+                sequence: 13
+            )
+
+            displayColumn DATA_FATO_GERADOR (
+                sequence: 14
+            )
+
+            displayColumn CRIADO_EM (
+                sequence: 15
+            )
+
+            displayColumn CRIADO_POR (
+                sequence: 16
+            )
+
+            sort (
+                column: SIMULACAO_ID
+                sort {
+                    sequence: 1
+                    direction: desc
+                }
+            )
+
+        )
+    )
+
+    button nova-regime (
+        buttonName: NOVA_REGIME
+        label: Nova - Regime Regular
+        layout {
+            sequence: 10
+            region: @simulacoes
+            slot: rightOfInteractiveReportSearchBar
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 31
+                clearCache: 31
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button nova-simples (
+        buttonName: NOVA_SIMPLES
+        label: Nova - Simples Nacional
+        layout {
+            sequence: 20
+            region: @simulacoes
+            slot: rightOfInteractiveReportSearchBar
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 32
+                clearCache: 32
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+)

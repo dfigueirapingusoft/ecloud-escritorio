@@ -1,0 +1,25 @@
+lov perfis (
+    name: PERFIS
+    source {
+        location: staticValues
+    }
+
+    entry perfis-1 (
+        sequence: 1
+        display: Administrador
+        return: ADMINISTRADOR
+    )
+
+    entry perfis-2 (
+        sequence: 2
+        display: Contador
+        return: CONTADOR
+    )
+
+    entry perfis-3 (
+        sequence: 3
+        display: Assistente
+        return: ASSISTENTE
+    )
+
+)

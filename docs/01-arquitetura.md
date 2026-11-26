@@ -187,8 +187,11 @@ configuração para o perfil Contador e criação dos jobs.
 Executado em Oracle AI Database 26ai Free + APEX 26.2.0 com as calculadoras
 oficiais (Regime 1.7.2, Simples 1.0.2, DANFSe 1.0.0) rodando localmente.
 
-## 8. Próximas fases
+## 8. Fase 3 (app APEX)
 
-* **Fase 3:** app em APEXlang a partir do `example-0`, validado com
-  `apexlang-compile` (SQLcl 26.3 `apex validate`).
+Páginas, segurança, pré-requisitos do workspace e validação em
+[02-app-apex.md](02-app-apex.md).
+
+## 9. Próximas fases
+
 * **Fase 4:** deploy com `apexlang-deploy`, somente com sua autorização e o ambiente alvo.

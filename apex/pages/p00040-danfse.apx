@@ -1,0 +1,543 @@
+page 40 (
+    name: DANFSe
+    alias: DANFSE
+    title: DANFSe
+    pageGroup: @danfse
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+    help {
+        helpText:
+            ```html
+            <p>Gera o DANFSe (PDF) a partir do XML da NFS-e do <strong>Padrão Nacional</strong>
+            (elemento raiz &lt;NFSe&gt;, emitida pelo Emissor Nacional ou baixada do Portal Nacional). XML municipal (ABRASF) é recusado.</p>
+            ```
+    }
+
+    region breadcrumb (
+        name: Breadcrumb
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region filtro (
+        name: Filtro
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+            ]
+        }
+    )
+
+    pageItem P40_CLIENTE_ID (
+        type: popupLov
+        label {
+            label: Cliente
+            alignment: right
+        }
+        layout {
+            sequence: 10
+            region: @filtro
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        lov {
+            type: sharedComponent
+            lov: @clientes
+            displayNullValue: true
+            nullDisplayValue: - Todos os clientes -
+        }
+        sessionState {
+            storage: session
+        }
+    )
+
+    region historico (
+        name: Histórico de DANFSe
+        type: interactiveReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select d.danfse_id,
+                       d.cliente_razao_social,
+                       pkg_ecloud_util.formatar_cnpj(d.cliente_cnpj) as cliente_cnpj,
+                       d.numero_nfse,
+                       d.chave_acesso,
+                       cast(d.dh_emissao as date) as dh_emissao,
+                       d.nome_emitente,
+                       d.valor_liquido,
+                       d.stc_descricao,
+                       d.canhoto,
+                       d.status,
+                       d.mensagem_erro,
+                       d.nome_arquivo,
+                       d.pdf_bytes,
+                       cast(d.gerado_em as date) as gerado_em,
+                       d.criado_por,
+                       case when d.pdf_bytes is not null then
+                           '<a class="t-Button t-Button--small" href="'
+                           || apex_page.get_url(p_page => 42, p_items => 'P42_DANFSE_ID', p_values => d.danfse_id)
+                           || '"><span class="fa fa-download" aria-hidden="true"></span> PDF</a>'
+                       end as baixar
+                  from vw_danfse_historico d
+                 where (:P40_CLIENTE_ID is null or d.cliente_id = :P40_CLIENTE_ID)
+                ```
+            pageItemsToSubmit: P40_CLIENTE_ID
+        }
+        layout {
+            sequence: 20
+            slot: body
+        }
+        link {
+            linkColumn: customTarget
+            target: {
+                page: 41
+                items: {
+                    P41_DANFSE_ID: \#DANFSE_ID#\
+                }
+                action: resetPagination
+            }
+            linkIcon: <span aria-label="Editar"><span class="fa fa-edit" aria-hidden="true" title="Editar"></span></span>
+        }
+        pagination {
+            type: rowRangesXToY
+        }
+        messages {
+            whenNoDataFound: Nenhum registro encontrado.
+        }
+        actionsMenu {
+            subscription: false
+        }
+
+        column DANFSE_ID (
+            type: hidden
+            heading {
+                heading: ID
+            }
+            layout {
+                sequence: 1
+            }
+            source {
+                dataType: number
+            }
+        )
+
+        column CLIENTE_RAZAO_SOCIAL (
+            type: plainText
+            heading {
+                heading: Cliente
+            }
+            layout {
+                sequence: 2
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        column CLIENTE_CNPJ (
+            type: plainText
+            heading {
+                heading: CNPJ do cliente
+            }
+            layout {
+                sequence: 3
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        column NUMERO_NFSE (
+            type: plainText
+            heading {
+                heading: Nº NFS-e
+            }
+            layout {
+                sequence: 4
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        column CHAVE_ACESSO (
+            type: plainText
+            heading {
+                heading: Chave de acesso
+            }
+            layout {
+                sequence: 5
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        column DH_EMISSAO (
+            type: plainText
+            heading {
+                heading: Emissão
+            }
+            layout {
+                sequence: 6
+            }
+            appearance {
+                formatMask: DD/MM/YYYY HH24:MI
+            }
+            source {
+                dataType: date
+            }
+        )
+
+        column NOME_EMITENTE (
+            type: plainText
+            heading {
+                heading: Emitente
+            }
+            layout {
+                sequence: 7
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        column VALOR_LIQUIDO (
+            type: plainText
+            heading {
+                heading: Valor líquido
+                alignment: end
+            }
+            layout {
+                sequence: 8
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: FML999G999G999G990D00
+            }
+            source {
+                dataType: number
+            }
+        )
+
+        column STC_DESCRICAO (
+            type: plainText
+            heading {
+                heading: Situação da NFS-e
+            }
+            layout {
+                sequence: 9
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        column CANHOTO (
+            type: plainTextBasedOnLov
+            heading {
+                heading: Canhoto
+            }
+            lov {
+                lov: @sim-nao
+            }
+            layout {
+                sequence: 10
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        column STATUS (
+            type: plainTextBasedOnLov
+            heading {
+                heading: Status
+            }
+            lov {
+                lov: @status-danfse
+            }
+            layout {
+                sequence: 11
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        column MENSAGEM_ERRO (
+            type: plainText
+            heading {
+                heading: Mensagem
+            }
+            layout {
+                sequence: 12
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        column NOME_ARQUIVO (
+            type: plainText
+            heading {
+                heading: Arquivo XML
+            }
+            layout {
+                sequence: 13
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        column PDF_BYTES (
+            type: plainText
+            heading {
+                heading: Tamanho do PDF (bytes)
+                alignment: end
+            }
+            layout {
+                sequence: 14
+                columnAlignment: end
+            }
+            source {
+                dataType: number
+            }
+        )
+
+        column GERADO_EM (
+            type: plainText
+            heading {
+                heading: Gerado em
+            }
+            layout {
+                sequence: 15
+            }
+            appearance {
+                formatMask: DD/MM/YYYY HH24:MI
+            }
+            source {
+                dataType: date
+            }
+        )
+
+        column CRIADO_POR (
+            type: plainText
+            heading {
+                heading: Enviado por
+            }
+            layout {
+                sequence: 16
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        column BAIXAR (
+            type: plainText
+            heading {
+                heading: Baixar
+            }
+            layout {
+                sequence: 17
+            }
+            appearance {
+            }
+            security {
+                escapeSpecialChars: false
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        savedReport 473828654 (
+            visibility: primaryDefault
+            view {
+                rowsPerPage: 50
+            }
+
+            displayColumn CLIENTE_RAZAO_SOCIAL (
+                sequence: 1
+            )
+
+            displayColumn CLIENTE_CNPJ (
+                sequence: 2
+            )
+
+            displayColumn NUMERO_NFSE (
+                sequence: 3
+            )
+
+            displayColumn CHAVE_ACESSO (
+                sequence: 4
+            )
+
+            displayColumn DH_EMISSAO (
+                sequence: 5
+            )
+
+            displayColumn NOME_EMITENTE (
+                sequence: 6
+            )
+
+            displayColumn VALOR_LIQUIDO (
+                sequence: 7
+            )
+
+            displayColumn STC_DESCRICAO (
+                sequence: 8
+            )
+
+            displayColumn CANHOTO (
+                sequence: 9
+            )
+
+            displayColumn STATUS (
+                sequence: 10
+            )
+
+            displayColumn MENSAGEM_ERRO (
+                sequence: 11
+            )
+
+            displayColumn NOME_ARQUIVO (
+                sequence: 12
+            )
+
+            displayColumn PDF_BYTES (
+                sequence: 13
+            )
+
+            displayColumn GERADO_EM (
+                sequence: 14
+            )
+
+            displayColumn CRIADO_POR (
+                sequence: 15
+            )
+
+            displayColumn BAIXAR (
+                sequence: 16
+            )
+
+            sort (
+                column: DANFSE_ID
+                sort {
+                    sequence: 1
+                    direction: desc
+                }
+            )
+
+        )
+    )
+
+    button gerar (
+        buttonName: GERAR
+        label: Gerar DANFSe
+        layout {
+            sequence: 10
+            region: @historico
+            slot: rightOfInteractiveReportSearchBar
+        }
+        appearance {
+            buttonTemplate: @/text-with-icon
+            icon: fa-upload
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 41
+                clearCache: 41
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction refresh-after-dialog (
+        name: Atualizar após fechar o diálogo
+        execution {
+            sequence: 10
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @historico
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @historico
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction filtrar-cliente (
+        name: Filtrar por cliente
+        execution {
+            sequence: 20
+        }
+        when {
+            event: change
+            selectionType: items
+            items: P40_CLIENTE_ID
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @historico
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+)

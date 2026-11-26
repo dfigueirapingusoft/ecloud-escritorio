@@ -1,0 +1,37 @@
+lov status-simulacao (
+    name: STATUS_SIMULACAO
+    source {
+        location: staticValues
+    }
+
+    entry status-simulacao-1 (
+        sequence: 1
+        display: Rascunho
+        return: RASCUNHO
+    )
+
+    entry status-simulacao-2 (
+        sequence: 2
+        display: Processada
+        return: PROCESSADA
+    )
+
+    entry status-simulacao-3 (
+        sequence: 3
+        display: Processada com pendências
+        return: PROCESSADA_COM_PENDENCIAS
+    )
+
+    entry status-simulacao-4 (
+        sequence: 4
+        display: Rejeitada
+        return: REJEITADA
+    )
+
+    entry status-simulacao-5 (
+        sequence: 5
+        display: Falha
+        return: FALHA
+    )
+
+)

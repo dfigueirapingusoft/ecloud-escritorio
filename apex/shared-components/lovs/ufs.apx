@@ -1,0 +1,16 @@
+lov ufs (
+    name: UFS
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select sigla || ' - ' || nome d, sigla r
+              from rtc_da_uf
+             order by sigla
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)

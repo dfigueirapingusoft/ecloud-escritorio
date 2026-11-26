@@ -1,0 +1,19 @@
+pageGroup cadastros (
+    name: Cadastros
+)
+
+pageGroup simulacoes (
+    name: Simulações
+)
+
+pageGroup danfse (
+    name: DANFSe
+)
+
+pageGroup consultas (
+    name: Consultas
+)
+
+pageGroup administracao (
+    name: Administração
+)

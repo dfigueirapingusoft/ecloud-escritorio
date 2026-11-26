@@ -1,0 +1,207 @@
+page 62 (
+    name: Detalhe da chamada
+    alias: DETALHE-CHAMADA
+    title: Detalhe da chamada
+    pageGroup: @administracao
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @/modal-dialog
+        templateOptions: [
+            #DEFAULT#
+            ui-dialog--stretch
+        ]
+    }
+    dialog {
+        chained: false
+        resizable: false
+    }
+    security {
+        authorizationScheme: @administrador
+    }
+
+    region detalhe (
+        name: Chamada
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @/blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P62_CHAMADA_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @detalhe
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P62_URL (
+        type: displayOnly
+        label {
+            label: URL
+            alignment: right
+        }
+        layout {
+            sequence: 20
+            region: @detalhe
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        source {
+            type: sqlQuerySingleValue
+            sqlQuery: select URL from rtc_chamada_log where chamada_id = :P62_CHAMADA_ID
+        }
+    )
+
+    pageItem P62_HTTP_STATUS (
+        type: displayOnly
+        label {
+            label: Status HTTP
+            alignment: right
+        }
+        layout {
+            sequence: 30
+            region: @detalhe
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        source {
+            type: sqlQuerySingleValue
+            sqlQuery: select HTTP_STATUS from rtc_chamada_log where chamada_id = :P62_CHAMADA_ID
+        }
+    )
+
+    pageItem P62_TEMPO_MS (
+        type: displayOnly
+        label {
+            label: Tempo (ms)
+            alignment: right
+        }
+        layout {
+            sequence: 40
+            region: @detalhe
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        source {
+            type: sqlQuerySingleValue
+            sqlQuery: select TEMPO_MS from rtc_chamada_log where chamada_id = :P62_CHAMADA_ID
+        }
+    )
+
+    pageItem P62_RESPONSE_HEADERS (
+        type: displayOnly
+        label {
+            label: Headers da resposta
+            alignment: right
+        }
+        layout {
+            sequence: 50
+            region: @detalhe
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        source {
+            type: sqlQuerySingleValue
+            sqlQuery: select RESPONSE_HEADERS from rtc_chamada_log where chamada_id = :P62_CHAMADA_ID
+        }
+    )
+
+    pageItem P62_ERRO_ORACLE (
+        type: displayOnly
+        label {
+            label: Erro
+            alignment: right
+        }
+        layout {
+            sequence: 60
+            region: @detalhe
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        source {
+            type: sqlQuerySingleValue
+            sqlQuery: select ERRO_ORACLE from rtc_chamada_log where chamada_id = :P62_CHAMADA_ID
+        }
+    )
+
+    pageItem P62_REQUEST_BODY (
+        type: textarea
+        label {
+            label: Requisição
+            alignment: right
+        }
+        layout {
+            sequence: 70
+            region: @detalhe
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        source {
+            type: sqlQuerySingleValue
+            sqlQuery: select dbms_lob.substr(request_body, 32000, 1) from rtc_chamada_log where chamada_id = :P62_CHAMADA_ID
+        }
+        readOnly {
+            type: always
+        }
+    )
+
+    pageItem P62_RESPONSE_BODY (
+        type: textarea
+        label {
+            label: Resposta
+            alignment: right
+        }
+        layout {
+            sequence: 80
+            region: @detalhe
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        source {
+            type: sqlQuerySingleValue
+            sqlQuery: select dbms_lob.substr(response_body, 32000, 1) from rtc_chamada_log where chamada_id = :P62_CHAMADA_ID
+        }
+        readOnly {
+            type: always
+        }
+    )
+
+)

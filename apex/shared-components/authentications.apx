@@ -1,0 +1,19 @@
+authentication oracle-apex-accounts (
+    name: Contas do Oracle APEX
+    type: oracleApexAccounts
+    loginProcessing {
+        postAuthenticationProcedureName: pos_autenticacao
+    }
+    source {
+        plsqlCode:
+            ```plsql
+            -- Depois do login: grava o contexto VPD e o último acesso do usuário.
+            -- Quem não está em USUARIO (ou está inativo) fica sem escritório no
+            -- contexto e é barrado pelo esquema de autorização "usuario-cadastrado".
+            procedure pos_autenticacao is
+            begin
+                pkg_ecloud_ctx.definir_contexto(p_registrar_acesso => true);
+            end pos_autenticacao;
+            ```
+    }
+)

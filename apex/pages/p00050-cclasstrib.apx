@@ -1,0 +1,422 @@
+page 50 (
+    name: cClassTrib
+    alias: CCLASSTRIB
+    title: cClassTrib
+    pageGroup: @consultas
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+
+    region breadcrumb (
+        name: Breadcrumb
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region cclasstrib (
+        name: cClassTrib
+        type: interactiveReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select t.tributo,
+                       t.codigo,
+                       t.cst,
+                       t.descricao,
+                       t.tipo_aliquota,
+                       t.nomenclatura,
+                       t.perc_reducao_cbs,
+                       t.perc_reducao_ibs_uf,
+                       t.perc_reducao_ibs_mun,
+                       (select listagg(d.sigla_dfe, ', ') within group (order by d.tipo_dfe)
+                          from rtc_da_cclasstrib_dfe d
+                         where d.tributo = t.tributo
+                           and d.codigo  = t.codigo) as documentos,
+                       t.data_referencia
+                  from rtc_da_cclasstrib t
+                ```
+        }
+        layout {
+            sequence: 20
+            slot: body
+        }
+        link {
+            linkColumn: exclude
+        }
+        pagination {
+            type: rowRangesXToY
+        }
+        messages {
+            whenNoDataFound: Nenhum registro encontrado.
+        }
+        actionsMenu {
+            subscription: false
+        }
+
+        column TRIBUTO (
+            type: plainText
+            heading {
+                heading: Tributo
+            }
+            layout {
+                sequence: 1
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        column CODIGO (
+            type: plainText
+            heading {
+                heading: cClassTrib
+            }
+            layout {
+                sequence: 2
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        column CST (
+            type: plainText
+            heading {
+                heading: CST
+            }
+            layout {
+                sequence: 3
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        column DESCRICAO (
+            type: plainText
+            heading {
+                heading: Descrição
+            }
+            layout {
+                sequence: 4
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        column TIPO_ALIQUOTA (
+            type: plainText
+            heading {
+                heading: Tipo de alíquota
+            }
+            layout {
+                sequence: 5
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        column NOMENCLATURA (
+            type: plainText
+            heading {
+                heading: Nomenclatura
+            }
+            layout {
+                sequence: 6
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        column PERC_REDUCAO_CBS (
+            type: plainText
+            heading {
+                heading: % redução CBS
+                alignment: end
+            }
+            layout {
+                sequence: 7
+                columnAlignment: end
+            }
+            source {
+                dataType: number
+            }
+        )
+
+        column PERC_REDUCAO_IBS_UF (
+            type: plainText
+            heading {
+                heading: % redução IBS UF
+                alignment: end
+            }
+            layout {
+                sequence: 8
+                columnAlignment: end
+            }
+            source {
+                dataType: number
+            }
+        )
+
+        column PERC_REDUCAO_IBS_MUN (
+            type: plainText
+            heading {
+                heading: % redução IBS Mun.
+                alignment: end
+            }
+            layout {
+                sequence: 9
+                columnAlignment: end
+            }
+            source {
+                dataType: number
+            }
+        )
+
+        column DOCUMENTOS (
+            type: plainText
+            heading {
+                heading: Documentos fiscais
+            }
+            layout {
+                sequence: 10
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        column DATA_REFERENCIA (
+            type: plainText
+            heading {
+                heading: Data de referência
+            }
+            layout {
+                sequence: 11
+            }
+            source {
+                dataType: date
+            }
+        )
+
+        savedReport 403660322 (
+            visibility: primaryDefault
+            view {
+                rowsPerPage: 50
+            }
+
+            displayColumn TRIBUTO (
+                sequence: 1
+            )
+
+            displayColumn CODIGO (
+                sequence: 2
+            )
+
+            displayColumn CST (
+                sequence: 3
+            )
+
+            displayColumn DESCRICAO (
+                sequence: 4
+            )
+
+            displayColumn TIPO_ALIQUOTA (
+                sequence: 5
+            )
+
+            displayColumn NOMENCLATURA (
+                sequence: 6
+            )
+
+            displayColumn PERC_REDUCAO_CBS (
+                sequence: 7
+            )
+
+            displayColumn PERC_REDUCAO_IBS_UF (
+                sequence: 8
+            )
+
+            displayColumn PERC_REDUCAO_IBS_MUN (
+                sequence: 9
+            )
+
+            displayColumn DOCUMENTOS (
+                sequence: 10
+            )
+
+            displayColumn DATA_REFERENCIA (
+                sequence: 11
+            )
+
+            sort (
+                column: CODIGO
+                sort {
+                    sequence: 1
+                }
+            )
+
+        )
+    )
+
+    region cache (
+        name: Atualização do cache
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                <p>Dados abertos das calculadoras guardados no banco e atualizados todo dia pelo job de sincronização.</p>
+                ```
+        }
+        layout {
+            sequence: 30
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region cache-status (
+        name: Última sincronização
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select descricao,
+                       cast(ultima_sincronizacao as date) as ultima_sincronizacao,
+                       data_referencia,
+                       qtd_registros,
+                       status,
+                       mensagem
+                  from rtc_cache_controle
+                 where recurso in ('CCLASSTRIB')
+                ```
+        }
+        layout {
+            sequence: 40
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        reportLayout {
+            numberOfRows: 500
+        }
+        componentAppearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+            ]
+        }
+        messages {
+            whenNoDataFound: Nenhum registro.
+        }
+
+        column DESCRICAO (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Recurso
+            }
+            layout {
+                sequence: 1
+            }
+        )
+
+        column ULTIMA_SINCRONIZACAO (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Última sincronização
+            }
+            layout {
+                sequence: 2
+            }
+            appearance {
+                formatMask: DD/MM/YYYY HH24:MI
+            }
+        )
+
+        column DATA_REFERENCIA (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Data de referência
+            }
+            layout {
+                sequence: 3
+            }
+            appearance {
+                formatMask: DD/MM/YYYY
+            }
+        )
+
+        column QTD_REGISTROS (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Registros
+                alignment: end
+            }
+            layout {
+                sequence: 4
+                columnAlignment: end
+            }
+        )
+
+        column STATUS (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Status
+            }
+            layout {
+                sequence: 5
+            }
+        )
+
+        column MENSAGEM (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Mensagem
+            }
+            layout {
+                sequence: 6
+            }
+        )
+
+    )
+
+)

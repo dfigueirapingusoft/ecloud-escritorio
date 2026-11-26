@@ -1,0 +1,9 @@
+appItem F_ESCRITORIO_ATIVO (
+    scope: app
+    security {
+        sessionStateProtection: restricted
+    }
+    comments {
+        comments: Escritório em que o administrador da plataforma está operando (suporte). Lido no Initialization PL/SQL Code.
+    }
+)

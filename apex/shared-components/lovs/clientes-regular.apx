@@ -1,0 +1,18 @@
+lov clientes-regular (
+    name: CLIENTES_REGULAR
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select razao_social || ' (' || pkg_ecloud_util.formatar_cnpj(cnpj) || ')' d, cliente_id r
+              from cliente
+             where ativo = 'S'
+               and regime = 'REGULAR'
+             order by razao_social
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)

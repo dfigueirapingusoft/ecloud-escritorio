@@ -1,0 +1,16 @@
+lov escritorios (
+    name: ESCRITORIOS
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select coalesce(nome_fantasia, razao_social) d, escritorio_id r
+              from escritorio
+             order by 1
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)

@@ -1,0 +1,17 @@
+lov cclasstrib-cbsibs (
+    name: CCLASSTRIB_CBSIBS
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select exibicao d, codigo r
+              from vw_cclasstrib_lov
+             where tributo = 'CBSIBS'
+             order by codigo
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)

@@ -1,0 +1,17 @@
+lov cst-is (
+    name: CST_IS
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select codigo || ' - ' || descricao d, codigo r
+              from rtc_da_cst
+             where tributo = 'IS'
+             order by codigo
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)

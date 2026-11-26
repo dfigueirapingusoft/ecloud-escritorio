@@ -1,0 +1,16 @@
+lov ncm (
+    name: NCM
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select codigo || ' - ' || substr(descricao, 1, 200) d, codigo r
+              from rtc_da_ncm
+             order by codigo
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)

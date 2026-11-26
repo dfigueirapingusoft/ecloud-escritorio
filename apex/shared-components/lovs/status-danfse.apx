@@ -1,0 +1,31 @@
+lov status-danfse (
+    name: STATUS_DANFSE
+    source {
+        location: staticValues
+    }
+
+    entry status-danfse-1 (
+        sequence: 1
+        display: Pendente
+        return: PENDENTE
+    )
+
+    entry status-danfse-2 (
+        sequence: 2
+        display: Gerado
+        return: GERADO
+    )
+
+    entry status-danfse-3 (
+        sequence: 3
+        display: Rejeitado
+        return: REJEITADO
+    )
+
+    entry status-danfse-4 (
+        sequence: 4
+        display: Falha
+        return: FALHA
+    )
+
+)

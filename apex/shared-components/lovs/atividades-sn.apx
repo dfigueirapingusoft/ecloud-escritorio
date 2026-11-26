@@ -1,0 +1,16 @@
+lov atividades-sn (
+    name: ATIVIDADES_SN
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select codigo || ' - ' || descricao d, codigo r
+              from rtc_da_atividade_sn
+             order by ordem, codigo
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)
