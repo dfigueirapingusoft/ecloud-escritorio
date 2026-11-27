@@ -71,8 +71,8 @@ ficam em `RTC_CHAMADA_LOG` com referência `ASSINATURA_FATURA`.
      dois-pontos no fim e senha vazia). No terminal:
      `printf 'sk_test_xxx:' | base64` (use `sk_` em produção);
    * Valid for URLs: `https://api.pagar.me/`.
-3. **Remetente de e-mail**: `RTC_CONFIG.EMAIL_REMETENTE` com um Approved Sender do
-   OCI Email Delivery.
+3. **Remetente de e-mail**: `RTC_CONFIG.EMAIL_REMETENTE` = `nao-responda@escritoriocloud.com.br`,
+   já criado como Approved Sender no OCI Email Delivery (o `05_dados_iniciais.sql` preenche).
 4. **Webhook** (fase 2): `WEBHOOK_BASE_URL` em `RTC_CONFIG` se o ORDS responder por
    outro domínio; a URL pronta aparece na página Planos para colar no painel da
    Stone, com os eventos `order.*` e `charge.*`.

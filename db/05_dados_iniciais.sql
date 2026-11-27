@@ -56,7 +56,7 @@ using (
            'Dias antes do fim do período (ou do teste) em que a fatura é gerada' from dual union all
     select 'ASSINATURA_TOLERANCIA_DIAS', '5', 'NUMERO',
            'Dias depois do vencimento até o escritório ficar suspenso' from dual union all
-    select 'EMAIL_REMETENTE', null, 'TEXTO',
+    select 'EMAIL_REMETENTE', 'nao-responda@escritoriocloud.com.br', 'TEXTO',
            'Remetente dos e-mails de conta (boas-vindas, senha). Precisa ser Approved Sender no OCI Email Delivery' from dual
 ) o
 on (d.chave = o.chave)
@@ -81,6 +81,13 @@ when not matched then
     insert (recurso, descricao) values (o.recurso, o.descricao)
 when matched then
     update set d.descricao = o.descricao;
+
+-- Remetente aprovado no OCI Email Delivery (Daniel, 27/11/2026). Preenche só
+-- quando ainda está vazio: valor trocado pela plataforma é mantido.
+update rtc_config
+   set valor = 'nao-responda@escritoriocloud.com.br'
+ where chave = 'EMAIL_REMETENTE'
+   and valor is null;
 
 -- Token do webhook da Stone: sorteado uma vez por banco (32 bytes em hex).
 -- DBMS_CRYPTO é chamado por SQL dinâmico para o script não quebrar quando o
