@@ -115,6 +115,7 @@ page 73 (
         lov {
             type: sharedComponent
             lov: @tipo-conta
+            displayNullValue: false
         }
         default {
             type: static

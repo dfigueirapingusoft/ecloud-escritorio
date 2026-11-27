@@ -122,4 +122,26 @@ tradução pt-br do APEX (`builder/pt-br/load_pt-br.sql`) para esses textos saí
   (antes o PARSE não compilava bloco com bind) e aceita function body booleano ou texto.
   Num banco sem APEX sobram só os erros das APIs do APEX (`APEX_APPLICATION`, `APEX_UTIL`, ...).
 
+### Teste do módulo A num APEX local (27/11/2026)
+
+Com autorização do Daniel, o app foi importado **só num container local de teste** (Oracle
+26ai Free `gvenzl/oracle-free:23` + APEX 26.2.0 + ORDS standalone, workspace `ECLOUD_TESTE`,
+dados fictícios). A imagem `-slim` não serve: o APEX exige o Oracle XML DB.
+
+Fluxo navegado com Playwright, pelas próprias telas: cliente pessoa física (CPF, CAEPF, regime
+não contribuinte) → imóvel arrendado com contraparte na grade → exclusão de imóvel com
+contraparte → conta corrente e caixa (000) → plano padrão (21 categorias) → lançamentos
+(participante inválido recusado) → transferência → importação OFX (4 movimentos, 2 conciliados
+na importação; o mesmo arquivo de novo é recusado) → conciliação (sugestão, lançar e conciliar,
+ignorar, desfazer) → LCDPR (sem pendências, 22 linhas, download em UTF-8 com CR LF) → painel do
+produtor com gráficos. Todas as páginas do módulo abrem sem erro.
+
+| Problema | Correção |
+|---|---|
+| Download do LCDPR com PLS-00363 | `apex_http.download` recebe o BLOB numa variável (`p_blob` é IN OUT). |
+| Resumo do movimento na página 86 mostrava o movimento aberto antes | Itens calculados por SQL com `source.used: always`. |
+| Botões de rádio e listas com uma opção vazia a mais (inclusive Regime na página 21 e stc na 41, que já existiam) | `displayNullValue: false` quando não há opção nula. |
+| Conciliação sem conta escolhida ficava em branco | Região com a orientação "Escolha a conta". |
+| Transferência aparecia com imóvel "000 - Comum" no livro caixa | Imóvel só para lançamentos que vão ao LCDPR. |
+
 O deploy (`apexlang-deploy`) é a fase 4 e só será feito com sua autorização e o ambiente alvo informado.

@@ -91,6 +91,7 @@ page 21 (
         lov {
             type: sharedComponent
             lov: @tipos-pessoa
+            displayNullValue: false
         }
         source {
             formRegion: @cliente
@@ -310,6 +311,7 @@ page 21 (
         lov {
             type: sharedComponent
             lov: @regimes
+            displayNullValue: false
         }
         source {
             formRegion: @cliente
@@ -665,6 +667,7 @@ page 21 (
         lov {
             type: sharedComponent
             lov: @forma-apuracao
+            displayNullValue: false
         }
         source {
             formRegion: @cliente

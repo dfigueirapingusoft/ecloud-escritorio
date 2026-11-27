@@ -524,6 +524,7 @@ page 77 (
             lov {
                 type: sharedComponent
                 lov: @tipo-doc
+                displayNullValue: false
             }
             source {
                 databaseColumn: TIPO_DOC
@@ -604,6 +605,7 @@ page 77 (
             lov {
                 type: sharedComponent
                 lov: @sim-nao
+                displayNullValue: false
             }
             source {
                 databaseColumn: ATIVO

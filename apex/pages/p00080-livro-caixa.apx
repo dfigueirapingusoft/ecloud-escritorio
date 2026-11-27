@@ -400,7 +400,8 @@ page 80 (
                             l.valor,
                             l.valor_sinal,
                             l.historico,
-                            case when l.imovel_id is null then '000 - Comum'
+                            case when l.tipo_lanc is null then null
+                                 when l.imovel_id is null then '000 - Comum'
                                  else lpad(l.cod_imovel, 3, '0') || ' - ' || l.imovel_nome end as imovel,
                             l.centro_custo_nome,
                             l.tipo_doc,

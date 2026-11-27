@@ -729,6 +729,7 @@ page 71 (
                  where sigla_uf = :P71_UF
                  order by nome
                 ```
+            displayNullValue: false
         }
         cascadingLov {
             parentItems: P71_UF
@@ -841,6 +842,7 @@ page 71 (
         lov {
             type: sharedComponent
             lov: @tipo-exploracao
+            displayNullValue: false
         }
         default {
             type: static

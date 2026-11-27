@@ -234,6 +234,7 @@ page 86 (
             slot: regionBody
         }
         source {
+            used: always
             type: sqlQuerySingleValue
             sqlQuery:
                 ```sql
@@ -263,6 +264,7 @@ page 86 (
             templateOptions: #DEFAULT#
         }
         source {
+            used: always
             type: sqlQuerySingleValue
             sqlQuery:
                 ```sql
@@ -356,6 +358,7 @@ page 86 (
         lov {
             type: sharedComponent
             lov: @categorias
+            displayNullValue: false
         }
     )
 
@@ -380,6 +383,7 @@ page 86 (
         lov {
             type: sharedComponent
             lov: @tipo-doc
+            displayNullValue: false
         }
         default {
             type: static
@@ -493,6 +497,7 @@ page 86 (
         lov {
             type: sharedComponent
             lov: @tipos-pessoa
+            displayNullValue: false
         }
         default {
             type: static

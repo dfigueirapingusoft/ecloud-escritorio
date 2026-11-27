@@ -146,6 +146,7 @@ page 84 (
         lov {
             type: sharedComponent
             lov: @formato-extrato
+            displayNullValue: false
         }
         default {
             type: static
@@ -243,6 +244,7 @@ page 84 (
             templateOptions: #DEFAULT#
         }
         source {
+            used: always
             type: sqlQuerySingleValue
             sqlQuery:
                 ```sql

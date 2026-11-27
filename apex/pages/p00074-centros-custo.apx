@@ -466,6 +466,7 @@ page 74 (
             lov {
                 type: sharedComponent
                 lov: @sim-nao
+                displayNullValue: false
             }
             source {
                 databaseColumn: ATIVO

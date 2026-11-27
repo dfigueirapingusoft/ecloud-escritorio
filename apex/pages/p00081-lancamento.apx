@@ -187,6 +187,7 @@ page 81 (
         lov {
             type: sharedComponent
             lov: @categorias
+            displayNullValue: false
         }
     )
 
@@ -326,6 +327,7 @@ page 81 (
         lov {
             type: sharedComponent
             lov: @tipo-doc
+            displayNullValue: false
         }
         default {
             type: static
@@ -376,6 +378,7 @@ page 81 (
         lov {
             type: sharedComponent
             lov: @tipos-pessoa
+            displayNullValue: false
         }
         default {
             type: static

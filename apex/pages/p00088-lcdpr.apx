@@ -176,6 +176,7 @@ page 88 (
         lov {
             type: sharedComponent
             lov: @ind-sit-ini-per
+            displayNullValue: false
         }
         default {
             type: static
@@ -207,6 +208,7 @@ page 88 (
         lov {
             type: sharedComponent
             lov: @sit-especial
+            displayNullValue: false
         }
         default {
             type: static

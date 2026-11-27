@@ -254,6 +254,7 @@ page 76 (
                     union all select 'Barra vertical (|)', '|' from dual
                     union all select 'Tabulação', chr(9) from dual
                     ```
+                displayNullValue: false
             }
             source {
                 databaseColumn: SEPARADOR
@@ -281,6 +282,7 @@ page 76 (
             lov {
                 type: sqlQuery
                 sqlQuery: select 'Vírgula (1.234,56)' d, ',' r from dual union all select 'Ponto (1,234.56)', '.' from dual
+                displayNullValue: false
             }
             source {
                 databaseColumn: SEPARADOR_DECIMAL
@@ -502,6 +504,7 @@ page 76 (
             lov {
                 type: sharedComponent
                 lov: @sim-nao
+                displayNullValue: false
             }
             source {
                 databaseColumn: ATIVO

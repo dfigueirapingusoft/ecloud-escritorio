@@ -156,6 +156,7 @@ page 41 (
         lov {
             type: sharedComponent
             lov: @stc
+            displayNullValue: false
         }
         source {
             type: sqlQuerySingleValue

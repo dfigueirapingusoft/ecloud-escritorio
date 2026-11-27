@@ -46,6 +46,7 @@ page 89 (
                 ```plsql
                 declare
                     l_conteudo clob;
+                    l_arquivo  blob;
                     l_nome     lcdpr_arquivo.nome_arquivo%type;
                 begin
                     -- VPD: só devolve arquivos do escritório do usuário.
@@ -54,8 +55,10 @@ page 89 (
                       from lcdpr_arquivo a
                      where a.arquivo_id = :P89_ARQUIVO_ID
                        and a.conteudo is not null;
+                    -- p_blob é IN OUT: o arquivo precisa estar numa variável.
+                    l_arquivo := apex_util.clob_to_blob(p_clob => l_conteudo, p_charset => 'AL32UTF8');
                     apex_http.download(
-                        p_blob         => apex_util.clob_to_blob(p_clob => l_conteudo, p_charset => 'AL32UTF8'),
+                        p_blob         => l_arquivo,
                         p_content_type => 'text/plain',
                         p_filename     => l_nome);
                 exception

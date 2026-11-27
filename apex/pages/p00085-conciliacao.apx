@@ -245,6 +245,30 @@ page 85 (
         }
     )
 
+    region sem-conta (
+        name: Escolha a conta
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                <p>Escolha a conta bancária e o período e clique em <strong>Aplicar filtros</strong>. Extratos são importados em Extratos bancários.</p>
+                ```
+        }
+        layout {
+            sequence: 16
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: expression
+            language: plsql
+            plsqlExpression: :P85_CLIENTE_ID is not null and :P85_CONTA_ID is null
+        }
+    )
+
     region situacao (
         name: Situação da conta
         type: classicReport
