@@ -195,3 +195,5 @@ Páginas, segurança, pré-requisitos do workspace e validação em
 ## 9. Próximas fases
 
 * **Fase 4:** deploy com `apexlang-deploy`, somente com sua autorização e o ambiente alvo.
+* **Escopo Agro (proposta):** roadmap de módulos para o escritório do agronegócio em
+  [04-escopo-agro.md](04-escopo-agro.md), aguardando aprovação.
