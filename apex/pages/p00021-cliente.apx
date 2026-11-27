@@ -12,6 +12,29 @@ page 21 (
         chained: false
         resizable: false
     }
+    javaScript {
+        fileUrls: #APP_FILES#cep.js
+        functionAndGlobalVariableDeclaration:
+            ```javascript
+            // Campos de pessoa física (F) ou jurídica (J). Os escondidos são limpos
+            // no servidor (processo "Guardar só o documento do tipo de pessoa").
+            var ecCliente = {
+                soPJ: ["P21_CNPJ", "P21_NOME_FANTASIA", "P21_CRT"],
+                soPF: ["P21_CPF", "P21_CAEPF", "P21_FORMA_APURACAO_RURAL"],
+                aplicarTipo: function () {
+                    var pf = apex.item("P21_TIPO_PESSOA").getValue() === "F";
+                    ecCliente.soPJ.forEach(function (i) { pf ? apex.item(i).hide() : apex.item(i).show(); });
+                    ecCliente.soPF.forEach(function (i) { pf ? apex.item(i).show() : apex.item(i).hide(); });
+                    apex.jQuery("#P21_RAZAO_SOCIAL_LABEL").text(pf ? "Nome completo" : "Razão social");
+                }
+            };
+            ```
+        executeWhenPageLoads:
+            ```javascript
+            ecCliente.aplicarTipo();
+            apex.jQuery("#P21_TIPO_PESSOA").on("change", ecCliente.aplicarTipo);
+            ```
+    }
 
     region buttons (
         name: Botões
@@ -69,6 +92,221 @@ page 21 (
         }
     )
 
+    pageItem P21_CEP (
+        type: textField
+        label {
+            label: CEP
+            alignment: right
+        }
+        layout {
+            sequence: 5
+            region: @cliente
+            slot: regionBody
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 10
+        }
+        source {
+            formRegion: @cliente
+            column: CEP
+            dataType: varchar2
+        }
+        help {
+            inlineHelpText: Digite o CEP para preencher endereço, bairro, UF e município.
+        }
+    )
+
+    pageItem P21_ENDERECO (
+        type: textField
+        label {
+            label: Endereço
+            alignment: right
+        }
+        layout {
+            sequence: 6
+            region: @cliente
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 8
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 150
+        }
+        source {
+            formRegion: @cliente
+            column: ENDERECO
+            dataType: varchar2
+        }
+    )
+
+    pageItem P21_NUMERO (
+        type: textField
+        label {
+            label: Número
+            alignment: right
+        }
+        layout {
+            sequence: 7
+            region: @cliente
+            slot: regionBody
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 6
+        }
+        source {
+            formRegion: @cliente
+            column: NUMERO
+            dataType: varchar2
+        }
+    )
+
+    pageItem P21_COMPLEMENTO (
+        type: textField
+        label {
+            label: Complemento
+            alignment: right
+        }
+        layout {
+            sequence: 8
+            region: @cliente
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 8
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 50
+        }
+        source {
+            formRegion: @cliente
+            column: COMPLEMENTO
+            dataType: varchar2
+        }
+    )
+
+    pageItem P21_BAIRRO (
+        type: textField
+        label {
+            label: Bairro
+            alignment: right
+        }
+        layout {
+            sequence: 9
+            region: @cliente
+            slot: regionBody
+            columnSpan: 5
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 50
+        }
+        source {
+            formRegion: @cliente
+            column: BAIRRO
+            dataType: varchar2
+        }
+    )
+
+    pageItem P21_UF (
+        type: selectList
+        label {
+            label: UF
+            alignment: right
+        }
+        layout {
+            sequence: 10
+            region: @cliente
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 2
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        lov {
+            type: sharedComponent
+            lov: @ufs
+            displayNullValue: true
+            nullDisplayValue: - Selecione -
+        }
+        source {
+            formRegion: @cliente
+            column: UF
+            dataType: varchar2
+        }
+    )
+
+    pageItem P21_MUNICIPIO_IBGE (
+        type: popupLov
+        label {
+            label: Município (IBGE)
+            alignment: right
+        }
+        layout {
+            sequence: 11
+            region: @cliente
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 5
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select nome || ' (' || codigo || ')' d, codigo r
+                  from rtc_da_municipio
+                 where sigla_uf = :P21_UF
+                 order by nome
+                ```
+        }
+        source {
+            formRegion: @cliente
+            column: MUNICIPIO_IBGE
+            dataType: number
+        }
+        cascadingLov {
+            parentItems: P21_UF
+        }
+    )
+
     pageItem P21_TIPO_PESSOA (
         type: radioGroup
         label {
@@ -107,35 +345,6 @@ page 21 (
         }
     )
 
-    pageItem P21_CPF (
-        type: textField
-        label {
-            label: CPF
-            alignment: right
-        }
-        layout {
-            sequence: 22
-            region: @cliente
-            slot: regionBody
-            alignment: left
-        }
-        appearance {
-            template: @/optional-floating
-            templateOptions: #DEFAULT#
-        }
-        validation {
-            maxLength: 14
-        }
-        source {
-            formRegion: @cliente
-            column: CPF
-            dataType: varchar2
-        }
-        help {
-            inlineHelpText: Só para pessoa física; a máscara é opcional.
-        }
-    )
-
     pageItem P21_CNPJ (
         type: textField
         label {
@@ -149,7 +358,7 @@ page 21 (
             alignment: left
         }
         appearance {
-            template: @/optional-floating
+            template: @/required-floating
             templateOptions: #DEFAULT#
         }
         validation {
@@ -162,6 +371,35 @@ page 21 (
         }
         help {
             inlineHelpText: Só para pessoa jurídica. Numérico ou alfanumérico; a máscara é opcional.
+        }
+    )
+
+    pageItem P21_CPF (
+        type: textField
+        label {
+            label: CPF
+            alignment: right
+        }
+        layout {
+            sequence: 22
+            region: @cliente
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 14
+        }
+        source {
+            formRegion: @cliente
+            column: CPF
+            dataType: varchar2
+        }
+        help {
+            inlineHelpText: Só para pessoa física; a máscara é opcional.
         }
     )
 
@@ -218,74 +456,58 @@ page 21 (
         }
     )
 
-    pageItem P21_UF (
-        type: selectList
+    pageItem P21_INSCRICAO_ESTADUAL (
+        type: textField
         label {
-            label: UF
+            label: Inscrição estadual
             alignment: right
         }
         layout {
-            sequence: 50
+            sequence: 45
             region: @cliente
             slot: regionBody
+            columnSpan: 6
             alignment: left
         }
         appearance {
-            template: @/required-floating
+            template: @/optional-floating
             templateOptions: #DEFAULT#
         }
         validation {
-            valueRequired: true
-        }
-        lov {
-            type: sharedComponent
-            lov: @ufs
-            displayNullValue: true
-            nullDisplayValue: - Selecione -
+            maxLength: 20
         }
         source {
             formRegion: @cliente
-            column: UF
+            column: INSCRICAO_ESTADUAL
             dataType: varchar2
         }
     )
 
-    pageItem P21_MUNICIPIO_IBGE (
-        type: popupLov
+    pageItem P21_CAEPF (
+        type: textField
         label {
-            label: Município (IBGE)
+            label: CAEPF (produtor rural pessoa física)
             alignment: right
         }
         layout {
-            sequence: 60
+            sequence: 46
             region: @cliente
             slot: regionBody
+            startNewRow: false
+            columnSpan: 6
             alignment: left
         }
         appearance {
-            template: @/required-floating
+            template: @/optional-floating
             templateOptions: #DEFAULT#
         }
         validation {
-            valueRequired: true
-        }
-        lov {
-            type: sqlQuery
-            sqlQuery:
-                ```sql
-                select nome || ' (' || codigo || ')' d, codigo r
-                  from rtc_da_municipio
-                 where sigla_uf = :P21_UF
-                 order by nome
-                ```
+            maxLength: 18
         }
         source {
             formRegion: @cliente
-            column: MUNICIPIO_IBGE
-            dataType: number
-        }
-        cascadingLov {
-            parentItems: P21_UF
+            column: CAEPF
+            dataType: varchar2
         }
     )
 
@@ -353,6 +575,44 @@ page 21 (
         }
     )
 
+    pageItem P21_FORMA_APURACAO_RURAL (
+        type: selectList
+        label {
+            label: Apuração do resultado rural (LCDPR)
+            alignment: right
+        }
+        layout {
+            sequence: 85
+            region: @cliente
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        lov {
+            type: sharedComponent
+            lov: @forma-apuracao
+            displayNullValue: false
+        }
+        source {
+            formRegion: @cliente
+            column: FORMA_APURACAO_RURAL
+            dataType: varchar2
+        }
+        default {
+            type: static
+            staticValue: 1
+        }
+        help {
+            inlineHelpText: Só faz diferença para produtor rural pessoa física.
+        }
+    )
+
     pageItem P21_EMAIL (
         type: textField
         label {
@@ -363,6 +623,7 @@ page 21 (
             sequence: 90
             region: @cliente
             slot: regionBody
+            columnSpan: 6
             alignment: left
         }
         appearance {
@@ -389,6 +650,8 @@ page 21 (
             sequence: 100
             region: @cliente
             slot: regionBody
+            startNewRow: false
+            columnSpan: 6
             alignment: left
         }
         appearance {
@@ -460,226 +723,6 @@ page 21 (
         default {
             type: static
             staticValue: S
-        }
-    )
-
-    pageItem P21_CAEPF (
-        type: textField
-        label {
-            label: CAEPF (produtor rural pessoa física)
-            alignment: right
-        }
-        layout {
-            sequence: 101
-            region: @cliente
-            slot: regionBody
-            alignment: left
-        }
-        appearance {
-            template: @/optional-floating
-            templateOptions: #DEFAULT#
-        }
-        validation {
-            maxLength: 18
-        }
-        source {
-            formRegion: @cliente
-            column: CAEPF
-            dataType: varchar2
-        }
-    )
-
-    pageItem P21_INSCRICAO_ESTADUAL (
-        type: textField
-        label {
-            label: Inscrição estadual
-            alignment: right
-        }
-        layout {
-            sequence: 102
-            region: @cliente
-            slot: regionBody
-            alignment: left
-        }
-        appearance {
-            template: @/optional-floating
-            templateOptions: #DEFAULT#
-        }
-        validation {
-            maxLength: 20
-        }
-        source {
-            formRegion: @cliente
-            column: INSCRICAO_ESTADUAL
-            dataType: varchar2
-        }
-    )
-
-    pageItem P21_ENDERECO (
-        type: textField
-        label {
-            label: Endereço
-            alignment: right
-        }
-        layout {
-            sequence: 103
-            region: @cliente
-            slot: regionBody
-            alignment: left
-        }
-        appearance {
-            template: @/optional-floating
-            templateOptions: #DEFAULT#
-        }
-        validation {
-            maxLength: 150
-        }
-        source {
-            formRegion: @cliente
-            column: ENDERECO
-            dataType: varchar2
-        }
-    )
-
-    pageItem P21_NUMERO (
-        type: textField
-        label {
-            label: Número
-            alignment: right
-        }
-        layout {
-            sequence: 104
-            region: @cliente
-            slot: regionBody
-            alignment: left
-        }
-        appearance {
-            template: @/optional-floating
-            templateOptions: #DEFAULT#
-        }
-        validation {
-            maxLength: 6
-        }
-        source {
-            formRegion: @cliente
-            column: NUMERO
-            dataType: varchar2
-        }
-    )
-
-    pageItem P21_COMPLEMENTO (
-        type: textField
-        label {
-            label: Complemento
-            alignment: right
-        }
-        layout {
-            sequence: 105
-            region: @cliente
-            slot: regionBody
-            alignment: left
-        }
-        appearance {
-            template: @/optional-floating
-            templateOptions: #DEFAULT#
-        }
-        validation {
-            maxLength: 50
-        }
-        source {
-            formRegion: @cliente
-            column: COMPLEMENTO
-            dataType: varchar2
-        }
-    )
-
-    pageItem P21_BAIRRO (
-        type: textField
-        label {
-            label: Bairro
-            alignment: right
-        }
-        layout {
-            sequence: 106
-            region: @cliente
-            slot: regionBody
-            alignment: left
-        }
-        appearance {
-            template: @/optional-floating
-            templateOptions: #DEFAULT#
-        }
-        validation {
-            maxLength: 50
-        }
-        source {
-            formRegion: @cliente
-            column: BAIRRO
-            dataType: varchar2
-        }
-    )
-
-    pageItem P21_CEP (
-        type: textField
-        label {
-            label: CEP
-            alignment: right
-        }
-        layout {
-            sequence: 107
-            region: @cliente
-            slot: regionBody
-            alignment: left
-        }
-        appearance {
-            template: @/optional-floating
-            templateOptions: #DEFAULT#
-        }
-        validation {
-            maxLength: 10
-        }
-        source {
-            formRegion: @cliente
-            column: CEP
-            dataType: varchar2
-        }
-    )
-
-    pageItem P21_FORMA_APURACAO_RURAL (
-        type: selectList
-        label {
-            label: Apuração do resultado rural (LCDPR)
-            alignment: right
-        }
-        layout {
-            sequence: 108
-            region: @cliente
-            slot: regionBody
-            alignment: left
-        }
-        appearance {
-            template: @/required-floating
-            templateOptions: #DEFAULT#
-        }
-        validation {
-            valueRequired: true
-        }
-        lov {
-            type: sharedComponent
-            lov: @forma-apuracao
-            displayNullValue: false
-        }
-        source {
-            formRegion: @cliente
-            column: FORMA_APURACAO_RURAL
-            dataType: varchar2
-        }
-        default {
-            type: static
-            staticValue: 1
-        }
-        help {
-            inlineHelpText: Só faz diferença para produtor rural pessoa física.
         }
     )
 
@@ -933,8 +976,11 @@ page 21 (
             plsqlCode:
                 ```plsql
                 -- CNPJ para pessoa jurídica, CPF para pessoa física (constraint CLIENTE_DOCUMENTO_CK).
+                -- Campos só de PJ (nome fantasia, CRT) ficam vazios para pessoa física.
                 if :P21_TIPO_PESSOA = 'F' then
                     :P21_CNPJ := null;
+                    :P21_NOME_FANTASIA := null;
+                    :P21_CRT := null;
                 else
                     :P21_CPF := null;
                     :P21_CAEPF := null;

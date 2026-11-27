@@ -929,3 +929,19 @@ body,
     background: var(--ec-sand);
     object-fit: contain;
 }
+
+/* Consulta do CEP em andamento (cep.js). */
+input.ec-cep-loading {
+    background-image: linear-gradient(90deg, transparent, var(--ec-brand-soft), transparent);
+    background-size: 200% 100%;
+    animation: ec-cep-loading 1s linear infinite;
+}
+
+@keyframes ec-cep-loading {
+    from { background-position: 100% 0; }
+    to { background-position: -100% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    input.ec-cep-loading { animation: none; }
+}
