@@ -3,7 +3,8 @@
 Origem: feedback do Eraldo (26/11/2026), escritório de contabilidade, financeiro e
 jurídico voltado ao agronegócio, que está validando o Ecloud.
 
-Status: **proposta para aprovação do Daniel.** Nada aqui foi implementado. Cada
+Status: **Módulo A aprovado como MVP pelo Daniel em 27/11/2026** (fase 1 em
+[05-modulo-a-rural.md](05-modulo-a-rural.md)). Os demais módulos seguem como proposta. Cada
 módulo aprovado segue as fases do projeto (1 arquitetura + DDL + VPD + specs,
 2 bodies + testes, 3 APEXlang, 4 deploy), com aprovação ao fim de cada uma.
 

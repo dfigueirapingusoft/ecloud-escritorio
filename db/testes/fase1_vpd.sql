@@ -17,8 +17,34 @@ declare
     l_cli_a   number;
     l_cli_b   number;
     l_sim_a   number;
+    -- módulo A (produtor rural)
+    l_pf_a    number;
+    l_pf_b    number;
+    l_imo_a   number;
+    l_cc_a    number;
+    l_cta_a   number;
+    l_cta_b   number;
+    l_cat_a   number;
+    l_lan_a   number;
+    l_lay_a   number;
+    l_imp_a   number;
+    l_ite_a   number;
+    l_reg_a   number;
+    type t_nomes is table of varchar2(30);
+    l_tabelas_rurais t_nomes := t_nomes(
+        'IMOVEL_RURAL','IMOVEL_CONTRAPARTE','CENTRO_CUSTO','CONTA_BANCARIA',
+        'CATEGORIA_CAIXA','LIVRO_CAIXA','EXTRATO_LAYOUT_CSV','EXTRATO_IMPORTACAO',
+        'EXTRATO_ITEM','CONCILIACAO','REGRA_CONCILIACAO','LCDPR_ARQUIVO');
+
     l_qtd     number;
     l_falhas  number := 0;
+
+    function contar(p_tabela in varchar2) return number is
+        l_n number;
+    begin
+        execute immediate 'select count(*) from ' || p_tabela into l_n;
+        return l_n;
+    end contar;
 
     procedure confere(p_desc in varchar2, p_ok in boolean) is
     begin
@@ -161,6 +187,137 @@ begin
     pkg_ecloud_ctx.definir_contexto('teste_contador_a');
     confere('contador não pode trocar de escritório (ORA-20001)',
         espera_erro('begin pkg_ecloud_ctx.trocar_escritorio(' || l_esc_b || '); end;', -20001));
+
+    ----------------------------------------------------------------------------
+    -- Módulo A – Produtor rural: cliente PF, constraints e VPD das 12 tabelas
+    ----------------------------------------------------------------------------
+    pkg_ecloud_ctx.definir_contexto_sistema;
+    insert into cliente (escritorio_id, tipo_pessoa, cpf, razao_social, uf, municipio_ibge, regime)
+    values (l_esc_b, 'F', '529.982.247-25', 'Produtor do B', 'MT', 5103403, 'NAO_CONTRIBUINTE')
+    returning cliente_id into l_pf_b;
+    insert into conta_bancaria (escritorio_id, cliente_id, cod_conta, apelido, banco_codigo, banco_nome,
+                                agencia, conta_numero, data_saldo_inicial)
+    values (l_esc_b, l_pf_b, 1, 'Conta do B', '001', 'BANCO DO BRASIL', '1234', '12345-6', date '2026-01-01')
+    returning conta_id into l_cta_b;
+
+    pkg_ecloud_ctx.definir_contexto('teste_contador_a');
+
+    -- cliente PF herda o escritório, normaliza CPF/CEP e convive com outro PF
+    insert into cliente (tipo_pessoa, cpf, caepf, razao_social, uf, municipio_ibge, regime,
+                         endereco, numero, bairro, cep)
+    values ('f', '529.982.247-25', '123.456.789/001-23', 'Produtor do A', 'MT', 5103403, 'NAO_CONTRIBUINTE',
+            'Rodovia MT-130, km 12', 'SN', 'Zona Rural', '78.890-000')
+    returning cliente_id into l_pf_a;
+    select count(*) into l_qtd from cliente
+     where cliente_id = l_pf_a and escritorio_id = l_esc_a and tipo_pessoa = 'F'
+       and cpf = '52998224725' and cnpj is null and cep = '78890000';
+    confere('cliente PF herdou escritório e normalizou CPF/CEP', l_qtd = 1);
+    insert into cliente (tipo_pessoa, cpf, razao_social, uf, municipio_ibge, regime)
+    values ('F', '11144477735', 'Outro produtor do A', 'MT', 5103403, 'REGULAR');
+    confere('dois clientes PF no mesmo escritório (CNPJ nulo não colide)', sql%rowcount = 1);
+    confere('CPF repetido no escritório é rejeitado (ORA-00001)',
+        espera_erro(q'[insert into cliente (tipo_pessoa, cpf, razao_social, uf, municipio_ibge, regime) values ('F', '52998224725', 'Duplicado', 'MT', 5103403, 'REGULAR')]', -1));
+    confere('PF com CNPJ é rejeitado (ORA-02290)',
+        espera_erro(q'[insert into cliente (tipo_pessoa, cpf, cnpj, razao_social, uf, municipio_ibge, regime) values ('F', '39053344705', '11222333000181', 'X', 'MT', 5103403, 'REGULAR')]', -2290));
+    confere('PJ sem CNPJ é rejeitado (ORA-02290)',
+        espera_erro(q'[insert into cliente (tipo_pessoa, razao_social, uf, municipio_ibge, regime) values ('J', 'X', 'MT', 5103403, 'REGULAR')]', -2290));
+    confere('PJ NAO_CONTRIBUINTE é rejeitado (ORA-02290)',
+        espera_erro(q'[insert into cliente (cnpj, razao_social, uf, municipio_ibge, regime) values ('11222333000181', 'X', 'MT', 5103403, 'NAO_CONTRIBUINTE')]', -2290));
+
+    insert into imovel_rural (cliente_id, cod_imovel, nome, cad_itr, endereco, bairro, uf, municipio_ibge, cep,
+                              tipo_exploracao, participacao_pct)
+    values (l_pf_a, 1, 'Fazenda Boa Vista', '1234567-8', 'Estrada Vicinal 4', 'Zona Rural', 'mt', 5103403, '78890000', '2', 50)
+    returning imovel_id into l_imo_a;
+    insert into imovel_contraparte (imovel_id, tipo_contraparte, tipo_pessoa, documento, nome, percentual)
+    values (l_imo_a, '1', 'F', '111.444.777-35', 'Condômino', 50);
+    insert into centro_custo (cliente_id, imovel_id, codigo, nome, tipo, cultura)
+    values (l_pf_a, l_imo_a, 'soja-26/27', 'Soja 2026/27', 'SAFRA', 'Soja')
+    returning centro_custo_id into l_cc_a;
+    insert into extrato_layout_csv (nome, col_data, col_historico, col_valor)
+    values ('Banco Teste', 1, 2, 3)
+    returning layout_id into l_lay_a;
+    insert into conta_bancaria (cliente_id, cod_conta, apelido, banco_codigo, banco_nome, agencia, conta_numero,
+                                data_saldo_inicial, saldo_inicial, layout_csv_id)
+    values (l_pf_a, 1, 'Conta movimento', '756', 'SICOOB', '3001', '00.123.456-7', date '2026-01-01', 1000, l_lay_a)
+    returning conta_id into l_cta_a;
+    insert into categoria_caixa (codigo, nome, natureza, tipo_lanc, grupo)
+    values ('rec-graos', 'Venda de grãos', 'E', '1', 'RECEITA_RURAL')
+    returning categoria_id into l_cat_a;
+    insert into livro_caixa (cliente_id, conta_id, categoria_id, imovel_id, centro_custo_id, data_lancamento,
+                             natureza, valor, tipo_doc, num_doc, historico, partic_tipo_pessoa, partic_documento, partic_nome)
+    values (l_pf_a, l_cta_a, l_cat_a, l_imo_a, l_cc_a, date '2026-03-10',
+            'E', 50000, '1', 'NF 123', 'Venda de soja', 'J', '11.444.777/0001-61', 'Cerealista')
+    returning lancamento_id into l_lan_a;
+    insert into extrato_importacao (conta_id, formato, nome_arquivo, arquivo, arquivo_bytes, hash_sha256)
+    values (l_cta_a, 'OFX', 'extrato.ofx', to_blob(utl_raw.cast_to_raw('OFXHEADER:100')), 13, rpad('a', 64, 'a'))
+    returning importacao_id into l_imp_a;
+    insert into extrato_item (importacao_id, conta_id, data_movimento, valor, fitid, chave_dedup, historico)
+    values (l_imp_a, l_cta_a, date '2026-03-11', 50000, 'F1', 'F1', 'TED RECEBIDA CEREALISTA')
+    returning item_id into l_ite_a;
+    insert into regra_conciliacao (cliente_id, nome, texto_contem, natureza, categoria_id)
+    values (l_pf_a, 'TED de cerealista', 'CEREALISTA', 'E', l_cat_a)
+    returning regra_id into l_reg_a;
+    insert into conciliacao (item_id, lancamento_id, valor, tipo, regra_id)
+    values (l_ite_a, l_lan_a, 50000, 'REGRA', l_reg_a);
+    insert into lcdpr_arquivo (cliente_id, ano, pendencias, status)
+    values (l_pf_a, 2026, '[]', 'GERADO');
+
+    for i in 1 .. l_tabelas_rurais.count loop
+        confere('A vê 1 linha própria em ' || l_tabelas_rurais(i), contar(l_tabelas_rurais(i)) = 1);
+    end loop;
+    select count(*) into l_qtd from livro_caixa where lancamento_id = l_lan_a and escritorio_id = l_esc_a;
+    confere('lançamento herdou ESCRITORIO_ID do contexto', l_qtd = 1);
+    select count(*) into l_qtd from imovel_rural where imovel_id = l_imo_a and cad_itr = '12345678' and uf = 'MT';
+    confere('trigger normaliza CAD_ITR e UF do imóvel', l_qtd = 1);
+    select count(*) into l_qtd from conta_bancaria where conta_id = l_cta_a and conta_numero = '001234567';
+    confere('trigger normaliza número da conta', l_qtd = 1);
+    select count(*) into l_qtd from vw_livro_caixa where lancamento_id = l_lan_a and valor_sinal = 50000;
+    confere('vw_livro_caixa traz o lançamento com sinal', l_qtd = 1);
+    select count(*) into l_qtd from vw_conta_conciliacao where conta_id = l_cta_a and saldo_livro = 51000;
+    confere('vw_conta_conciliacao: saldo do livro = inicial + entradas', l_qtd = 1);
+
+    -- referências cruzadas e regras das constraints
+    confere('A não lança na conta de B (ORA-02291)',
+        espera_erro('insert into livro_caixa (cliente_id, conta_id, categoria_id, data_lancamento, natureza, valor, historico) values ('
+                    || l_pf_a || ', ' || l_cta_b || ', ' || l_cat_a || q'[, date '2026-03-10', 'E', 1, 'x')]', -2291));
+    confere('A não importa extrato na conta de B (ORA-02291)',
+        espera_erro('insert into extrato_importacao (conta_id, formato, nome_arquivo, arquivo, arquivo_bytes, hash_sha256) values ('
+                    || l_cta_b || q'[, 'OFX', 'x.ofx', empty_blob(), 1, 'b')]', -2291));
+    confere('A não cria conta para cliente de B (ORA-02291)',
+        espera_erro('insert into conta_bancaria (cliente_id, cod_conta, apelido, tipo, data_saldo_inicial) values ('
+                    || l_pf_b || q'[, 0, 'Caixa', 'CAIXA', date '2026-01-01')]', -2291));
+    confere('categoria de receita com natureza S é rejeitada (ORA-02290)',
+        espera_erro(q'[insert into categoria_caixa (codigo, nome, natureza, tipo_lanc, grupo) values ('X', 'X', 'S', '1', 'RECEITA_RURAL')]', -2290));
+    confere('conta CAIXA com código diferente de 000 é rejeitada (ORA-02290)',
+        espera_erro('insert into conta_bancaria (cliente_id, cod_conta, apelido, tipo, data_saldo_inicial) values ('
+                    || l_pf_a || q'[, 5, 'Caixa', 'CAIXA', date '2026-01-01')]', -2290));
+    confere('lançamento com valor negativo é rejeitado (ORA-02290)',
+        espera_erro('insert into livro_caixa (cliente_id, conta_id, categoria_id, data_lancamento, natureza, valor, historico) values ('
+                    || l_pf_a || ', ' || l_cta_a || ', ' || l_cat_a || q'[, date '2026-03-10', 'E', -1, 'x')]', -2290));
+    confere('item de extrato repetido na conta é rejeitado (ORA-00001)',
+        espera_erro('insert into extrato_item (importacao_id, conta_id, data_movimento, valor, chave_dedup) values ('
+                    || l_imp_a || ', ' || l_cta_a || q'[, date '2026-03-11', 10, 'F1')]', -1));
+    confere('mesmo arquivo de extrato duas vezes na conta é rejeitado (ORA-00001)',
+        espera_erro('insert into extrato_importacao (conta_id, formato, nome_arquivo, arquivo, arquivo_bytes, hash_sha256) values ('
+                    || l_cta_a || q'[, 'OFX', 'copia.ofx', empty_blob(), 1, rpad('a', 64, 'a'))]', -1));
+    confere('LCDPR com pendências fora de JSON é rejeitado (ORA-02290)',
+        espera_erro('insert into lcdpr_arquivo (cliente_id, ano, pendencias, status) values ('
+                    || l_pf_a || q'[, 2026, 'nao e json', 'GERADO')]', -2290));
+
+    pkg_ecloud_ctx.definir_contexto('TESTE_ADMIN_B');
+    for i in 1 .. l_tabelas_rurais.count loop
+        confere('B não vê linhas de A em ' || l_tabelas_rurais(i),
+                contar(l_tabelas_rurais(i) || ' where escritorio_id = ' || l_esc_a) = 0);
+    end loop;
+    update livro_caixa set valor = 1 where lancamento_id = l_lan_a;
+    confere('B não altera lançamento de A (0 linhas)', sql%rowcount = 0);
+    delete from conciliacao where item_id = l_ite_a;
+    confere('B não desfaz conciliação de A (0 linhas)', sql%rowcount = 0);
+
+    pkg_ecloud_ctx.limpar_contexto;
+    for i in 1 .. l_tabelas_rurais.count loop
+        confere('sem contexto: 0 linhas em ' || l_tabelas_rurais(i), contar(l_tabelas_rurais(i)) = 0);
+    end loop;
 
     ----------------------------------------------------------------------------
     -- Limpeza

@@ -8,7 +8,10 @@
 --   2. Tabelas de negócio (com ESCRITORIO_ID, isoladas por VPD em 02_vpd.sql):
 --      escritório, usuário, cliente, simulação, item, erro de item, DANFSe e
 --      log de chamadas HTTP.
---   3. Triggers de auditoria (ATUALIZADO_EM / ATUALIZADO_POR).
+--   3. Módulo A – Produtor rural (docs/05-modulo-a-rural.md): cliente pessoa
+--      física, imóveis rurais, centros de custo/safras, contas bancárias,
+--      livro caixa, extratos, conciliação bancária e arquivos do LCDPR.
+--   4. Triggers de auditoria (ATUALIZADO_EM / ATUALIZADO_POR).
 --
 -- Idempotente: pode ser executado várias vezes. Objetos que já existem são
 -- mantidos; colunas novas são adicionadas com ALTER TABLE ... ADD.
@@ -645,8 +648,10 @@ begin
 end;
 /
 
+@@01b_tabelas_rural.sql
+
 --------------------------------------------------------------------------------
--- 3. TRIGGERS DE AUDITORIA
+-- 4. TRIGGERS DE AUDITORIA
 --    Preenchem ATUALIZADO_EM/ATUALIZADO_POR e normalizam campos-chave.
 --------------------------------------------------------------------------------
 create or replace trigger rtc_config_biu
@@ -706,6 +711,12 @@ for each row
 begin
     :new.cnpj := upper(regexp_replace(:new.cnpj, '[^0-9A-Za-z]', ''));
     :new.uf   := upper(:new.uf);
+    -- Módulo A: documentos de pessoa física e endereço só com dígitos
+    :new.tipo_pessoa        := upper(:new.tipo_pessoa);
+    :new.cpf                := regexp_replace(:new.cpf, '[^0-9]', '');
+    :new.caepf              := regexp_replace(:new.caepf, '[^0-9]', '');
+    :new.inscricao_estadual := regexp_replace(:new.inscricao_estadual, '[^0-9]', '');
+    :new.cep                := regexp_replace(:new.cep, '[^0-9]', '');
     if updating then
         :new.atualizado_em  := systimestamp;
         :new.atualizado_por := coalesce(sys_context('APEX$SESSION','APP_USER'), user);

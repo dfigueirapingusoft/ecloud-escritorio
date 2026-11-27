@@ -235,7 +235,8 @@ end pkg_ecloud_ctx;
 create or replace package pkg_rtc_vpd
 authid definer
 as
-    -- CLIENTE, SIMULACAO, SIMULACAO_ITEM, SIMULACAO_ITEM_ERRO, DANFSE
+    -- CLIENTE, SIMULACAO, SIMULACAO_ITEM, SIMULACAO_ITEM_ERRO, DANFSE e as
+    -- tabelas do módulo A (IMOVEL_RURAL ... LCDPR_ARQUIVO)
     function fn_escritorio(p_schema in varchar2, p_objeto in varchar2) return varchar2;
 
     -- ESCRITORIO: admin da plataforma vê todos; usuário vê só o seu.
@@ -325,7 +326,20 @@ declare
         t_pol('SIMULACAO_ITEM',      'PKG_RTC_VPD.FN_ESCRITORIO'),
         t_pol('SIMULACAO_ITEM_ERRO', 'PKG_RTC_VPD.FN_ESCRITORIO'),
         t_pol('DANFSE',              'PKG_RTC_VPD.FN_ESCRITORIO'),
-        t_pol('RTC_CHAMADA_LOG',     'PKG_RTC_VPD.FN_LOG'));
+        t_pol('RTC_CHAMADA_LOG',     'PKG_RTC_VPD.FN_LOG'),
+        -- Módulo A – Produtor rural (01b_tabelas_rural.sql)
+        t_pol('IMOVEL_RURAL',        'PKG_RTC_VPD.FN_ESCRITORIO'),
+        t_pol('IMOVEL_CONTRAPARTE',  'PKG_RTC_VPD.FN_ESCRITORIO'),
+        t_pol('CENTRO_CUSTO',        'PKG_RTC_VPD.FN_ESCRITORIO'),
+        t_pol('CONTA_BANCARIA',      'PKG_RTC_VPD.FN_ESCRITORIO'),
+        t_pol('CATEGORIA_CAIXA',     'PKG_RTC_VPD.FN_ESCRITORIO'),
+        t_pol('LIVRO_CAIXA',         'PKG_RTC_VPD.FN_ESCRITORIO'),
+        t_pol('EXTRATO_LAYOUT_CSV',  'PKG_RTC_VPD.FN_ESCRITORIO'),
+        t_pol('EXTRATO_IMPORTACAO',  'PKG_RTC_VPD.FN_ESCRITORIO'),
+        t_pol('EXTRATO_ITEM',        'PKG_RTC_VPD.FN_ESCRITORIO'),
+        t_pol('CONCILIACAO',         'PKG_RTC_VPD.FN_ESCRITORIO'),
+        t_pol('REGRA_CONCILIACAO',   'PKG_RTC_VPD.FN_ESCRITORIO'),
+        t_pol('LCDPR_ARQUIVO',       'PKG_RTC_VPD.FN_ESCRITORIO'));
     l_existe number;
 begin
     for i in 1 .. l_pols.count loop

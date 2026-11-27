@@ -16,7 +16,8 @@
 -- (o OpenAPI do DANFSe já traz o prefixo /api em /api/danfse)
 --
 -- Ordem: PKG_ECLOUD_UTIL, PKG_RTC_CONFIG, PKG_RTC_LOG, PKG_RTC_HTTP,
---        PKG_RTC_DADOS_ABERTOS, PKG_RTC_CALC, PKG_RTC_DANFSE.
+--        PKG_RTC_DADOS_ABERTOS, PKG_RTC_CALC, PKG_RTC_DANFSE e, no fim,
+--        03b_pacotes_spec_rural.sql (módulo A – produtor rural).
 -- Idempotente (CREATE OR REPLACE).
 --------------------------------------------------------------------------------
 set define off
@@ -467,3 +468,6 @@ as
     procedure regerar(p_danfse_id in number, p_stc in varchar2, p_canhoto in varchar2);
 end pkg_rtc_danfse;
 /
+
+-- Módulo A – Produtor rural
+@@03b_pacotes_spec_rural.sql

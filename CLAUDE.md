@@ -42,11 +42,12 @@ português do Brasil.
 ## Estrutura
 
 ```
-db/        00_pre_requisitos.sql e 00b_acesso_proxy.sql (DBA), 01_tabelas.sql, 02_vpd.sql,
-           03_pacotes_spec.sql, 04_views.sql, 05_dados_iniciais.sql,
+db/        00_pre_requisitos.sql e 00b_acesso_proxy.sql (DBA), 01_tabelas.sql (+ 01b_tabelas_rural.sql),
+           02_vpd.sql, 03_pacotes_spec.sql (+ 03b_pacotes_spec_rural.sql), 04_views.sql, 05_dados_iniciais.sql,
            06_pacotes_body.sql, 07_primeiro_admin.sql, instalar.sql, testes/
 apex/      fonte APEXlang 26.2 (fase 3): application.apx, shared-components/, pages/
-docs/      01-arquitetura.md, 02-app-apex.md, 03-deploy.md, contratos/
+docs/      01-arquitetura.md, 02-app-apex.md, 03-deploy.md, 04-escopo-agro.md (roadmap Agro),
+           05-modulo-a-rural.md, contratos/ (OpenAPI, exemplos, lcdpr-leiaute-1.3.md)
 tools/     validar_contratos.py, verificar_sql_apex.py
 ```
 
@@ -83,3 +84,7 @@ python3 tools/verificar_sql_apex.py /tmp/v.sql && sql ECLOUD@base @/tmp/v.sql
 * `pointer` é base 0 (`#/itens/3` = item 4); `#/itens/-1` = erro da operação.
 * Município IBGE pode ter 9 dígitos.
 * DANFSe não tem endpoint de versão; use `/health/ready`.
+* LCDPR: fonte da verdade é `docs/contratos/lcdpr-leiaute-1.3.md`; valores sem vírgula com 2 casas
+  implícitas, datas `ddmmaaaa`, `COD_CONTA` 000 = dinheiro e `COD_IMOVEL` 000 = custo comum.
+* Módulo A (produtor rural): DDL em tabela com VPD que valida linhas dá ORA-28133; ligue
+  `pkg_ecloud_ctx.definir_contexto_sistema` durante a migração (ver `01b_tabelas_rural.sql`).

@@ -151,7 +151,7 @@ sql ADMIN@base @db/00_pre_requisitos.sql ECLOUD
 # 2) Schema da aplicação: instalação (idempotente; pode rodar de novo)
 cd db && sql ECLOUD@base @instalar.sql        # esperado: "no rows selected" em objetos inválidos
 # 3) Isolamento VPD e constraints (não deixa dados)
-sql ECLOUD@base @testes/fase1_vpd.sql          # esperado: 27 linhas OK e "fase1_vpd: SUCESSO"
+sql ECLOUD@base @testes/fase1_vpd.sql          # esperado: 85 linhas OK e "fase1_vpd: SUCESSO"
 # 4) Specs x OpenAPI
 python3 tools/validar_contratos.py             # esperado: "Contratos validados: ..."
 ```
@@ -195,5 +195,6 @@ Páginas, segurança, pré-requisitos do workspace e validação em
 ## 9. Próximas fases
 
 * **Fase 4:** deploy com `apexlang-deploy`, somente com sua autorização e o ambiente alvo.
-* **Escopo Agro (proposta):** roadmap de módulos para o escritório do agronegócio em
-  [04-escopo-agro.md](04-escopo-agro.md), aguardando aprovação.
+* **Escopo Agro:** roadmap de módulos para o escritório do agronegócio em
+  [04-escopo-agro.md](04-escopo-agro.md). Módulo A (produtor rural, livro caixa e
+  conciliação) aprovado; fase 1 em [05-modulo-a-rural.md](05-modulo-a-rural.md).
