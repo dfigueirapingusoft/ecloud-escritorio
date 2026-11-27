@@ -1,0 +1,26 @@
+lov sit-especial (
+    name: SIT_ESPECIAL
+    source {
+        location: staticValues
+    }
+    entry sit-especial-1 (
+        sequence: 1
+        display: 0 - Normal
+        return: 0
+    )
+    entry sit-especial-2 (
+        sequence: 2
+        display: 1 - Falecimento
+        return: 1
+    )
+    entry sit-especial-3 (
+        sequence: 3
+        display: 2 - Espólio
+        return: 2
+    )
+    entry sit-especial-4 (
+        sequence: 4
+        display: 3 - Saída definitiva do país
+        return: 3
+    )
+)

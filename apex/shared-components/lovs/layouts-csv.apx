@@ -1,0 +1,17 @@
+lov layouts-csv (
+    name: LAYOUTS_CSV
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select nome d, layout_id r
+              from extrato_layout_csv
+             where ativo = 'S'
+             order by nome
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)

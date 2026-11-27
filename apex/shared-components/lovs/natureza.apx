@@ -1,0 +1,16 @@
+lov natureza (
+    name: NATUREZA
+    source {
+        location: staticValues
+    }
+    entry natureza-1 (
+        sequence: 1
+        display: Entrada
+        return: E
+    )
+    entry natureza-2 (
+        sequence: 2
+        display: Saída
+        return: S
+    )
+)

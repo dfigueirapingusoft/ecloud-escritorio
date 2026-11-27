@@ -1,0 +1,800 @@
+page 88 (
+    name: LCDPR
+    alias: LCDPR
+    title: LCDPR
+    pageGroup: @rural
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+    help {
+        helpText:
+            ```html
+            <p>Livro Caixa Digital do Produtor Rural, leiaute 1.3. Só entram lançamentos de categorias com tipo no LCDPR. O arquivo é texto com linhas terminadas em CR LF, pronto para o programa da Receita.</p>
+            ```
+    }
+    region breadcrumb (
+        name: Breadcrumb
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region filtros (
+        name: Filtros
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+            ]
+        }
+    )
+
+    pageItem P88_CLIENTE_ID (
+        type: selectList
+        label {
+            label: Produtor rural
+            alignment: right
+        }
+        layout {
+            sequence: 10
+            region: @filtros
+            slot: regionBody
+            columnSpan: 5
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        lov {
+            type: sharedComponent
+            lov: @produtores
+            displayNullValue: true
+            nullDisplayValue: - Selecione o produtor -
+        }
+        sessionState {
+            storage: session
+        }
+    )
+
+    pageItem P88_ANO (
+        type: numberField
+        label {
+            label: Ano-calendário
+            alignment: right
+        }
+        layout {
+            sequence: 20
+            region: @filtros
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 2
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        default {
+            type: expression
+            plsqlExpression: extract(year from current_date) - 1
+        }
+        sessionState {
+            storage: session
+        }
+    )
+
+    region sem-produtor (
+        name: Selecione o produtor
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                <p>Selecione o produtor rural para ver os dados. Produtores são clientes pessoa física, cadastrados em Clientes.</p>
+                ```
+        }
+        layout {
+            sequence: 15
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P88_CLIENTE_ID
+        }
+    )
+
+    region parametros (
+        name: Arquivo
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P88_CLIENTE_ID
+        }
+    )
+
+    pageItem P88_IND_SIT_INI_PER (
+        type: selectList
+        label {
+            label: Situação no início do período
+            alignment: right
+        }
+        layout {
+            sequence: 10
+            region: @parametros
+            slot: regionBody
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        lov {
+            type: sharedComponent
+            lov: @ind-sit-ini-per
+            displayNullValue: false
+        }
+        default {
+            type: static
+            staticValue: 0
+        }
+    )
+
+    pageItem P88_SIT_ESPECIAL (
+        type: selectList
+        label {
+            label: Situação especial
+            alignment: right
+        }
+        layout {
+            sequence: 20
+            region: @parametros
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        lov {
+            type: sharedComponent
+            lov: @sit-especial
+            displayNullValue: false
+        }
+        default {
+            type: static
+            staticValue: 0
+        }
+    )
+
+    pageItem P88_DT_SIT_ESP (
+        type: datePicker
+        label {
+            label: Data da situação especial
+            alignment: right
+        }
+        layout {
+            sequence: 30
+            region: @parametros
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P88_RESP_NOME (
+        type: textField
+        label {
+            label: Responsável pela escrituração (opcional)
+            alignment: right
+        }
+        layout {
+            sequence: 40
+            region: @parametros
+            slot: regionBody
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 150
+        }
+    )
+
+    pageItem P88_RESP_DOCUMENTO (
+        type: textField
+        label {
+            label: CPF/CNPJ do responsável
+            alignment: right
+        }
+        layout {
+            sequence: 50
+            region: @parametros
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 3
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 18
+        }
+    )
+
+    pageItem P88_RESP_CRC (
+        type: textField
+        label {
+            label: CRC
+            alignment: right
+        }
+        layout {
+            sequence: 60
+            region: @parametros
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 3
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 30
+        }
+    )
+
+    pageItem P88_RESP_EMAIL (
+        type: textField
+        label {
+            label: E-mail do responsável
+            alignment: right
+        }
+        layout {
+            sequence: 70
+            region: @parametros
+            slot: regionBody
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 115
+        }
+    )
+
+    pageItem P88_RESP_FONE (
+        type: textField
+        label {
+            label: Telefone do responsável
+            alignment: right
+        }
+        layout {
+            sequence: 80
+            region: @parametros
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 20
+        }
+    )
+
+    region pendencias (
+        name: Pendências para o LCDPR
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select p.registro,
+                       p.referencia,
+                       p.mensagem
+                  from json_table(pkg_lcdpr.validar(:P88_CLIENTE_ID, to_number(:P88_ANO)), '$[*]'
+                           columns (registro   varchar2(10)   path '$.registro',
+                                    referencia varchar2(100)  path '$.referencia',
+                                    mensagem   varchar2(4000) path '$.mensagem')) p
+                ```
+            pageItemsToSubmit: P88_CLIENTE_ID,P88_ANO
+        }
+        layout {
+            sequence: 30
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        reportLayout {
+            numberOfRows: 500
+        }
+        componentAppearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+            ]
+        }
+        messages {
+            whenNoDataFound: Nenhuma pendência: o arquivo pode ser gerado.
+        }
+        serverSideCondition {
+            type: expression
+            language: plsql
+            plsqlExpression: :P88_CLIENTE_ID is not null and :P88_ANO is not null
+        }
+        column REGISTRO (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Registro
+            }
+            layout {
+                sequence: 1
+            }
+        )
+        column REFERENCIA (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Onde
+            }
+            layout {
+                sequence: 2
+            }
+        )
+        column MENSAGEM (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: O que corrigir
+            }
+            layout {
+                sequence: 3
+            }
+        )
+    )
+
+    region arquivos (
+        name: Arquivos gerados
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select a.arquivo_id,
+                       a.ano,
+                       case a.status when 'GERADO' then 'Gerado' else 'Com pendências' end as status,
+                       (select count(*) from json_table(a.pendencias, '$[*]'
+                                                columns (registro varchar2(10) path '$.registro'))) as pendencias,
+                       a.qtd_linhas,
+                       a.total_entradas,
+                       a.total_saidas,
+                       a.nome_arquivo,
+                       case when a.conteudo is not null then 'Baixar' end as baixar,
+                       cast(a.criado_em as date) as gerado_em,
+                       a.criado_por
+                  from lcdpr_arquivo a
+                 where a.cliente_id = :P88_CLIENTE_ID
+                 order by a.arquivo_id desc
+                ```
+            pageItemsToSubmit: P88_CLIENTE_ID
+        }
+        layout {
+            sequence: 40
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        reportLayout {
+            numberOfRows: 50
+        }
+        componentAppearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+            ]
+        }
+        messages {
+            whenNoDataFound: Nenhum arquivo gerado.
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P88_CLIENTE_ID
+        }
+        column ARQUIVO_ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Nº
+                alignment: end
+            }
+            layout {
+                sequence: 1
+                columnAlignment: end
+            }
+        )
+        column ANO (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Ano
+            }
+            layout {
+                sequence: 2
+            }
+        )
+        column STATUS (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Status
+            }
+            layout {
+                sequence: 3
+            }
+        )
+        column PENDENCIAS (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Pendências
+                alignment: end
+            }
+            layout {
+                sequence: 4
+                columnAlignment: end
+            }
+        )
+        column QTD_LINHAS (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Linhas
+                alignment: end
+            }
+            layout {
+                sequence: 5
+                columnAlignment: end
+            }
+        )
+        column TOTAL_ENTRADAS (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Entradas
+                alignment: end
+            }
+            layout {
+                sequence: 6
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G990D00
+            }
+        )
+        column TOTAL_SAIDAS (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Saídas
+                alignment: end
+            }
+            layout {
+                sequence: 7
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G990D00
+            }
+        )
+        column NOME_ARQUIVO (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Arquivo
+            }
+            layout {
+                sequence: 8
+            }
+        )
+        column BAIXAR (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Download
+            }
+            layout {
+                sequence: 9
+            }
+            link {
+                target: {
+                    page: 89
+                    items: {
+                        P89_ARQUIVO_ID: \#ARQUIVO_ID#\
+                    }
+                }
+                linkText: #BAIXAR#
+            }
+            sorting {
+                sortable: false
+            }
+        )
+        column GERADO_EM (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            heading {
+                heading: Gerado em
+            }
+            layout {
+                sequence: 10
+            }
+            appearance {
+                formatMask: DD/MM/YYYY HH24:MI
+            }
+        )
+        column CRIADO_POR (
+            reportColumnQueryId: 11
+            derivedColumn: N
+            heading {
+                heading: Por
+            }
+            layout {
+                sequence: 11
+            }
+        )
+    )
+
+    button validar (
+        buttonName: VALIDAR
+        label: Conferir pendências
+        layout {
+            sequence: 10
+            region: @parametros
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text-with-icon
+            icon: fa-check-square-o
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button gerar (
+        buttonName: GERAR
+        label: Gerar arquivo
+        layout {
+            sequence: 20
+            region: @parametros
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text-with-icon
+            icon: fa-file-text-o
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        security {
+            authorizationScheme: @contador-ou-administrador
+        }
+    )
+
+    validation data-situacao-especial (
+        name: Data da situação especial
+        validation {
+            type: functionBodyReturningBoolean
+            plsqlFunctionBody: return :P88_SIT_ESPECIAL = '0' or :P88_DT_SIT_ESP is not null;
+        }
+        error {
+            errorMessage: Informe a data da situação especial.
+            associatedItem: @P88_DT_SIT_ESP
+        }
+        execution {
+            sequence: 10
+        }
+        serverSideCondition {
+            whenButtonPressed: @gerar
+        }
+    )
+
+    dynamicAction trocar-filtro (
+        name: Recarregar ao trocar o filtro
+        execution {
+            sequence: 50
+        }
+        when {
+            event: change
+            selectionType: items
+            items: P88_CLIENTE_ID,P88_ANO
+        }
+        action native-submit (
+            action: submitPage
+            settings {
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+    )
+
+    process carregar-produtor (
+        name: Carregar o produtor escolhido
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                -- O produtor escolhido em qualquer página do módulo fica em F_PRODUTOR_ID.
+                if :F_PRODUTOR_ID is not null then
+                    :P88_CLIENTE_ID := :F_PRODUTOR_ID;
+                end if;
+                ```
+        }
+        execution {
+            sequence: 5
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 3088547990
+        }
+    )
+
+    process guardar-produtor (
+        name: Guardar o produtor escolhido
+        type: executeCode
+        source {
+            plsqlCode: :F_PRODUTOR_ID := :P88_CLIENTE_ID;
+        }
+        execution {
+            sequence: 1
+        }
+        advanced {
+            executionMappingIdentifier: 2051491760
+        }
+    )
+
+    process gerar (
+        name: Gerar o arquivo do LCDPR
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                declare
+                    l_id     number;
+                    l_status lcdpr_arquivo.status%type;
+                begin
+                    -- Com pendências o arquivo fica registrado sem conteúdo, com a lista do que corrigir.
+                    l_id := pkg_lcdpr.gerar(
+                                p_cliente_id      => :P88_CLIENTE_ID,
+                                p_ano             => to_number(:P88_ANO),
+                                p_ind_sit_ini_per => :P88_IND_SIT_INI_PER,
+                                p_sit_especial    => :P88_SIT_ESPECIAL,
+                                p_dt_sit_esp      => to_date(:P88_DT_SIT_ESP, 'DD/MM/YYYY'),
+                                p_resp_nome       => :P88_RESP_NOME,
+                                p_resp_documento  => :P88_RESP_DOCUMENTO,
+                                p_resp_crc        => :P88_RESP_CRC,
+                                p_resp_email      => :P88_RESP_EMAIL,
+                                p_resp_fone       => :P88_RESP_FONE);
+                    select status into l_status from lcdpr_arquivo where arquivo_id = l_id;
+                    apex_application.g_print_success_message :=
+                        case l_status when 'GERADO' then 'Arquivo gerado. Baixe-o na lista abaixo.'
+                                      else 'Há pendências: corrija-as e gere de novo.' end;
+                end;
+                ```
+        }
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 4611494300
+        }
+        serverSideCondition {
+            whenButtonPressed: @gerar
+        }
+    )
+
+    branch recarregar (
+        name: Recarregar a página
+        execution {
+            sequence: 99
+        }
+        behavior {
+            type: pageOrUrl
+            target: {
+                page: 88
+            }
+        }
+    )
+)

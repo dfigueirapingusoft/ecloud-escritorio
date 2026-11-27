@@ -1,0 +1,36 @@
+lov tipo-exploracao (
+    name: TIPO_EXPLORACAO
+    source {
+        location: staticValues
+    }
+    entry tipo-exploracao-1 (
+        sequence: 1
+        display: 1 - Individual (imóvel próprio)
+        return: 1
+    )
+    entry tipo-exploracao-2 (
+        sequence: 2
+        display: 2 - Condomínio
+        return: 2
+    )
+    entry tipo-exploracao-3 (
+        sequence: 3
+        display: 3 - Imóvel arrendado
+        return: 3
+    )
+    entry tipo-exploracao-4 (
+        sequence: 4
+        display: 4 - Parceria
+        return: 4
+    )
+    entry tipo-exploracao-5 (
+        sequence: 5
+        display: 5 - Comodato
+        return: 5
+    )
+    entry tipo-exploracao-6 (
+        sequence: 6
+        display: 6 - Outros
+        return: 6
+    )
+)

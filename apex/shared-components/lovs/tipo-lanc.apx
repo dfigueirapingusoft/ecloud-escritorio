@@ -1,0 +1,21 @@
+lov tipo-lanc (
+    name: TIPO_LANC
+    source {
+        location: staticValues
+    }
+    entry tipo-lanc-1 (
+        sequence: 1
+        display: 1 - Receita da atividade rural
+        return: 1
+    )
+    entry tipo-lanc-2 (
+        sequence: 2
+        display: 2 - Despesa de custeio e investimento
+        return: 2
+    )
+    entry tipo-lanc-3 (
+        sequence: 3
+        display: 3 - Receita de produto entregue (adiantamento)
+        return: 3
+    )
+)

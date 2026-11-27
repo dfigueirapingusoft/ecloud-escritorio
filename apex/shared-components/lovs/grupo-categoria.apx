@@ -1,0 +1,46 @@
+lov grupo-categoria (
+    name: GRUPO_CATEGORIA
+    source {
+        location: staticValues
+    }
+    entry grupo-categoria-1 (
+        sequence: 1
+        display: Receita rural
+        return: RECEITA_RURAL
+    )
+    entry grupo-categoria-2 (
+        sequence: 2
+        display: Adiantamento
+        return: ADIANTAMENTO
+    )
+    entry grupo-categoria-3 (
+        sequence: 3
+        display: Custeio
+        return: CUSTEIO
+    )
+    entry grupo-categoria-4 (
+        sequence: 4
+        display: Investimento
+        return: INVESTIMENTO
+    )
+    entry grupo-categoria-5 (
+        sequence: 5
+        display: Financiamento
+        return: FINANCIAMENTO
+    )
+    entry grupo-categoria-6 (
+        sequence: 6
+        display: Transferência
+        return: TRANSFERENCIA
+    )
+    entry grupo-categoria-7 (
+        sequence: 7
+        display: Pessoal (aporte/retirada)
+        return: PESSOAL
+    )
+    entry grupo-categoria-8 (
+        sequence: 8
+        display: Não rural
+        return: NAO_RURAL
+    )
+)

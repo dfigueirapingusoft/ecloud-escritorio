@@ -1,0 +1,736 @@
+page 77 (
+    name: Regras de conciliação
+    alias: REGRAS
+    title: Regras de conciliação
+    pageGroup: @rural
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+    help {
+        helpText:
+            ```html
+            <p>Movimentos do extrato que sobram depois da conciliação automática são lançados pela primeira regra que casar (menor prioridade primeiro). Regras do produtor vêm antes das regras gerais do escritório.</p>
+            ```
+    }
+    region breadcrumb (
+        name: Breadcrumb
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region filtros (
+        name: Filtros
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+            ]
+        }
+    )
+
+    pageItem P77_CLIENTE_ID (
+        type: selectList
+        label {
+            label: Produtor rural
+            alignment: right
+        }
+        layout {
+            sequence: 10
+            region: @filtros
+            slot: regionBody
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+        
+        }
+        lov {
+            type: sharedComponent
+            lov: @produtores
+            displayNullValue: true
+            nullDisplayValue: - Regras gerais do escritório -
+        }
+        sessionState {
+            storage: session
+        }
+    )
+
+    region acoes (
+        name: Ações
+        type: staticContent
+        layout {
+            sequence: 5
+            slot: body
+        }
+        appearance {
+            template: @/buttons-container
+            templateOptions: [
+                #DEFAULT#
+                t-ButtonRegion--noPadding
+                t-ButtonRegion--noUI
+            ]
+        }
+    )
+
+    region regras (
+        name: Regras
+        type: interactiveGrid
+        source {
+            location: localDatabase
+            tableName: REGRA_CONCILIACAO
+            whereClause: cliente_id is null or cliente_id = :P77_CLIENTE_ID
+            orderByClause: prioridade, nome
+            pageItemsToSubmit: P77_CLIENTE_ID
+        }
+        layout {
+            sequence: 20
+            slot: body
+        }
+        appearance {
+            template: @/interactive-report
+            templateOptions: #DEFAULT#
+        }
+        edit {
+            enabled: true
+            allowedOperations: [
+                add
+                update
+                delete
+            ]
+        }
+        pagination {
+            type: page
+        }
+        toolbar {
+            controls: [
+                searchCol
+                searchField
+                actionsMenu
+                resetButton
+            ]
+        }
+        advanced {
+            savedReportMappingIdentifier: 7330904152
+        }
+        savedReport 748976796 (
+            visibility: primary
+            view {
+                default: grid
+                rowsPerPage: 50
+            }
+            displayColumn (
+                column: @APEX$ROW_ACTION
+                layout {
+                    sequence: 0
+                }
+            )
+            displayColumn (
+                column: @REGRA_ID
+                layout {
+                    sequence: 1
+                }
+            )
+            displayColumn (
+                column: @CLIENTE_ID
+                layout {
+                    sequence: 2
+                }
+            )
+            displayColumn (
+                column: @NOME
+                layout {
+                    sequence: 3
+                }
+            )
+            displayColumn (
+                column: @PRIORIDADE
+                layout {
+                    sequence: 4
+                }
+            )
+            displayColumn (
+                column: @TEXTO_CONTEM
+                layout {
+                    sequence: 5
+                }
+            )
+            displayColumn (
+                column: @NATUREZA
+                layout {
+                    sequence: 6
+                }
+            )
+            displayColumn (
+                column: @VALOR_MIN
+                layout {
+                    sequence: 7
+                }
+            )
+            displayColumn (
+                column: @VALOR_MAX
+                layout {
+                    sequence: 8
+                }
+            )
+            displayColumn (
+                column: @CATEGORIA_ID
+                layout {
+                    sequence: 9
+                }
+            )
+            displayColumn (
+                column: @IMOVEL_ID
+                layout {
+                    sequence: 10
+                }
+            )
+            displayColumn (
+                column: @CENTRO_CUSTO_ID
+                layout {
+                    sequence: 11
+                }
+            )
+            displayColumn (
+                column: @TIPO_DOC
+                layout {
+                    sequence: 12
+                }
+            )
+            displayColumn (
+                column: @PARTIC_TIPO_PESSOA
+                layout {
+                    sequence: 13
+                }
+            )
+            displayColumn (
+                column: @PARTIC_DOCUMENTO
+                layout {
+                    sequence: 14
+                }
+            )
+            displayColumn (
+                column: @PARTIC_NOME
+                layout {
+                    sequence: 15
+                }
+            )
+            displayColumn (
+                column: @ATIVO
+                layout {
+                    sequence: 16
+                }
+            )
+        )
+        column APEX$ROW_ACTION (
+            type: actionsMenu
+            layout {
+                sequence: 20
+            }
+        )
+        column APEX$ROW_SELECTOR (
+            type: rowSelector
+            layout {
+                sequence: 10
+            }
+        )
+        column REGRA_ID (
+            type: hidden
+            heading {
+                heading: ID
+            }
+            layout {
+                sequence: 30
+            }
+            source {
+                databaseColumn: REGRA_ID
+                dataType: number
+                primaryKey: true
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+        column CLIENTE_ID (
+            type: selectList
+            heading {
+                heading: Produtor
+            }
+            layout {
+                sequence: 40
+            }
+            lov {
+                type: sharedComponent
+                lov: @produtores
+                displayNullValue: true
+                nullDisplayValue: Todos os produtores
+            }
+            source {
+                databaseColumn: CLIENTE_ID
+                dataType: number
+            }
+            default {
+                type: item
+                item: P77_CLIENTE_ID
+            }
+            columnFilter {
+                lovType: none
+            }
+        )
+        column NOME (
+            type: textField
+            heading {
+                heading: Nome
+            }
+            layout {
+                sequence: 50
+            }
+            validation {
+                valueRequired: true
+                maxLength: 100
+            }
+            source {
+                databaseColumn: NOME
+                dataType: varchar2
+            }
+        )
+        column PRIORIDADE (
+            type: numberField
+            heading {
+                heading: Prioridade
+                alignment: end
+            }
+            settings {
+                numberAlignment: end
+                virtualKeyboard: decimal
+            }
+            layout {
+                sequence: 60
+                columnAlignment: end
+            }
+            validation {
+                valueRequired: true
+            }
+            source {
+                databaseColumn: PRIORIDADE
+                dataType: number
+            }
+            default {
+                type: static
+                staticValue: 100
+            }
+        )
+        column TEXTO_CONTEM (
+            type: textField
+            heading {
+                heading: Histórico contém
+            }
+            layout {
+                sequence: 70
+            }
+            validation {
+                valueRequired: true
+                maxLength: 200
+            }
+            source {
+                databaseColumn: TEXTO_CONTEM
+                dataType: varchar2
+            }
+        )
+        column NATUREZA (
+            type: selectList
+            heading {
+                heading: Natureza
+            }
+            layout {
+                sequence: 80
+            }
+            lov {
+                type: sharedComponent
+                lov: @natureza
+                displayNullValue: true
+                nullDisplayValue: Qualquer
+            }
+            source {
+                databaseColumn: NATUREZA
+                dataType: varchar2
+            }
+            columnFilter {
+                lovType: none
+            }
+        )
+        column VALOR_MIN (
+            type: numberField
+            heading {
+                heading: Valor mínimo
+                alignment: end
+            }
+            settings {
+                numberAlignment: end
+                virtualKeyboard: decimal
+            }
+            layout {
+                sequence: 90
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G990D00
+            }
+            source {
+                databaseColumn: VALOR_MIN
+                dataType: number
+            }
+        )
+        column VALOR_MAX (
+            type: numberField
+            heading {
+                heading: Valor máximo
+                alignment: end
+            }
+            settings {
+                numberAlignment: end
+                virtualKeyboard: decimal
+            }
+            layout {
+                sequence: 100
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G990D00
+            }
+            source {
+                databaseColumn: VALOR_MAX
+                dataType: number
+            }
+        )
+        column CATEGORIA_ID (
+            type: popupLov
+            heading {
+                heading: Categoria
+            }
+            layout {
+                sequence: 110
+            }
+            validation {
+                valueRequired: true
+            }
+            lov {
+                type: sharedComponent
+                lov: @categorias
+                displayNullValue: true
+            }
+            source {
+                databaseColumn: CATEGORIA_ID
+                dataType: number
+            }
+            columnFilter {
+                lovType: none
+            }
+        )
+        column IMOVEL_ID (
+            type: selectList
+            heading {
+                heading: Imóvel
+            }
+            layout {
+                sequence: 120
+            }
+            lov {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    select lpad(cod_imovel, 3, '0') || ' - ' || nome d, imovel_id r
+                      from imovel_rural
+                     where cliente_id = :P77_CLIENTE_ID
+                       and ativo = 'S'
+                     order by cod_imovel
+                    ```
+                displayNullValue: true
+            }
+            source {
+                databaseColumn: IMOVEL_ID
+                dataType: number
+            }
+            columnFilter {
+                lovType: none
+            }
+        )
+        column CENTRO_CUSTO_ID (
+            type: selectList
+            heading {
+                heading: Centro de custo
+            }
+            layout {
+                sequence: 130
+            }
+            lov {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    select codigo || ' - ' || nome d, centro_custo_id r
+                      from centro_custo
+                     where cliente_id = :P77_CLIENTE_ID
+                       and ativo = 'S'
+                     order by codigo
+                    ```
+                displayNullValue: true
+            }
+            source {
+                databaseColumn: CENTRO_CUSTO_ID
+                dataType: number
+            }
+            columnFilter {
+                lovType: none
+            }
+        )
+        column TIPO_DOC (
+            type: selectList
+            heading {
+                heading: Tipo de documento
+            }
+            layout {
+                sequence: 140
+            }
+            validation {
+                valueRequired: true
+            }
+            lov {
+                type: sharedComponent
+                lov: @tipo-doc
+                displayNullValue: false
+            }
+            source {
+                databaseColumn: TIPO_DOC
+                dataType: varchar2
+            }
+            default {
+                type: static
+                staticValue: 6
+            }
+            columnFilter {
+                lovType: none
+            }
+        )
+        column PARTIC_TIPO_PESSOA (
+            type: selectList
+            heading {
+                heading: Participante: pessoa
+            }
+            layout {
+                sequence: 150
+            }
+            lov {
+                type: sharedComponent
+                lov: @tipos-pessoa
+                displayNullValue: true
+            }
+            source {
+                databaseColumn: PARTIC_TIPO_PESSOA
+                dataType: varchar2
+            }
+            columnFilter {
+                lovType: none
+            }
+        )
+        column PARTIC_DOCUMENTO (
+            type: textField
+            heading {
+                heading: Participante: CPF/CNPJ
+            }
+            layout {
+                sequence: 160
+            }
+            validation {
+                maxLength: 18
+            }
+            source {
+                databaseColumn: PARTIC_DOCUMENTO
+                dataType: varchar2
+            }
+        )
+        column PARTIC_NOME (
+            type: textField
+            heading {
+                heading: Participante: nome
+            }
+            layout {
+                sequence: 170
+            }
+            validation {
+                maxLength: 150
+            }
+            source {
+                databaseColumn: PARTIC_NOME
+                dataType: varchar2
+            }
+        )
+        column ATIVO (
+            type: selectList
+            heading {
+                heading: Ativa
+            }
+            layout {
+                sequence: 180
+            }
+            validation {
+                valueRequired: true
+            }
+            lov {
+                type: sharedComponent
+                lov: @sim-nao
+                displayNullValue: false
+            }
+            source {
+                databaseColumn: ATIVO
+                dataType: varchar2
+            }
+            default {
+                type: static
+                staticValue: S
+            }
+            columnFilter {
+                lovType: none
+            }
+        )
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Salvar
+        layout {
+            sequence: 10
+            region: @acoes
+            slot: edit
+        }
+        appearance {
+            buttonTemplate: @/text-with-icon
+            icon: fa-save
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        security {
+            authorizationScheme: @contador-ou-administrador
+        }
+    )
+
+    dynamicAction trocar-filtro (
+        name: Recarregar ao trocar o filtro
+        execution {
+            sequence: 50
+        }
+        when {
+            event: change
+            selectionType: items
+            items: P77_CLIENTE_ID
+        }
+        action native-submit (
+            action: submitPage
+            settings {
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+    )
+
+    process carregar-produtor (
+        name: Carregar o produtor escolhido
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                -- O produtor escolhido em qualquer página do módulo fica em F_PRODUTOR_ID.
+                if :F_PRODUTOR_ID is not null then
+                    :P77_CLIENTE_ID := :F_PRODUTOR_ID;
+                end if;
+                ```
+        }
+        execution {
+            sequence: 5
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 2725749208
+        }
+    )
+
+    process guardar-produtor (
+        name: Guardar o produtor escolhido
+        type: executeCode
+        source {
+            plsqlCode: :F_PRODUTOR_ID := :P77_CLIENTE_ID;
+        }
+        execution {
+            sequence: 1
+        }
+        advanced {
+            executionMappingIdentifier: 6031117024
+        }
+    )
+
+    process save-regras (
+        name: Gravar regras
+        type: interactiveGridAutoRowProcessing
+        editableRegion: @regras
+        execution {
+            sequence: 20
+        }
+        successMessage {
+            successMessage: Alterações gravadas.
+        }
+        advanced {
+            executionMappingIdentifier: 9843243849
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+    branch recarregar (
+        name: Recarregar a página
+        execution {
+            sequence: 99
+        }
+        behavior {
+            type: pageOrUrl
+            target: {
+                page: 77
+            }
+        }
+    )
+)

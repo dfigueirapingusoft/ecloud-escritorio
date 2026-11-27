@@ -1,0 +1,19 @@
+lov categorias (
+    name: CATEGORIAS
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select codigo || ' - ' || nome
+                   || case natureza when 'E' then ' (entrada)' else ' (saída)' end d,
+                   categoria_id r
+              from categoria_caixa
+             where ativo = 'S'
+             order by codigo
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)

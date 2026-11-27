@@ -1,0 +1,78 @@
+page 89 (
+    name: Baixar LCDPR
+    alias: BAIXAR-LCDPR
+    title: Baixar LCDPR
+    pageGroup: @rural
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+    region download (
+        name: Download
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                <p>Preparando o download...</p>
+                ```
+        }
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P89_ARQUIVO_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @download
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    process baixar (
+        name: Baixar arquivo
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                declare
+                    l_conteudo clob;
+                    l_arquivo  blob;
+                    l_nome     lcdpr_arquivo.nome_arquivo%type;
+                begin
+                    -- VPD: só devolve arquivos do escritório do usuário.
+                    select a.conteudo, a.nome_arquivo
+                      into l_conteudo, l_nome
+                      from lcdpr_arquivo a
+                     where a.arquivo_id = :P89_ARQUIVO_ID
+                       and a.conteudo is not null;
+                    -- p_blob é IN OUT: o arquivo precisa estar numa variável.
+                    l_arquivo := apex_util.clob_to_blob(p_clob => l_conteudo, p_charset => 'AL32UTF8');
+                    apex_http.download(
+                        p_blob         => l_arquivo,
+                        p_content_type => 'text/plain',
+                        p_filename     => l_nome);
+                exception
+                    when no_data_found then
+                        raise_application_error(-20100, 'Arquivo do LCDPR não encontrado ou gerado com pendências.');
+                end;
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 6774570249
+        }
+    )
+)

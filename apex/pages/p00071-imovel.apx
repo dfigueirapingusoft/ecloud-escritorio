@@ -1,0 +1,1219 @@
+page 71 (
+    name: Imóvel rural
+    alias: IMOVEL
+    title: Imóvel rural
+    pageGroup: @rural
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @/modal-dialog
+        templateOptions: #DEFAULT#
+    }
+    dialog {
+        chained: false
+        resizable: false
+        width: 900
+    }
+    region buttons (
+        name: Botões
+        type: staticContent
+        layout {
+            sequence: 90
+            slot: dialogFooter
+        }
+        appearance {
+            template: @/buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region imovel (
+        name: Imóvel
+        type: form
+        source {
+            location: localDatabase
+            tableName: IMOVEL_RURAL
+        }
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @/blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        edit {
+            enabled: true
+            allowedOperations: [
+                add
+                update
+                delete
+            ]
+        }
+    )
+
+    region contrapartes (
+        name: Contrapartes (condôminos, arrendadores, parceiros, comodantes)
+        type: interactiveGrid
+        source {
+            location: localDatabase
+            tableName: IMOVEL_CONTRAPARTE
+            whereClause: imovel_id = :P71_IMOVEL_ID
+            orderByClause: nome
+            pageItemsToSubmit: P71_IMOVEL_ID
+        }
+        layout {
+            sequence: 20
+            slot: contentBody
+        }
+        appearance {
+            template: @/interactive-report
+            templateOptions: #DEFAULT#
+        }
+        edit {
+            enabled: true
+            allowedOperations: [
+                add
+                update
+                delete
+            ]
+        }
+        pagination {
+            type: page
+        }
+        toolbar {
+            controls: [
+                searchCol
+                searchField
+                actionsMenu
+                resetButton
+            ]
+        }
+        advanced {
+            savedReportMappingIdentifier: 8618814487
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P71_IMOVEL_ID
+        }
+        savedReport 358004774 (
+            visibility: primary
+            view {
+                default: grid
+                rowsPerPage: 50
+            }
+            displayColumn (
+                column: @APEX$ROW_ACTION
+                layout {
+                    sequence: 0
+                }
+            )
+            displayColumn (
+                column: @CONTRAPARTE_ID
+                layout {
+                    sequence: 1
+                }
+            )
+            displayColumn (
+                column: @IMOVEL_ID
+                layout {
+                    sequence: 2
+                }
+            )
+            displayColumn (
+                column: @TIPO_CONTRAPARTE
+                layout {
+                    sequence: 3
+                }
+            )
+            displayColumn (
+                column: @TIPO_PESSOA
+                layout {
+                    sequence: 4
+                }
+            )
+            displayColumn (
+                column: @DOCUMENTO
+                layout {
+                    sequence: 5
+                }
+            )
+            displayColumn (
+                column: @NOME
+                layout {
+                    sequence: 6
+                }
+            )
+            displayColumn (
+                column: @PERCENTUAL
+                layout {
+                    sequence: 7
+                }
+            )
+        )
+        column APEX$ROW_ACTION (
+            type: actionsMenu
+            layout {
+                sequence: 20
+            }
+        )
+        column APEX$ROW_SELECTOR (
+            type: rowSelector
+            layout {
+                sequence: 10
+            }
+        )
+        column CONTRAPARTE_ID (
+            type: hidden
+            heading {
+                heading: ID
+            }
+            layout {
+                sequence: 30
+            }
+            source {
+                databaseColumn: CONTRAPARTE_ID
+                dataType: number
+                primaryKey: true
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+        column IMOVEL_ID (
+            type: hidden
+            heading {
+                heading: Imóvel
+            }
+            layout {
+                sequence: 40
+            }
+            source {
+                databaseColumn: IMOVEL_ID
+                dataType: number
+            }
+            default {
+                type: item
+                item: P71_IMOVEL_ID
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+        column TIPO_CONTRAPARTE (
+            type: selectList
+            heading {
+                heading: Tipo
+            }
+            layout {
+                sequence: 50
+            }
+            validation {
+                valueRequired: true
+            }
+            lov {
+                type: sharedComponent
+                lov: @tipo-contraparte
+                displayNullValue: true
+            }
+            source {
+                databaseColumn: TIPO_CONTRAPARTE
+                dataType: varchar2
+            }
+            columnFilter {
+                lovType: none
+            }
+        )
+        column TIPO_PESSOA (
+            type: selectList
+            heading {
+                heading: Pessoa
+            }
+            layout {
+                sequence: 60
+            }
+            validation {
+                valueRequired: true
+            }
+            lov {
+                type: sharedComponent
+                lov: @tipos-pessoa
+                displayNullValue: true
+            }
+            source {
+                databaseColumn: TIPO_PESSOA
+                dataType: varchar2
+            }
+            default {
+                type: static
+                staticValue: F
+            }
+            columnFilter {
+                lovType: none
+            }
+        )
+        column DOCUMENTO (
+            type: textField
+            heading {
+                heading: CPF/CNPJ
+            }
+            layout {
+                sequence: 70
+            }
+            validation {
+                valueRequired: true
+                maxLength: 18
+            }
+            source {
+                databaseColumn: DOCUMENTO
+                dataType: varchar2
+            }
+        )
+        column NOME (
+            type: textField
+            heading {
+                heading: Nome
+            }
+            layout {
+                sequence: 80
+            }
+            validation {
+                valueRequired: true
+                maxLength: 50
+            }
+            source {
+                databaseColumn: NOME
+                dataType: varchar2
+            }
+        )
+        column PERCENTUAL (
+            type: numberField
+            heading {
+                heading: Participação (%)
+                alignment: end
+            }
+            settings {
+                numberAlignment: end
+                virtualKeyboard: decimal
+            }
+            layout {
+                sequence: 90
+                columnAlignment: end
+            }
+            validation {
+                valueRequired: true
+            }
+            appearance {
+                formatMask: 990D00
+            }
+            source {
+                databaseColumn: PERCENTUAL
+                dataType: number
+            }
+        )
+    )
+
+    pageItem P71_IMOVEL_ID (
+        type: hidden
+        layout {
+            sequence: 1
+            region: @imovel
+            slot: regionBody
+        }
+        source {
+            formRegion: @imovel
+            column: IMOVEL_ID
+            dataType: number
+            primaryKey: true
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P71_CLIENTE_ID (
+        type: hidden
+        layout {
+            sequence: 2
+            region: @imovel
+            slot: regionBody
+        }
+        source {
+            formRegion: @imovel
+            column: CLIENTE_ID
+            dataType: number
+        }
+        default {
+            type: item
+            item: F_PRODUTOR_ID
+        }
+    )
+
+    pageItem P71_COD_IMOVEL (
+        type: numberField
+        label {
+            label: Código do imóvel (001 a 999)
+            alignment: right
+        }
+        layout {
+            sequence: 20
+            region: @imovel
+            slot: regionBody
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        source {
+            formRegion: @imovel
+            column: COD_IMOVEL
+            dataType: number
+        }
+        default {
+            type: expression
+            plsqlExpression: pkg_rural_cadastro.proximo_cod_imovel(:P71_CLIENTE_ID)
+        }
+    )
+
+    pageItem P71_NOME (
+        type: textField
+        label {
+            label: Nome do imóvel
+            alignment: right
+        }
+        layout {
+            sequence: 30
+            region: @imovel
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 8
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+            maxLength: 50
+        }
+        source {
+            formRegion: @imovel
+            column: NOME
+            dataType: varchar2
+        }
+    )
+
+    pageItem P71_CAD_ITR (
+        type: textField
+        label {
+            label: CIB/NIRF (cadastro do ITR)
+            alignment: right
+        }
+        layout {
+            sequence: 40
+            region: @imovel
+            slot: regionBody
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 9
+        }
+        source {
+            formRegion: @imovel
+            column: CAD_ITR
+            dataType: varchar2
+        }
+        help {
+            inlineHelpText: 8 dígitos, sem máscara.
+        }
+    )
+
+    pageItem P71_CAR (
+        type: textField
+        label {
+            label: CAR
+            alignment: right
+        }
+        layout {
+            sequence: 50
+            region: @imovel
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 60
+        }
+        source {
+            formRegion: @imovel
+            column: CAR
+            dataType: varchar2
+        }
+    )
+
+    pageItem P71_CCIR (
+        type: textField
+        label {
+            label: CCIR
+            alignment: right
+        }
+        layout {
+            sequence: 60
+            region: @imovel
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 20
+        }
+        source {
+            formRegion: @imovel
+            column: CCIR
+            dataType: varchar2
+        }
+    )
+
+    pageItem P71_CAEPF (
+        type: textField
+        label {
+            label: CAEPF
+            alignment: right
+        }
+        layout {
+            sequence: 70
+            region: @imovel
+            slot: regionBody
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 18
+        }
+        source {
+            formRegion: @imovel
+            column: CAEPF
+            dataType: varchar2
+        }
+    )
+
+    pageItem P71_INSCRICAO_ESTADUAL (
+        type: textField
+        label {
+            label: Inscrição estadual
+            alignment: right
+        }
+        layout {
+            sequence: 80
+            region: @imovel
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 20
+        }
+        source {
+            formRegion: @imovel
+            column: INSCRICAO_ESTADUAL
+            dataType: varchar2
+        }
+    )
+
+    pageItem P71_ENDERECO (
+        type: textField
+        label {
+            label: Endereço
+            alignment: right
+        }
+        layout {
+            sequence: 90
+            region: @imovel
+            slot: regionBody
+            columnSpan: 8
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+            maxLength: 150
+        }
+        source {
+            formRegion: @imovel
+            column: ENDERECO
+            dataType: varchar2
+        }
+    )
+
+    pageItem P71_NUMERO (
+        type: textField
+        label {
+            label: Número
+            alignment: right
+        }
+        layout {
+            sequence: 100
+            region: @imovel
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 6
+        }
+        source {
+            formRegion: @imovel
+            column: NUMERO
+            dataType: varchar2
+        }
+    )
+
+    pageItem P71_COMPLEMENTO (
+        type: textField
+        label {
+            label: Complemento
+            alignment: right
+        }
+        layout {
+            sequence: 110
+            region: @imovel
+            slot: regionBody
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 50
+        }
+        source {
+            formRegion: @imovel
+            column: COMPLEMENTO
+            dataType: varchar2
+        }
+    )
+
+    pageItem P71_BAIRRO (
+        type: textField
+        label {
+            label: Bairro ou distrito
+            alignment: right
+        }
+        layout {
+            sequence: 120
+            region: @imovel
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+            maxLength: 50
+        }
+        source {
+            formRegion: @imovel
+            column: BAIRRO
+            dataType: varchar2
+        }
+    )
+
+    pageItem P71_UF (
+        type: selectList
+        label {
+            label: UF
+            alignment: right
+        }
+        layout {
+            sequence: 130
+            region: @imovel
+            slot: regionBody
+            columnSpan: 3
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        source {
+            formRegion: @imovel
+            column: UF
+            dataType: varchar2
+        }
+        lov {
+            type: sharedComponent
+            lov: @ufs
+            displayNullValue: true
+            nullDisplayValue: - Selecione -
+        }
+    )
+
+    pageItem P71_MUNICIPIO_IBGE (
+        type: popupLov
+        label {
+            label: Município (IBGE)
+            alignment: right
+        }
+        layout {
+            sequence: 140
+            region: @imovel
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        source {
+            formRegion: @imovel
+            column: MUNICIPIO_IBGE
+            dataType: number
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select nome || ' (' || codigo || ')' d, codigo r
+                  from rtc_da_municipio
+                 where sigla_uf = :P71_UF
+                 order by nome
+                ```
+            displayNullValue: false
+        }
+        cascadingLov {
+            parentItems: P71_UF
+        }
+    )
+
+    pageItem P71_CEP (
+        type: textField
+        label {
+            label: CEP
+            alignment: right
+        }
+        layout {
+            sequence: 150
+            region: @imovel
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 3
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+            maxLength: 10
+        }
+        source {
+            formRegion: @imovel
+            column: CEP
+            dataType: varchar2
+        }
+    )
+
+    pageItem P71_AREA_TOTAL_HA (
+        type: numberField
+        label {
+            label: Área total (ha)
+            alignment: right
+        }
+        layout {
+            sequence: 160
+            region: @imovel
+            slot: regionBody
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        source {
+            formRegion: @imovel
+            column: AREA_TOTAL_HA
+            dataType: number
+        }
+    )
+
+    pageItem P71_AREA_PRODUTIVA_HA (
+        type: numberField
+        label {
+            label: Área produtiva (ha)
+            alignment: right
+        }
+        layout {
+            sequence: 170
+            region: @imovel
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        source {
+            formRegion: @imovel
+            column: AREA_PRODUTIVA_HA
+            dataType: number
+        }
+    )
+
+    pageItem P71_TIPO_EXPLORACAO (
+        type: selectList
+        label {
+            label: Tipo de exploração
+            alignment: right
+        }
+        layout {
+            sequence: 180
+            region: @imovel
+            slot: regionBody
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        source {
+            formRegion: @imovel
+            column: TIPO_EXPLORACAO
+            dataType: varchar2
+        }
+        lov {
+            type: sharedComponent
+            lov: @tipo-exploracao
+            displayNullValue: false
+        }
+        default {
+            type: static
+            staticValue: 1
+        }
+    )
+
+    pageItem P71_PARTICIPACAO_PCT (
+        type: numberField
+        label {
+            label: Participação do produtor (%)
+            alignment: right
+        }
+        layout {
+            sequence: 190
+            region: @imovel
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        source {
+            formRegion: @imovel
+            column: PARTICIPACAO_PCT
+            dataType: number
+        }
+        default {
+            type: static
+            staticValue: 100
+        }
+    )
+
+    pageItem P71_OBSERVACAO (
+        type: textarea
+        label {
+            label: Observação
+            alignment: right
+        }
+        layout {
+            sequence: 200
+            region: @imovel
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 4000
+        }
+        source {
+            formRegion: @imovel
+            column: OBSERVACAO
+            dataType: varchar2
+        }
+    )
+
+    pageItem P71_ATIVO (
+        type: switch
+        label {
+            label: Ativo
+            alignment: right
+        }
+        layout {
+            sequence: 210
+            region: @imovel
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            useDefaults: false
+            onValue: S
+            offValue: N
+        }
+        source {
+            formRegion: @imovel
+            column: ATIVO
+            dataType: varchar2
+        }
+        default {
+            type: static
+            staticValue: S
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Cancelar
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button delete (
+        buttonName: DELETE
+        label: Excluir
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: delete
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: [
+                #DEFAULT#
+                t-Button--danger
+                t-Button--simple
+            ]
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: delete
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: &APP_TEXT$DELETE_MSG!RAW.
+            style: danger
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P71_IMOVEL_ID
+        }
+        security {
+            authorizationScheme: @contador-ou-administrador
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Salvar alterações
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: update
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P71_IMOVEL_ID
+        }
+        security {
+            authorizationScheme: @contador-ou-administrador
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Criar
+        layout {
+            sequence: 40
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: insert
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P71_IMOVEL_ID
+        }
+        security {
+            authorizationScheme: @contador-ou-administrador
+        }
+    )
+
+    validation cad-itr (
+        name: CIB/NIRF com 8 dígitos
+        validation {
+            type: functionBodyReturningBoolean
+            plsqlFunctionBody: return :P71_CAD_ITR is null or pkg_rural_cadastro.cad_itr_valido(:P71_CAD_ITR);
+        }
+        error {
+            errorMessage: O CIB/NIRF deve ter 8 dígitos.
+            associatedItem: @P71_CAD_ITR
+        }
+        execution {
+            sequence: 10
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE
+        }
+    )
+
+    validation municipio-da-uf (
+        name: Município pertence à UF
+        validation {
+            type: functionBodyReturningBoolean
+            plsqlFunctionBody: return pkg_ecloud_util.municipio_valido(:P71_UF, to_number(:P71_MUNICIPIO_IBGE));
+        }
+        error {
+            errorMessage: O município informado não pertence à UF.
+            associatedItem: @P71_MUNICIPIO_IBGE
+        }
+        execution {
+            sequence: 20
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE
+        }
+    )
+
+    validation participacao (
+        name: Participação entre 0 e 100%
+        validation {
+            type: functionBodyReturningBoolean
+            plsqlFunctionBody: return to_number(:P71_PARTICIPACAO_PCT) > 0 and to_number(:P71_PARTICIPACAO_PCT) <= 100;
+        }
+        error {
+            errorMessage: A participação deve ser maior que 0 e no máximo 100%.
+            associatedItem: @P71_PARTICIPACAO_PCT
+        }
+        execution {
+            sequence: 30
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancelar diálogo
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+    )
+
+    process initialize-form (
+        name: Inicializar formulário
+        type: formInitialization
+        formRegion: @imovel
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 2716985881
+        }
+    )
+
+    process excluir-contrapartes (
+        name: Excluir as contrapartes antes do imóvel
+        type: executeCode
+        source {
+            plsqlCode: delete from imovel_contraparte where imovel_id = :P71_IMOVEL_ID;
+        }
+        execution {
+            sequence: 5
+        }
+        advanced {
+            executionMappingIdentifier: 3690404090
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: DELETE
+        }
+    )
+
+    process process-form (
+        name: Gravar imóvel
+        type: formAutoRowProcessing
+        formRegion: @imovel
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 7446203620
+        }
+    )
+
+    process save-contrapartes (
+        name: Gravar contrapartes
+        type: interactiveGridAutoRowProcessing
+        editableRegion: @contrapartes
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 6666660031
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: SAVE
+        }
+    )
+
+    process close-dialog (
+        name: Fechar diálogo
+        type: closeDialog
+        settings {
+            showSuccessMessages: false
+        }
+        execution {
+            sequence: 50
+        }
+        advanced {
+            executionMappingIdentifier: 2694569277
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: SAVE,DELETE
+        }
+    )
+
+    branch reabrir (
+        name: Reabrir para incluir as contrapartes
+        execution {
+            sequence: 10
+        }
+        behavior {
+            type: pageOrUrl
+            target: {
+                page: 71
+                items: {
+                    P71_IMOVEL_ID: &P71_IMOVEL_ID.
+                }
+            }
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE
+        }
+    )
+)

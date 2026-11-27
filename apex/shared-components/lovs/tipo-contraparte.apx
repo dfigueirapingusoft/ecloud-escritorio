@@ -1,0 +1,31 @@
+lov tipo-contraparte (
+    name: TIPO_CONTRAPARTE
+    source {
+        location: staticValues
+    }
+    entry tipo-contraparte-1 (
+        sequence: 1
+        display: 1 - Condômino
+        return: 1
+    )
+    entry tipo-contraparte-2 (
+        sequence: 2
+        display: 2 - Arrendador
+        return: 2
+    )
+    entry tipo-contraparte-3 (
+        sequence: 3
+        display: 3 - Parceiro
+        return: 3
+    )
+    entry tipo-contraparte-4 (
+        sequence: 4
+        display: 4 - Comodante
+        return: 4
+    )
+    entry tipo-contraparte-5 (
+        sequence: 5
+        display: 5 - Outro
+        return: 5
+    )
+)

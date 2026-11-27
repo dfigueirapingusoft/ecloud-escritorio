@@ -61,6 +61,241 @@ list navigation-menu (
         }
     )
 
+    entry produtor-rural (
+        label: Produtor rural
+        icon {
+            imageIconCssClasses: fa-leaf
+        }
+        layout {
+            sequence: 35
+        }
+        link {
+            target: {
+                type: url
+                url: #
+            }
+        }
+    )
+
+    entry painel-produtor (
+        label: Painel do produtor
+        icon {
+            imageIconCssClasses: fa-line-chart
+        }
+        layout {
+            sequence: 200
+            parentEntry: @produtor-rural
+        }
+        link {
+            target: {
+                page: 90
+            }
+        }
+    )
+
+    entry livro-caixa (
+        label: Livro caixa
+        icon {
+            imageIconCssClasses: fa-book
+        }
+        layout {
+            sequence: 205
+            parentEntry: @produtor-rural
+        }
+        isCurrent {
+            type: pages
+            pages: [
+                80
+                81
+                82
+            ]
+        }
+        link {
+            target: {
+                page: 80
+            }
+        }
+    )
+
+    entry extratos (
+        label: Extratos
+        icon {
+            imageIconCssClasses: fa-upload
+        }
+        layout {
+            sequence: 210
+            parentEntry: @produtor-rural
+        }
+        isCurrent {
+            type: pages
+            pages: [
+                83
+                84
+            ]
+        }
+        link {
+            target: {
+                page: 83
+            }
+        }
+    )
+
+    entry conciliacao (
+        label: Conciliação
+        icon {
+            imageIconCssClasses: fa-check-square-o
+        }
+        layout {
+            sequence: 215
+            parentEntry: @produtor-rural
+        }
+        isCurrent {
+            type: pages
+            pages: [
+                85
+                86
+            ]
+        }
+        link {
+            target: {
+                page: 85
+            }
+        }
+    )
+
+    entry lcdpr (
+        label: LCDPR
+        icon {
+            imageIconCssClasses: fa-file-text-o
+        }
+        layout {
+            sequence: 220
+            parentEntry: @produtor-rural
+        }
+        isCurrent {
+            type: pages
+            pages: [
+                88
+                89
+            ]
+        }
+        link {
+            target: {
+                page: 88
+            }
+        }
+    )
+
+    entry imoveis (
+        label: Imóveis
+        icon {
+            imageIconCssClasses: fa-map-o
+        }
+        layout {
+            sequence: 225
+            parentEntry: @produtor-rural
+        }
+        isCurrent {
+            type: pages
+            pages: [
+                70
+                71
+            ]
+        }
+        link {
+            target: {
+                page: 70
+            }
+        }
+    )
+
+    entry contas (
+        label: Contas
+        icon {
+            imageIconCssClasses: fa-bank
+        }
+        layout {
+            sequence: 230
+            parentEntry: @produtor-rural
+        }
+        isCurrent {
+            type: pages
+            pages: [
+                72
+                73
+            ]
+        }
+        link {
+            target: {
+                page: 72
+            }
+        }
+    )
+
+    entry centros-custo (
+        label: Centros de custo
+        icon {
+            imageIconCssClasses: fa-pie-chart
+        }
+        layout {
+            sequence: 235
+            parentEntry: @produtor-rural
+        }
+        link {
+            target: {
+                page: 74
+            }
+        }
+    )
+
+    entry categorias (
+        label: Categorias
+        icon {
+            imageIconCssClasses: fa-tags
+        }
+        layout {
+            sequence: 240
+            parentEntry: @produtor-rural
+        }
+        link {
+            target: {
+                page: 75
+            }
+        }
+    )
+
+    entry layouts-csv (
+        label: Layouts CSV
+        icon {
+            imageIconCssClasses: fa-table
+        }
+        layout {
+            sequence: 245
+            parentEntry: @produtor-rural
+        }
+        link {
+            target: {
+                page: 76
+            }
+        }
+    )
+
+    entry regras (
+        label: Regras de conciliação
+        icon {
+            imageIconCssClasses: fa-random
+        }
+        layout {
+            sequence: 250
+            parentEntry: @produtor-rural
+        }
+        link {
+            target: {
+                page: 77
+            }
+        }
+    )
+
     entry clientes (
         label: Clientes
         icon {

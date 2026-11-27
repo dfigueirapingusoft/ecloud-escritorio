@@ -1,0 +1,18 @@
+lov produtores (
+    name: PRODUTORES
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select razao_social || ' (' || pkg_rural_cadastro.formatar_documento(cpf) || ')' d, cliente_id r
+              from cliente
+             where ativo = 'S'
+               and tipo_pessoa = 'F'
+             order by razao_social
+            ```
+    }
+    columnMapping {
+        return: R
+        display: D
+    }
+)

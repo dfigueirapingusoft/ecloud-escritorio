@@ -1,0 +1,765 @@
+page 81 (
+    name: Lançamento
+    alias: LANCAMENTO
+    title: Lançamento
+    pageGroup: @rural
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @/modal-dialog
+        templateOptions: #DEFAULT#
+    }
+    dialog {
+        chained: false
+        resizable: false
+        width: 900
+    }
+    region buttons (
+        name: Botões
+        type: staticContent
+        layout {
+            sequence: 90
+            slot: dialogFooter
+        }
+        appearance {
+            template: @/buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region lancamento (
+        name: Lançamento
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @/blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P81_LANCAMENTO_ID (
+        type: hidden
+        layout {
+            sequence: 1
+            region: @lancamento
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P81_CLIENTE_ID (
+        type: hidden
+        layout {
+            sequence: 2
+            region: @lancamento
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+        default {
+            type: item
+            item: F_PRODUTOR_ID
+        }
+    )
+
+    pageItem P81_TRANSFERENCIA_ID (
+        type: hidden
+        layout {
+            sequence: 3
+            region: @lancamento
+            slot: regionBody
+        }
+    )
+
+    pageItem P81_SITUACAO (
+        type: displayOnly
+        label {
+            label: Situação
+            alignment: right
+        }
+        layout {
+            sequence: 10
+            region: @lancamento
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P81_LANCAMENTO_ID
+        }
+    )
+
+    pageItem P81_CONTA_ID (
+        type: selectList
+        label {
+            label: Conta
+            alignment: right
+        }
+        layout {
+            sequence: 20
+            region: @lancamento
+            slot: regionBody
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select lpad(cod_conta, 3, '0') || ' - ' || apelido d, conta_id r
+                  from conta_bancaria
+                 where cliente_id = :P81_CLIENTE_ID
+                   and ativo = 'S'
+                 order by cod_conta
+                ```
+            displayNullValue: true
+            nullDisplayValue: - Selecione -
+        }
+        readOnly {
+            type: itemIsNotNull
+            item: P81_LANCAMENTO_ID
+        }
+    )
+
+    pageItem P81_DATA (
+        type: datePicker
+        label {
+            label: Data
+            alignment: right
+        }
+        layout {
+            sequence: 30
+            region: @lancamento
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        default {
+            type: expression
+            plsqlExpression: trunc(current_date)
+        }
+    )
+
+    pageItem P81_CATEGORIA_ID (
+        type: popupLov
+        label {
+            label: Categoria
+            alignment: right
+        }
+        layout {
+            sequence: 40
+            region: @lancamento
+            slot: regionBody
+            columnSpan: 8
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        lov {
+            type: sharedComponent
+            lov: @categorias
+            displayNullValue: false
+        }
+    )
+
+    pageItem P81_VALOR (
+        type: numberField
+        label {
+            label: Valor
+            alignment: right
+        }
+        layout {
+            sequence: 50
+            region: @lancamento
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        help {
+            inlineHelpText: Sempre positivo; a categoria define se é entrada ou saída.
+        }
+    )
+
+    pageItem P81_HISTORICO (
+        type: textarea
+        label {
+            label: Histórico
+            alignment: right
+        }
+        layout {
+            sequence: 60
+            region: @lancamento
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+            maxLength: 400
+        }
+    )
+
+    pageItem P81_IMOVEL_ID (
+        type: selectList
+        label {
+            label: Imóvel
+            alignment: right
+        }
+        layout {
+            sequence: 70
+            region: @lancamento
+            slot: regionBody
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select lpad(cod_imovel, 3, '0') || ' - ' || nome d, imovel_id r
+                  from imovel_rural
+                 where cliente_id = :P81_CLIENTE_ID
+                   and ativo = 'S'
+                 order by cod_imovel
+                ```
+            displayNullValue: true
+            nullDisplayValue: 000 - Custo comum a vários imóveis
+        }
+    )
+
+    pageItem P81_CENTRO_CUSTO_ID (
+        type: selectList
+        label {
+            label: Centro de custo
+            alignment: right
+        }
+        layout {
+            sequence: 80
+            region: @lancamento
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select codigo || ' - ' || nome d, centro_custo_id r
+                  from centro_custo
+                 where cliente_id = :P81_CLIENTE_ID
+                   and ativo = 'S'
+                 order by codigo
+                ```
+            displayNullValue: true
+            nullDisplayValue: - Nenhum -
+        }
+    )
+
+    pageItem P81_TIPO_DOC (
+        type: selectList
+        label {
+            label: Tipo de documento
+            alignment: right
+        }
+        layout {
+            sequence: 90
+            region: @lancamento
+            slot: regionBody
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        lov {
+            type: sharedComponent
+            lov: @tipo-doc
+            displayNullValue: false
+        }
+        default {
+            type: static
+            staticValue: 6
+        }
+    )
+
+    pageItem P81_NUM_DOC (
+        type: textField
+        label {
+            label: Número do documento
+            alignment: right
+        }
+        layout {
+            sequence: 100
+            region: @lancamento
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 60
+        }
+    )
+
+    pageItem P81_PARTIC_TIPO_PESSOA (
+        type: radioGroup
+        label {
+            label: Participante
+            alignment: right
+        }
+        layout {
+            sequence: 110
+            region: @lancamento
+            slot: regionBody
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        lov {
+            type: sharedComponent
+            lov: @tipos-pessoa
+            displayNullValue: false
+        }
+        default {
+            type: static
+            staticValue: J
+        }
+    )
+
+    pageItem P81_PARTIC_DOCUMENTO (
+        type: textField
+        label {
+            label: CPF/CNPJ do participante
+            alignment: right
+        }
+        layout {
+            sequence: 120
+            region: @lancamento
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 18
+        }
+        help {
+            inlineHelpText: Obrigatório para o LCDPR nas receitas e despesas rurais.
+        }
+    )
+
+    pageItem P81_PARTIC_NOME (
+        type: textField
+        label {
+            label: Nome do participante
+            alignment: right
+        }
+        layout {
+            sequence: 130
+            region: @lancamento
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 150
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Cancelar
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button delete (
+        buttonName: DELETE
+        label: Excluir
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: delete
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: [
+                #DEFAULT#
+                t-Button--danger
+                t-Button--simple
+            ]
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: &APP_TEXT$DELETE_MSG!RAW.
+            style: danger
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery: select 1 from livro_caixa where lancamento_id = :P81_LANCAMENTO_ID and status_conciliacao <> 'CONCILIADO'
+        }
+        security {
+            authorizationScheme: @contador-ou-administrador
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Salvar alterações
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery:
+                ```sql
+                select 1 from livro_caixa
+                 where lancamento_id = :P81_LANCAMENTO_ID
+                   and transferencia_id is null
+                   and status_conciliacao <> 'CONCILIADO'
+                ```
+        }
+        security {
+            authorizationScheme: @contador-ou-administrador
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Lançar
+        layout {
+            sequence: 40
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P81_LANCAMENTO_ID
+        }
+        security {
+            authorizationScheme: @contador-ou-administrador
+        }
+    )
+
+    validation valor-positivo (
+        name: Valor positivo
+        validation {
+            type: functionBodyReturningBoolean
+            plsqlFunctionBody: return to_number(:P81_VALOR) > 0;
+        }
+        error {
+            errorMessage: Informe um valor maior que zero.
+            associatedItem: @P81_VALOR
+        }
+        execution {
+            sequence: 10
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE
+        }
+    )
+
+    validation participante (
+        name: Documento do participante
+        validation {
+            type: functionBodyReturningBoolean
+            plsqlFunctionBody:
+                ```plsql
+                return :P81_PARTIC_DOCUMENTO is null or pkg_rural_cadastro.documento_valido(:P81_PARTIC_TIPO_PESSOA, :P81_PARTIC_DOCUMENTO);
+                ```
+        }
+        error {
+            errorMessage: CPF ou CNPJ do participante inválido.
+            associatedItem: @P81_PARTIC_DOCUMENTO
+        }
+        execution {
+            sequence: 20
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancelar diálogo
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+    )
+
+    process carregar (
+        name: Carregar lançamento
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                -- VPD: só encontra lançamentos do escritório do usuário.
+                for l in (select l.*,
+                                 case l.status_conciliacao
+                                     when 'CONCILIADO' then 'Conciliado com o extrato: desfaça a conciliação para alterar.'
+                                     when 'NAO_APLICA' then 'Não se aplica à conciliação.'
+                                     else 'Pendente de conciliação.' end
+                                 || case when l.transferencia_id is not null
+                                         then ' Transferência entre contas: exclua e lance de novo para mudar.' end
+                                 || ' Origem: ' || initcap(l.origem) || '.' as situacao
+                            from livro_caixa l
+                           where l.lancamento_id = :P81_LANCAMENTO_ID) loop
+                    :P81_CLIENTE_ID         := l.cliente_id;
+                    :P81_TRANSFERENCIA_ID   := l.transferencia_id;
+                    :P81_SITUACAO           := l.situacao;
+                    :P81_CONTA_ID           := l.conta_id;
+                    :P81_DATA               := to_char(l.data_lancamento, 'DD/MM/YYYY');
+                    :P81_CATEGORIA_ID       := l.categoria_id;
+                    :P81_VALOR              := l.valor;
+                    :P81_HISTORICO          := l.historico;
+                    :P81_IMOVEL_ID          := l.imovel_id;
+                    :P81_CENTRO_CUSTO_ID    := l.centro_custo_id;
+                    :P81_TIPO_DOC           := l.tipo_doc;
+                    :P81_NUM_DOC            := l.num_doc;
+                    :P81_PARTIC_TIPO_PESSOA := l.partic_tipo_pessoa;
+                    :P81_PARTIC_DOCUMENTO   := pkg_rural_cadastro.formatar_documento(l.partic_documento);
+                    :P81_PARTIC_NOME        := l.partic_nome;
+                end loop;
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 2590942656
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P81_LANCAMENTO_ID
+        }
+    )
+
+    process lancar (
+        name: Lançar
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                :P81_LANCAMENTO_ID := pkg_livro_caixa.lancar(
+                            p_cliente_id         => :P81_CLIENTE_ID,
+                            p_conta_id           => :P81_CONTA_ID,
+                            p_categoria_id       => :P81_CATEGORIA_ID,
+                            p_data               => to_date(:P81_DATA, 'DD/MM/YYYY'),
+                            p_valor              => to_number(:P81_VALOR),
+                            p_historico          => :P81_HISTORICO,
+                            p_imovel_id          => :P81_IMOVEL_ID,
+                            p_centro_custo_id    => :P81_CENTRO_CUSTO_ID,
+                            p_tipo_doc           => :P81_TIPO_DOC,
+                            p_num_doc            => :P81_NUM_DOC,
+                            p_partic_tipo_pessoa => case when :P81_PARTIC_DOCUMENTO is not null then :P81_PARTIC_TIPO_PESSOA end,
+                            p_partic_documento   => :P81_PARTIC_DOCUMENTO,
+                            p_partic_nome        => :P81_PARTIC_NOME);
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        successMessage {
+            successMessage: Lançamento gravado.
+        }
+        advanced {
+            executionMappingIdentifier: 8986386942
+        }
+        serverSideCondition {
+            whenButtonPressed: @create
+        }
+    )
+
+    process alterar (
+        name: Salvar alterações
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                pkg_livro_caixa.alterar(
+                            p_lancamento_id      => :P81_LANCAMENTO_ID,
+                            p_categoria_id       => :P81_CATEGORIA_ID,
+                            p_data               => to_date(:P81_DATA, 'DD/MM/YYYY'),
+                            p_valor              => to_number(:P81_VALOR),
+                            p_historico          => :P81_HISTORICO,
+                            p_imovel_id          => :P81_IMOVEL_ID,
+                            p_centro_custo_id    => :P81_CENTRO_CUSTO_ID,
+                            p_tipo_doc           => :P81_TIPO_DOC,
+                            p_num_doc            => :P81_NUM_DOC,
+                            p_partic_tipo_pessoa => case when :P81_PARTIC_DOCUMENTO is not null then :P81_PARTIC_TIPO_PESSOA end,
+                            p_partic_documento   => :P81_PARTIC_DOCUMENTO,
+                            p_partic_nome        => :P81_PARTIC_NOME);
+                ```
+        }
+        execution {
+            sequence: 20
+        }
+        successMessage {
+            successMessage: Lançamento alterado.
+        }
+        advanced {
+            executionMappingIdentifier: 3011985620
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+    process excluir (
+        name: Excluir
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                -- Transferência: exclui as duas pernas.
+                pkg_livro_caixa.excluir(:P81_LANCAMENTO_ID);
+                ```
+        }
+        execution {
+            sequence: 30
+        }
+        successMessage {
+            successMessage: Lançamento excluído.
+        }
+        advanced {
+            executionMappingIdentifier: 9604051925
+        }
+        serverSideCondition {
+            whenButtonPressed: @delete
+        }
+    )
+
+    process close-dialog (
+        name: Fechar diálogo
+        type: closeDialog
+        settings {
+            showSuccessMessages: false
+        }
+        execution {
+            sequence: 50
+        }
+        advanced {
+            executionMappingIdentifier: 8482149972
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE,DELETE
+        }
+    )
+)

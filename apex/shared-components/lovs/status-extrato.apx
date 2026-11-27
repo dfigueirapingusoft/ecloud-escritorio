@@ -1,0 +1,16 @@
+lov status-extrato (
+    name: STATUS_EXTRATO
+    source {
+        location: staticValues
+    }
+    entry status-extrato-1 (
+        sequence: 1
+        display: Pendente
+        return: PENDENTE
+    )
+    entry status-extrato-2 (
+        sequence: 2
+        display: Processada
+        return: PROCESSADA
+    )
+)

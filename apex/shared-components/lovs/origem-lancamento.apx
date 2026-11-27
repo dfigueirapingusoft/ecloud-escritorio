@@ -1,0 +1,21 @@
+lov origem-lancamento (
+    name: ORIGEM_LANCAMENTO
+    source {
+        location: staticValues
+    }
+    entry origem-lancamento-1 (
+        sequence: 1
+        display: Manual
+        return: MANUAL
+    )
+    entry origem-lancamento-2 (
+        sequence: 2
+        display: Extrato
+        return: EXTRATO
+    )
+    entry origem-lancamento-3 (
+        sequence: 3
+        display: Importação
+        return: IMPORTACAO
+    )
+)

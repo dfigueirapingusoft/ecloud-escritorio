@@ -1,0 +1,26 @@
+lov tipo-conta (
+    name: TIPO_CONTA
+    source {
+        location: staticValues
+    }
+    entry tipo-conta-1 (
+        sequence: 1
+        display: Conta corrente
+        return: CORRENTE
+    )
+    entry tipo-conta-2 (
+        sequence: 2
+        display: Poupança
+        return: POUPANCA
+    )
+    entry tipo-conta-3 (
+        sequence: 3
+        display: Investimento
+        return: INVESTIMENTO
+    )
+    entry tipo-conta-4 (
+        sequence: 4
+        display: Caixa (dinheiro)
+        return: CAIXA
+    )
+)

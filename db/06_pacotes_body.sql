@@ -1,6 +1,7 @@
 --------------------------------------------------------------------------------
 -- 06_pacotes_body.sql
--- Bodies dos pacotes declarados em 03_pacotes_spec.sql.
+-- Bodies dos pacotes declarados em 03_pacotes_spec.sql. No fim chama
+-- 06b_pacotes_body_rural.sql (módulo A – produtor rural).
 --
 -- Dependências: APEX 26.2 instalado na base (APEX_WEB_SERVICE, APEX_UTIL,
 -- APEX_APPLICATION_TEMP_FILES) e XML DB (XMLTYPE/XMLEXISTS).
@@ -2025,3 +2026,6 @@ as
     end regerar;
 end pkg_rtc_danfse;
 /
+
+-- Módulo A – Produtor rural
+@@06b_pacotes_body_rural.sql

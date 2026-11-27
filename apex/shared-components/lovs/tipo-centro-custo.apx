@@ -1,0 +1,26 @@
+lov tipo-centro-custo (
+    name: TIPO_CENTRO_CUSTO
+    source {
+        location: staticValues
+    }
+    entry tipo-centro-custo-1 (
+        sequence: 1
+        display: Safra
+        return: SAFRA
+    )
+    entry tipo-centro-custo-2 (
+        sequence: 2
+        display: Atividade
+        return: ATIVIDADE
+    )
+    entry tipo-centro-custo-3 (
+        sequence: 3
+        display: Talhão
+        return: TALHAO
+    )
+    entry tipo-centro-custo-4 (
+        sequence: 4
+        display: Outro
+        return: OUTRO
+    )
+)

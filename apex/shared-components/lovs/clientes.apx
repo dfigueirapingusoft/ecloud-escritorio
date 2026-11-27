@@ -4,7 +4,7 @@ lov clientes (
         type: sqlQuery
         sqlQuery:
             ```sql
-            select razao_social || ' (' || pkg_ecloud_util.formatar_cnpj(cnpj) || ')' d, cliente_id r
+            select razao_social || ' (' || pkg_rural_cadastro.formatar_documento(coalesce(cnpj, cpf)) || ')' d, cliente_id r
               from cliente
              where ativo = 'S'
              order by razao_social

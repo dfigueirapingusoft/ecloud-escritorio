@@ -16,4 +16,10 @@ lov regimes (
         return: SIMPLES
     )
 
+    entry regimes-3 (
+        sequence: 3
+        display: Produtor rural não contribuinte
+        return: NAO_CONTRIBUINTE
+    )
+
 )
