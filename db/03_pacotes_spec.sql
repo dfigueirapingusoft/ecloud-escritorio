@@ -13,12 +13,15 @@
 --   REGIME_BASE_URL  = <BASE>/regime/api      -> + C_PATH_REGIME_*
 --   SIMPLES_BASE_URL = <BASE>/simples/api     -> + C_PATH_SIMPLES_*
 --   DANFSE_BASE_URL  = <BASE>/danfse          -> + C_PATH_DANFSE_*
--- (o OpenAPI do DANFSe já traz o prefixo /api em /api/danfse)
+--   STONE_BASE_URL   = https://api.pagar.me/core/v5 -> + C_PATH_STONE_*
+-- (o OpenAPI do DANFSe já traz o prefixo /api em /api/danfse; o contrato da
+--  Stone é docs/contratos/openapi-stone.json, recorte da API v5 da Pagar.me)
 --
 -- Ordem: PKG_ECLOUD_UTIL, PKG_RTC_CONFIG, PKG_RTC_LOG, PKG_RTC_HTTP,
 --        PKG_RTC_DADOS_ABERTOS, PKG_RTC_CALC, PKG_RTC_DANFSE e, no fim,
---        03b_pacotes_spec_rural.sql (módulo A – produtor rural) e
---        03c_pacotes_spec_vitrine.sql (anúncios e depoimentos do login).
+--        03b_pacotes_spec_rural.sql (módulo A – produtor rural),
+--        03c_pacotes_spec_vitrine.sql (anúncios e depoimentos do login) e
+--        03d_pacotes_spec_assinatura.sql (autocadastro, login e assinatura).
 -- Idempotente (CREATE OR REPLACE).
 --------------------------------------------------------------------------------
 set define off
@@ -91,19 +94,30 @@ as
     -- Worker de mídia (imagens dos anúncios no Cloudflare R2)
     c_midia_base_url          constant varchar2(60) := 'MIDIA_BASE_URL';
     c_midia_credencial        constant varchar2(60) := 'MIDIA_CREDENCIAL_STATIC_ID';
+    -- Stone / Pagar.me (mensalidade do escritório, 01d_tabelas_assinatura.sql)
+    c_stone_base_url          constant varchar2(60) := 'STONE_BASE_URL';
+    c_stone_credencial        constant varchar2(60) := 'STONE_CREDENCIAL_STATIC_ID';
+    c_stone_webhook_token     constant varchar2(60) := 'STONE_WEBHOOK_TOKEN';
+    c_assinatura_teste_dias   constant varchar2(60) := 'ASSINATURA_TESTE_DIAS';
+    c_assinatura_fatura_dias  constant varchar2(60) := 'ASSINATURA_FATURA_DIAS';
+    c_assinatura_tolerancia   constant varchar2(60) := 'ASSINATURA_TOLERANCIA_DIAS';
+    c_webhook_base_url        constant varchar2(60) := 'WEBHOOK_BASE_URL';
+    c_email_remetente         constant varchar2(60) := 'EMAIL_REMETENTE';
 
     -- Valor da chave; ORA-20010 se a chave não existir e p_obrigatorio = true.
     function valor(p_chave in varchar2, p_obrigatorio in boolean default true) return varchar2;
     function valor_numero(p_chave in varchar2, p_obrigatorio in boolean default true) return number;
 
-    -- URL base do serviço ('REGIME' | 'SIMPLES' | 'DANFSE' | 'MIDIA'), sem barra final.
+    -- URL base do serviço ('REGIME' | 'SIMPLES' | 'DANFSE' | 'MIDIA' | 'STONE'), sem barra final.
     function url_base(p_servico in varchar2) return varchar2;
 
     -- Static ID da Web Credential do APEX (padrão RTC_API_KEY).
     function credencial_static_id return varchar2;
 
     -- Static ID da Web Credential de um serviço: MIDIA -> MIDIA_UPLOAD_TOKEN
-    -- (RTC_CONFIG MIDIA_CREDENCIAL_STATIC_ID); os demais -> RTC_API_KEY.
+    -- (RTC_CONFIG MIDIA_CREDENCIAL_STATIC_ID); STONE -> STONE_API_KEY
+    -- (RTC_CONFIG STONE_CREDENCIAL_STATIC_ID, HTTP Header Authorization com
+    -- "Basic " + base64 de "<chave secreta>:"); os demais -> RTC_API_KEY.
     function credencial_static_id(p_servico in varchar2) return varchar2;
 
     -- Grava (MERGE) uma chave. Exige ADMIN_PLATAFORMA ou contexto de sistema
@@ -158,7 +172,8 @@ end pkg_rtc_log;
 -- PKG_RTC_HTTP: única porta de saída HTTP. Usa APEX_WEB_SERVICE com
 -- p_credential_static_id => PKG_RTC_CONFIG.credencial_static_id(serviço)
 -- ('RTC_API_KEY', tipo HTTP Header com X-API-Key; no serviço MIDIA,
--- 'MIDIA_UPLOAD_TOKEN' com X-Upload-Token). Registra tudo em PKG_RTC_LOG.
+-- 'MIDIA_UPLOAD_TOKEN' com X-Upload-Token; no serviço STONE, 'STONE_API_KEY'
+-- com Authorization Basic). Registra tudo em PKG_RTC_LOG.
 -- Fora de uma sessão APEX (jobs, SQLcl) define o workspace com
 -- APEX_UTIL.SET_WORKSPACE(RTC_CONFIG.APEX_WORKSPACE), exigido pela Web Credential.
 -- Nunca levanta exceção por falha de rede: devolve http_status nulo e erro.
@@ -171,6 +186,7 @@ as
     c_servico_simples  constant varchar2(10) := 'SIMPLES';
     c_servico_danfse   constant varchar2(10) := 'DANFSE';
     c_servico_midia    constant varchar2(10) := 'MIDIA';
+    c_servico_stone    constant varchar2(10) := 'STONE';
 
     -- Caminhos validados contra os OpenAPI (relativos à URL base do serviço)
     -- openapi-regime-regular.json
@@ -188,6 +204,9 @@ as
     -- openapi-midia.json (Worker de mídia do Ecloud; a chave vai depois da barra)
     c_path_midia_objetos      constant varchar2(100) := '/objetos';
     c_path_midia_saude        constant varchar2(100) := '/health';
+    -- openapi-stone.json (Pagar.me API v5; o id vai depois da barra)
+    c_path_stone_pedidos      constant varchar2(100) := '/orders';    -- POST; GET /orders/{order_id}
+    c_path_stone_cobrancas    constant varchar2(100) := '/charges';   -- DELETE /charges/{charge_id}
 
     -- Headers de resposta das calculadoras Java
     c_hdr_versao_app          constant varchar2(40) := 'X-CALC-APP-VERSION';
@@ -266,6 +285,21 @@ as
         p_operacao         in varchar2,
         p_referencia_tipo  in varchar2 default null,
         p_referencia_id    in number   default null) return t_resposta;
+
+    -- Requisição JSON com qualquer método (STONE: POST /orders, GET
+    -- /orders/{id}, DELETE /charges/{id}). p_idempotencia vai no cabeçalho
+    -- Idempotency-key (a Stone devolve o mesmo pedido para a mesma chave).
+    -- p_sem_escritorio = true grava o log sem escritório (job, webhook).
+    function requisicao_json(
+        p_servico          in varchar2,
+        p_metodo           in varchar2,
+        p_caminho          in varchar2,
+        p_corpo            in clob     default null,
+        p_operacao         in varchar2,
+        p_idempotencia     in varchar2 default null,
+        p_referencia_tipo  in varchar2 default null,
+        p_referencia_id    in number   default null,
+        p_sem_escritorio   in boolean  default false) return t_resposta;
 
     -- DELETE (MIDIA: apaga <C_PATH_MIDIA_OBJETOS>/<chave>).
     function delete_recurso(
@@ -507,3 +541,6 @@ end pkg_rtc_danfse;
 
 -- Vitrine da tela de login: anúncios e depoimentos
 @@03c_pacotes_spec_vitrine.sql
+
+-- Autocadastro, login próprio e assinatura cobrada pela Stone
+@@03d_pacotes_spec_assinatura.sql

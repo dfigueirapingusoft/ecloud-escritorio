@@ -28,7 +28,11 @@ OPENAPI = {
     "DANFSE": json.loads((CONTRATOS / "openapi-danfse.json").read_text(encoding="utf-8")),
     # Worker de mídia do próprio Ecloud (cloudflare/midia): imagens dos anúncios no R2
     "MIDIA": json.loads((CONTRATOS / "openapi-midia.json").read_text(encoding="utf-8")),
+    # Stone / Pagar.me API v5: recorte usado na mensalidade (PKG_STONE_API)
+    "STONE": json.loads((CONTRATOS / "openapi-stone.json").read_text(encoding="utf-8")),
 }
+SPEC_SQL += (RAIZ / "db" / "03d_pacotes_spec_assinatura.sql").read_text(encoding="utf-8")
+TABELAS_SQL += (RAIZ / "db" / "01d_tabelas_assinatura.sql").read_text(encoding="utf-8")
 
 falhas = []
 
@@ -69,6 +73,14 @@ METODO = {
     "c_path_midia_saude": ("MIDIA", "get"),
     # a chave do objeto vai depois da barra: confere o caminho com o parâmetro
     "c_path_midia_objetos": ("MIDIA", "put", "/objetos/{chave}"),
+    "c_path_stone_pedidos": ("STONE", "post"),
+    # o id vai depois da barra
+    "c_path_stone_cobrancas": ("STONE", "delete", "/charges/{charge_id}"),
+}
+
+# Caminhos filhos (constante + "/{id}") com método próprio.
+CAMINHOS_FILHOS = {
+    "c_path_stone_pedidos": [("get", "/orders/{order_id}")],
 }
 
 # Métodos que todo caminho com parâmetro precisa ter (além do principal).
@@ -97,6 +109,16 @@ for const, caminho in sorted(declarados.items()):
             falha(f"{const} = {caminho}: método {m.upper()} não existe em {servico}")
         else:
             ok(f"{servico:7} {m.upper():6} {caminho}")
+for const, filhos in CAMINHOS_FILHOS.items():
+    base = declarados.get(const)
+    servico = METODO[const][0]
+    for m, modelo in filhos:
+        if base is None or not modelo.startswith(base + "/"):
+            falha(f"{const}: {modelo} não começa com {base}/")
+        elif m not in OPENAPI[servico]["paths"].get(modelo, {}):
+            falha(f"{const}: método {m.upper()} não existe em {servico} {modelo}")
+        else:
+            ok(f"{servico:7} {m.upper():6} {modelo}")
 for const in METODO:
     if const not in declarados:
         falha(f"{const}: esperado no validador mas não declarado em 03_pacotes_spec.sql")
@@ -119,10 +141,12 @@ PARAMS = [
     ("SIMPLES", "/calculadora/simples-nacional/atividades", "get", "data"),
     ("DANFSE", "/api/danfse", "post", "stc"),
     ("DANFSE", "/api/danfse", "post", "canhoto"),
+    ("STONE", "/orders", "post", "Idempotency-key"),
 ]
 for servico, caminho, metodo, nome in PARAMS:
     op = OPENAPI[servico]["paths"].get(caminho, {}).get(metodo, {})
-    nomes = [p.get("name") for p in op.get("parameters", [])]
+    nomes = [OPENAPI[servico]["components"]["parameters"][p["$ref"].split("/")[-1]]["name"]
+             if "$ref" in p else p.get("name") for p in op.get("parameters", [])]
     if nome in nomes:
         ok(f"{servico:7} parâmetro {nome} em {metodo.upper()} {caminho}")
     else:
@@ -277,6 +301,33 @@ CAMPOS = [
     ("DANFSE", "controller.ErroResponse", c) for c in ["sucesso", "mensagem"]
 ] + [
     ("DANFSE", "controller.HealthStatus", c) for c in ["status"]
+] + [
+    # Stone -> PedidoInput (PKG_STONE_API.criar_pedido)
+    ("STONE", "PedidoInput", c) for c in [
+        "code", "closed", "metadata",
+        "items.amount", "items.description", "items.quantity", "items.code",
+        "customer.name", "customer.email", "customer.code", "customer.document",
+        "customer.document_type", "customer.type",
+        "customer.address.line_1", "customer.address.line_2", "customer.address.zip_code",
+        "customer.address.city", "customer.address.state", "customer.address.country",
+        "payments.payment_method", "payments.amount",
+        "payments.checkout.expires_in", "payments.checkout.customer_editable",
+        "payments.checkout.billing_address_editable", "payments.checkout.skip_checkout_success_page",
+        "payments.checkout.accepted_payment_methods", "payments.checkout.pix.expires_in",
+        "payments.checkout.boleto.due_at", "payments.checkout.credit_card.installments.number",
+        "payments.checkout.credit_card.installments.total",
+        "payments.boleto.due_at", "payments.boleto.instructions", "payments.boleto.type",
+    ]
+] + [
+    # Stone <- Pedido (obter_pedido / atualizar_fatura)
+    ("STONE", "Pedido", c) for c in [
+        "id", "status", "charges.id", "charges.status", "charges.paid_at", "charges.paid_amount",
+        "charges.payment_method", "charges.last_transaction.url", "charges.last_transaction.pdf",
+        "checkouts.payment_url",
+    ]
+] + [
+    # Stone <- Aviso (receber_aviso / pedido_do_aviso)
+    ("STONE", "Aviso", c) for c in ["id", "type", "data.id", "data.order.id"]
 ]
 
 for servico, raiz, caminho in CAMPOS:

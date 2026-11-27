@@ -196,6 +196,7 @@ as
                                when 'SIMPLES' then c_simples_base_url
                                when 'DANFSE'  then c_danfse_base_url
                                when 'MIDIA'   then c_midia_base_url
+                               when 'STONE'   then c_stone_base_url
                                else 'SERVICO_INVALIDO_' || p_servico
                            end), '/');
     end url_base;
@@ -209,6 +210,8 @@ as
     begin
         if upper(p_servico) = 'MIDIA' then
             return valor(c_midia_credencial);
+        elsif upper(p_servico) = 'STONE' then
+            return valor(c_stone_credencial);
         end if;
         return credencial_static_id;
     end credencial_static_id;
@@ -455,7 +458,8 @@ as
         p_operacao         in varchar2,
         p_referencia_tipo  in varchar2,
         p_referencia_id    in number,
-        p_sem_escritorio   in boolean) return t_resposta
+        p_sem_escritorio   in boolean,
+        p_idempotencia     in varchar2 default null) return t_resposta
     is
         l_url    varchar2(4000) := montar_url(p_servico, p_caminho, p_query);
         l_resp   t_resposta;
@@ -475,6 +479,11 @@ as
             garantir_workspace;
             definir_headers(case when p_corpo is not null then 'application/json' end,
                             'application/json, application/problem+json');
+            -- Stone: a mesma chave devolve o mesmo pedido (não cobra em dobro)
+            if p_idempotencia is not null then
+                apex_web_service.g_request_headers(apex_web_service.g_request_headers.count + 1).name := 'Idempotency-key';
+                apex_web_service.g_request_headers(apex_web_service.g_request_headers.count).value    := p_idempotencia;
+            end if;
             l_inicio := systimestamp;
             l_resp.corpo := apex_web_service.make_rest_request(
                 p_url                  => l_url,
@@ -518,6 +527,24 @@ as
         return executar_json(p_servico, 'POST', p_caminho, null, p_corpo, p_operacao,
                              p_referencia_tipo, p_referencia_id, false);
     end post_json;
+
+    function requisicao_json(
+        p_servico          in varchar2,
+        p_metodo           in varchar2,
+        p_caminho          in varchar2,
+        p_corpo            in clob     default null,
+        p_operacao         in varchar2,
+        p_idempotencia     in varchar2 default null,
+        p_referencia_tipo  in varchar2 default null,
+        p_referencia_id    in number   default null,
+        p_sem_escritorio   in boolean  default false) return t_resposta is
+    begin
+        if upper(p_metodo) not in ('GET', 'POST', 'PUT', 'DELETE') then
+            raise_application_error(-20000, 'Método HTTP não suportado: ' || p_metodo);
+        end if;
+        return executar_json(p_servico, upper(p_metodo), p_caminho, null, p_corpo, p_operacao,
+                             p_referencia_tipo, p_referencia_id, p_sem_escritorio, p_idempotencia);
+    end requisicao_json;
 
     function post_xml_blob(
         p_servico          in varchar2,

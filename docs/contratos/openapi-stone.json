@@ -1,0 +1,224 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Stone / Pagar.me API v5 (recorte usado pelo Ecloud)",
+    "version": "5",
+    "description": "Recorte da API Core v5 da Pagar.me (Stone) com SOMENTE os caminhos e campos que o Ecloud usa para cobrar a mensalidade do escritório (PKG_STONE_API). Não é o contrato completo do provedor. Cada caminho e schema traz em x-fonte de onde veio: a documentação oficial (docs.pagar.me, lida em 27/11/2026) ou o código do app Mecânico VIP que já cobra em produção com esses campos (db/23_mv_saas_api.sql e db/21_mv_billing_api.sql do repositório mecanico-vip). Valores monetários em centavos (inteiro). Autenticação: Basic com a chave secreta como usuário e senha vazia, injetada pela Web Credential STONE_API_KEY."
+  },
+  "servers": [
+    { "url": "https://api.pagar.me/core/v5", "description": "Sandbox e produção (a chave sk_test_ ou sk_ decide o ambiente)" }
+  ],
+  "x-fonte": [
+    "https://docs.pagar.me/reference/autentica%C3%A7%C3%A3o-2",
+    "https://docs.pagar.me/reference/criar-pedido-2",
+    "https://docs.pagar.me/reference/obter-pedido",
+    "https://docs.pagar.me/reference/cancelar-cobran%C3%A7a",
+    "https://docs.pagar.me/docs/o-que-%C3%A9",
+    "https://docs.pagar.me/reference/exemplo-de-webhook-1",
+    "https://docs.pagar.me/reference/eventos-de-webhook-1"
+  ],
+  "components": {
+    "securitySchemes": {
+      "basic": { "type": "http", "scheme": "basic", "description": "Usuário = chave secreta (sk_...), senha vazia." }
+    },
+    "parameters": {
+      "IdempotencyKey": {
+        "name": "Idempotency-key",
+        "in": "header",
+        "required": false,
+        "description": "Chave gerada pela loja. A mesma chave devolve um único pedido; vale 24 h (5 min no sandbox); 409 se a primeira requisição ainda estiver em andamento.",
+        "schema": { "type": "string" },
+        "x-fonte": "https://docs.pagar.me/docs/o-que-%C3%A9"
+      }
+    },
+    "schemas": {
+      "PedidoInput": {
+        "type": "object",
+        "required": ["items", "customer", "payments"],
+        "x-fonte": "https://docs.pagar.me/reference/criar-pedido-2",
+        "properties": {
+          "code": { "type": "string", "maxLength": 52, "description": "Código do pedido na loja (Ecloud: ECL-<FATURA_ID>)." },
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/ItemPedido" } },
+          "customer": { "$ref": "#/components/schemas/Cliente" },
+          "payments": { "type": "array", "items": { "$ref": "#/components/schemas/PagamentoInput" } },
+          "closed": { "type": "boolean", "description": "true = pedido criado fechado." },
+          "metadata": { "type": "object", "additionalProperties": { "type": "string" }, "description": "Chave/valor livre (Ecloud: ecloud_fatura_id, ecloud_escritorio_id)." }
+        }
+      },
+      "ItemPedido": {
+        "type": "object",
+        "x-fonte": "mecanico-vip db/23_mv_saas_api.sql (create_order), em produção",
+        "properties": {
+          "amount": { "type": "integer", "description": "Valor unitário em centavos." },
+          "description": { "type": "string", "maxLength": 256 },
+          "quantity": { "type": "integer" },
+          "code": { "type": "string" }
+        }
+      },
+      "Cliente": {
+        "type": "object",
+        "x-fonte": "mecanico-vip db/23_mv_saas_api.sql (create_order), em produção; exemplo de cliente em https://docs.pagar.me/reference/exemplo-de-webhook-1",
+        "properties": {
+          "name": { "type": "string" },
+          "email": { "type": "string" },
+          "code": { "type": "string", "description": "Código do cliente na loja (Ecloud: E<ESCRITORIO_ID>)." },
+          "document": { "type": "string", "description": "CPF ou CNPJ só com os caracteres do documento." },
+          "document_type": { "type": "string", "enum": ["CPF", "CNPJ"] },
+          "type": { "type": "string", "enum": ["individual", "company"] },
+          "address": { "$ref": "#/components/schemas/Endereco" }
+        }
+      },
+      "Endereco": {
+        "type": "object",
+        "x-fonte": "mecanico-vip db/23_mv_saas_api.sql (create_order), em produção",
+        "properties": {
+          "line_1": { "type": "string", "description": "Número, rua, bairro." },
+          "line_2": { "type": "string", "description": "Complemento." },
+          "zip_code": { "type": "string" },
+          "city": { "type": "string" },
+          "state": { "type": "string" },
+          "country": { "type": "string" }
+        }
+      },
+      "PagamentoInput": {
+        "type": "object",
+        "x-fonte": "mecanico-vip db/23_mv_saas_api.sql (create_order), em produção. A página oficial de Criar pedido não detalha os subcampos de payments.",
+        "properties": {
+          "payment_method": { "type": "string", "enum": ["checkout", "boleto"] },
+          "amount": { "type": "integer", "description": "Total em centavos (checkout)." },
+          "checkout": { "$ref": "#/components/schemas/CheckoutInput" },
+          "boleto": { "$ref": "#/components/schemas/BoletoInput" }
+        }
+      },
+      "CheckoutInput": {
+        "type": "object",
+        "x-fonte": "mecanico-vip db/23_mv_saas_api.sql (create_order), em produção",
+        "properties": {
+          "expires_in": { "type": "integer", "description": "Validade do link em minutos." },
+          "customer_editable": { "type": "boolean" },
+          "billing_address_editable": { "type": "boolean" },
+          "skip_checkout_success_page": { "type": "boolean" },
+          "accepted_payment_methods": { "type": "array", "items": { "type": "string", "enum": ["pix", "boleto", "credit_card"] } },
+          "pix": { "type": "object", "properties": { "expires_in": { "type": "integer", "description": "Validade do Pix em segundos." } } },
+          "boleto": { "type": "object", "properties": { "due_at": { "type": "string", "format": "date-time" } } },
+          "credit_card": {
+            "type": "object",
+            "properties": {
+              "installments": {
+                "type": "array",
+                "items": { "type": "object", "properties": { "number": { "type": "integer" }, "total": { "type": "integer" } } }
+              }
+            }
+          }
+        }
+      },
+      "BoletoInput": {
+        "type": "object",
+        "x-fonte": "mecanico-vip db/23_mv_saas_api.sql (create_order, caminho sem link de pagamento), em produção",
+        "properties": {
+          "due_at": { "type": "string", "format": "date-time", "description": "Último instante de pagamento, em UTC (YYYY-MM-DDTHH:MI:SSZ)." },
+          "instructions": { "type": "string" },
+          "type": { "type": "string", "description": "Espécie do boleto (DM)." }
+        }
+      },
+      "Pedido": {
+        "type": "object",
+        "x-fonte": "https://docs.pagar.me/reference/exemplo-de-webhook-1 (objeto order em data); checkouts: mecanico-vip db/23_mv_saas_api.sql",
+        "properties": {
+          "id": { "type": "string", "description": "or_..." },
+          "code": { "type": "string" },
+          "amount": { "type": "integer" },
+          "status": { "type": "string", "description": "Exemplo oficial: paid. O Ecloud trata pending, paid, canceled e failed." },
+          "closed": { "type": "boolean" },
+          "metadata": { "type": "object", "additionalProperties": { "type": "string" } },
+          "charges": { "type": "array", "items": { "$ref": "#/components/schemas/Cobranca" } },
+          "checkouts": { "type": "array", "items": { "$ref": "#/components/schemas/Checkout" } }
+        }
+      },
+      "Cobranca": {
+        "type": "object",
+        "x-fonte": "https://docs.pagar.me/reference/exemplo-de-webhook-1 (charges[]); paid_amount: mecanico-vip db/23_mv_saas_api.sql (refresh_invoice)",
+        "properties": {
+          "id": { "type": "string", "description": "ch_..." },
+          "code": { "type": "string" },
+          "amount": { "type": "integer" },
+          "paid_amount": { "type": "integer" },
+          "status": { "type": "string", "description": "paid, overpaid e underpaid = pago (eventos charge.paid, charge.overpaid, charge.underpaid); canceled; pending; failed." },
+          "payment_method": { "type": "string", "description": "pix, boleto ou credit_card." },
+          "paid_at": { "type": "string" },
+          "last_transaction": { "$ref": "#/components/schemas/Transacao" }
+        }
+      },
+      "Transacao": {
+        "type": "object",
+        "x-fonte": "https://docs.pagar.me/reference/exemplo-de-webhook-1 (last_transaction.status); url e pdf do boleto: mecanico-vip db/23_mv_saas_api.sql",
+        "properties": {
+          "status": { "type": "string" },
+          "url": { "type": "string", "description": "Boleto: página do boleto." },
+          "pdf": { "type": "string", "description": "Boleto: PDF." }
+        }
+      },
+      "Checkout": {
+        "type": "object",
+        "x-fonte": "mecanico-vip db/23_mv_saas_api.sql (create_order lê checkouts[].payment_url), em produção",
+        "properties": {
+          "id": { "type": "string" },
+          "payment_url": { "type": "string", "description": "Link de pagamento (Pix, boleto ou cartão)." }
+        }
+      },
+      "Aviso": {
+        "type": "object",
+        "description": "Corpo do webhook. O Ecloud usa só id (descarta repetidos), type e o id do pedido; a situação é sempre relida em GET /orders/{order_id}.",
+        "x-fonte": "https://docs.pagar.me/reference/exemplo-de-webhook-1 e https://docs.pagar.me/reference/eventos-de-webhook-1",
+        "properties": {
+          "id": { "type": "string", "description": "hook_..." },
+          "type": { "type": "string", "description": "order.paid, order.canceled, order.payment_failed, charge.paid, charge.overpaid, charge.underpaid, charge.payment_failed, charge.refunded..." },
+          "created_at": { "type": "string" },
+          "account": { "type": "object", "properties": { "id": { "type": "string" }, "name": { "type": "string" } } },
+          "data": { "$ref": "#/components/schemas/AvisoDados" }
+        }
+      },
+      "AvisoDados": {
+        "type": "object",
+        "description": "Em order.* é o próprio pedido (id or_...); em charge.* é a cobrança, que cita o pedido em order.id.",
+        "x-fonte": "https://docs.pagar.me/reference/exemplo-de-webhook-1; data.order: mecanico-vip db/21_mv_billing_api.sql (event_charge_ref)",
+        "properties": {
+          "id": { "type": "string" },
+          "status": { "type": "string" },
+          "order": { "type": "object", "properties": { "id": { "type": "string" } } }
+        }
+      }
+    }
+  },
+  "security": [{ "basic": [] }],
+  "paths": {
+    "/orders": {
+      "post": {
+        "summary": "Criar pedido (fatura da mensalidade)",
+        "operationId": "criarPedido",
+        "x-fonte": "https://docs.pagar.me/reference/criar-pedido-2",
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PedidoInput" } } } },
+        "responses": { "200": { "description": "Pedido criado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Pedido" } } } } }
+      }
+    },
+    "/orders/{order_id}": {
+      "get": {
+        "summary": "Obter pedido",
+        "operationId": "obterPedido",
+        "x-fonte": "https://docs.pagar.me/reference/obter-pedido",
+        "parameters": [{ "name": "order_id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Pedido", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Pedido" } } } } }
+      }
+    },
+    "/charges/{charge_id}": {
+      "delete": {
+        "summary": "Cancelar cobrança",
+        "operationId": "cancelarCobranca",
+        "x-fonte": "https://docs.pagar.me/reference/cancelar-cobran%C3%A7a",
+        "parameters": [{ "name": "charge_id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Cobrança cancelada", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Cobranca" } } } } }
+      }
+    }
+  }
+}
