@@ -26,7 +26,7 @@ editável e gráficos seguem o `example-1`.
 | 1 | Painel | todos | Filtros (período, regime, cliente); resumo; gráficos por mês, por regime e por cliente; erros mais frequentes com orientação. |
 | 10/11 | Escritórios | admin da plataforma | Relatório + formulário modal (CNPJ com DV, UF e município IBGE em cascata); troca do escritório ativo. |
 | 12/13 | Usuários | Administrador | Relatório + formulário (perfil, admin da plataforma só editável pelo admin da plataforma). |
-| 20/21 | Clientes | todos veem; Administrador e Contador editam | CNPJ, razão social, UF, município IBGE (9 dígitos aceitos), regime Regular/Simples, CRT. |
+| 20/21 | Clientes | todos veem; Administrador e Contador editam | Pessoa jurídica (CNPJ) ou física (CPF, CAEPF, endereço e forma de apuração do LCDPR), razão social, UF, município IBGE (9 dígitos aceitos), regime Regular/Simples/Produtor rural não contribuinte, CRT. |
 | 30 | Simulações | todos | Relatório de `VW_SIMULACAO_RESUMO`; botões Nova Regime Regular / Nova Simples Nacional. |
 | 31 | Simulação – Regime Regular | todos | Cabeçalho (cliente, data/hora do fato gerador, UF e município, tpDoc, compra governamental); grade de itens (NCM/NBS, CST, cClassTrib, base, quantidade, unidade e grupo IS); botões Salvar, Calcular, Duplicar, Excluir; totais, resultado por item e erros amigáveis com orientação. |
 | 32 | Simulação – Simples Nacional | todos | Cabeçalho (data, tpDoc, CRT, regime IBS/CBS, ente governamental); itens (atividade do Simples, cClassTrib, NCM/NBS, base, IS, % IBS/CBS); mesmo fluxo. |
@@ -36,6 +36,20 @@ editável e gráficos seguem o `example-1`.
 | 50–54 | Consultas | todos | cClassTrib (com documentos fiscais), CST, NCM, NBS e atividades do Simples, lidos do cache, com a última sincronização. |
 | 60 | Configuração das APIs | admin da plataforma | URLs e tempo limite (`pkg_rtc_config.definir`), **Testar conexão** (versão do serviço e da base de cada calculadora; DANFSe mostra o status), status do cache e **Sincronizar agora**. |
 | 61/62 | Log de chamadas | Administrador | `RTC_CHAMADA_LOG` com detalhe de requisição e resposta. |
+| 70/71 | Imóveis rurais | todos veem; Administrador e Contador editam | Relatório por produtor + formulário modal (registro 0040) com grade de contrapartes (0045), que aparece depois de criar o imóvel. |
+| 72/73 | Contas bancárias | idem | Relatório com saldo no livro e no banco + formulário modal (0050); caixa = código 000. |
+| 74 | Centros de custo | idem | Grade editável (safra, atividade, talhão), opcional no lançamento. |
+| 75 | Categorias do livro caixa | idem | Grade do plano do escritório (natureza, tipo no LCDPR, grupo) e botão **Criar plano padrão**. |
+| 76 | Layouts de extrato CSV | idem | Grade: separador, decimal, máscara de data, codificação e colunas. |
+| 77 | Regras de conciliação | idem | Grade com regras do produtor e regras gerais do escritório. |
+| 80 | Livro caixa | todos | Filtros (produtor, período, conta), resumo do período e relatório de `VW_LIVRO_CAIXA`; botões Novo lançamento e Transferência. |
+| 81 | Lançamento (modal) | Administrador e Contador gravam | `pkg_livro_caixa.lancar/alterar/excluir`; conciliado ou transferência fica só leitura. |
+| 82 | Transferência (modal) | idem | `pkg_livro_caixa.transferir` (duas pernas, fora do LCDPR). |
+| 83/84 | Extratos | idem | Importações por produtor; modal de envio OFX/CSV até 10 MiB (`pkg_extrato.importar_upload`) que mostra o resultado e permite excluir. |
+| 85 | Conciliação bancária | idem | Conta e período; situação livro x banco; sugestões; extrato e livro pendentes; conciliados; **Conciliar automaticamente**. |
+| 86 | Conciliar movimento (modal) | idem | Conciliar com lançamento (valor parcial opcional), lançar e conciliar, ignorar com motivo, desfazer. |
+| 88/89 | LCDPR | idem | Ano, situação inicial/especial e responsável; pendências (`pkg_lcdpr.validar`); **Gerar arquivo**; histórico e download (CR LF, UTF-8). |
+| 90 | Painel do produtor | todos | Saldos por conta, entradas e saídas por mês, saldo no fim do mês, resultado rural mensal e pendências do LCDPR do ano. |
 | 9999 | Entrar | público | Login. |
 
 ## 3. Pré-requisitos no workspace
@@ -56,7 +70,7 @@ export SQLCL_BIN=/caminho/para/sqlcl/bin/sql
 
 # 2) SQL e PL/SQL das páginas contra o schema (tabelas, colunas, pacotes)
 python3 tools/verificar_sql_apex.py /tmp/verificar.sql
-sql ECLOUD@base @/tmp/verificar.sql                                   # esperado: "Trechos OK: 104, com erro: 0"
+sql ECLOUD@base @/tmp/verificar.sql                                   # esperado: nenhum erro fora das APIs do APEX
 ```
 
 Os dois passos foram executados com sucesso (SQLcl 26.3.1; Oracle AI Database 26ai Free com APEX 26.2.0 e o banco da fase 2).
@@ -93,5 +107,19 @@ Correções feitas a partir do teste:
 Observação: textos internos do APEX ("Row created.", "Actions", "Add Row", "1 error has occurred")
 saem em inglês porque o APEX local não tem o idioma pt-br instalado. No ambiente alvo, instale a
 tradução pt-br do APEX (`builder/pt-br/load_pt-br.sql`) para esses textos saírem em português.
+
+## 6. Módulo A (produtor rural) – fase 3
+
+* Páginas 70 a 90 no grupo **Produtor rural**, com entrada própria no menu e no breadcrumb.
+* O produtor escolhido em qualquer página do módulo fica no item de aplicação `F_PRODUTOR_ID`
+  e vale para as outras páginas da sessão. Trocar o produtor recarrega a página.
+* Gravações passam pelos pacotes da fase 2 (`PKG_LIVRO_CAIXA`, `PKG_EXTRATO`, `PKG_CONCILIACAO`,
+  `PKG_LCDPR`); cadastros simples (imóvel, conta, grades) usam o processamento automático do
+  APEX, com VPD e as constraints da fase 1.
+* LOVs novas: produtores, categorias, layouts-csv e os domínios do LCDPR (tipo de exploração,
+  contraparte, documento, lançamento, situação inicial e especial etc.).
+* `tools/verificar_sql_apex.py` passou a compilar de fato os blocos PL/SQL com binds de item
+  (antes o PARSE não compilava bloco com bind) e aceita function body booleano ou texto.
+  Num banco sem APEX sobram só os erros das APIs do APEX (`APEX_APPLICATION`, `APEX_UTIL`, ...).
 
 O deploy (`apexlang-deploy`) é a fase 4 e só será feito com sua autorização e o ambiente alvo informado.

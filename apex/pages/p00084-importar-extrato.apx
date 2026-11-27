@@ -1,0 +1,449 @@
+page 84 (
+    name: Importar extrato
+    alias: IMPORTAR-EXTRATO
+    title: Importar extrato
+    pageGroup: @rural
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @/modal-dialog
+        templateOptions: #DEFAULT#
+    }
+    dialog {
+        chained: false
+        resizable: false
+        width: 720
+    }
+    region buttons (
+        name: Botões
+        type: staticContent
+        layout {
+            sequence: 90
+            slot: dialogFooter
+        }
+        appearance {
+            template: @/buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region envio (
+        name: Envio do extrato
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @/blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region situacao (
+        name: Situação
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: contentBody
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P84_IMPORTACAO_ID
+        }
+    )
+
+    pageItem P84_IMPORTACAO_ID (
+        type: hidden
+        layout {
+            sequence: 1
+            region: @envio
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P84_CLIENTE_ID (
+        type: hidden
+        layout {
+            sequence: 2
+            region: @envio
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+        default {
+            type: item
+            item: F_PRODUTOR_ID
+        }
+    )
+
+    pageItem P84_CONTA_ID (
+        type: selectList
+        label {
+            label: Conta
+            alignment: right
+        }
+        layout {
+            sequence: 10
+            region: @envio
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select lpad(cod_conta, 3, '0') || ' - ' || apelido d, conta_id r
+                  from conta_bancaria
+                 where cliente_id = :P84_CLIENTE_ID
+                   and ativo = 'S'
+                   and tipo <> 'CAIXA'
+                 order by cod_conta
+                ```
+            displayNullValue: true
+            nullDisplayValue: - Selecione -
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P84_IMPORTACAO_ID
+        }
+    )
+
+    pageItem P84_FORMATO (
+        type: radioGroup
+        label {
+            label: Formato
+            alignment: right
+        }
+        layout {
+            sequence: 20
+            region: @envio
+            slot: regionBody
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        lov {
+            type: sharedComponent
+            lov: @formato-extrato
+        }
+        default {
+            type: static
+            staticValue: OFX
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P84_IMPORTACAO_ID
+        }
+    )
+
+    pageItem P84_LAYOUT_ID (
+        type: selectList
+        label {
+            label: Layout do CSV
+            alignment: right
+        }
+        layout {
+            sequence: 30
+            region: @envio
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        lov {
+            type: sharedComponent
+            lov: @layouts-csv
+            displayNullValue: true
+            nullDisplayValue: - Padrão da conta -
+        }
+        help {
+            inlineHelpText: Só para CSV; vazio usa o layout padrão da conta.
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P84_IMPORTACAO_ID
+        }
+    )
+
+    pageItem P84_ARQUIVO (
+        type: fileUpload
+        label {
+            label: Arquivo do extrato (até 10 MiB)
+            alignment: right
+        }
+        layout {
+            sequence: 40
+            region: @envio
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P84_IMPORTACAO_ID
+        }
+        display {
+            displayAs: inlineDropzone
+            dropzoneTitle: Arraste o arquivo OFX ou CSV
+            dropzoneDesc: ou clique para escolher o arquivo
+        }
+        storage {
+            type: appTempFiles
+            purgeFileAt: endOfRequest
+            fileTypes: .ofx,.csv,.txt
+            maxFileSize: 10240
+        }
+    )
+
+    pageItem P84_RESUMO (
+        type: displayOnly
+        label {
+            label: Resultado
+            alignment: right
+        }
+        layout {
+            sequence: 10
+            region: @situacao
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        source {
+            type: sqlQuerySingleValue
+            sqlQuery:
+                ```sql
+                select lpad(cb.cod_conta, 3, '0') || ' - ' || cb.apelido || ' | ' || i.nome_arquivo
+                       || ' | ' || i.qtd_itens || ' movimento(s), ' || i.qtd_novos || ' novo(s), '
+                       || i.qtd_duplicados || ' já importado(s)'
+                       || case when i.saldo_final is not null
+                               then ' | saldo do banco ' || to_char(i.saldo_final, 'FM999G999G999G990D00')
+                                    || ' em ' || to_char(i.data_saldo_final, 'DD/MM/YYYY') end
+                       || case when i.mensagem is not null then ' | ' || i.mensagem end
+                  from extrato_importacao i
+                  join conta_bancaria cb
+                    on cb.conta_id = i.conta_id
+                 where i.importacao_id = :P84_IMPORTACAO_ID
+                ```
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Fechar
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button excluir (
+        buttonName: EXCLUIR
+        label: Excluir importação
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: delete
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: [
+                #DEFAULT#
+                t-Button--danger
+                t-Button--simple
+            ]
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: Excluir o extrato e os movimentos ainda não conciliados?
+            style: danger
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P84_IMPORTACAO_ID
+        }
+        security {
+            authorizationScheme: @contador-ou-administrador
+        }
+    )
+
+    button importar (
+        buttonName: IMPORTAR
+        label: Importar
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text-with-icon
+            icon: fa-upload
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P84_IMPORTACAO_ID
+        }
+        security {
+            authorizationScheme: @contador-ou-administrador
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancelar diálogo
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+    )
+
+    process importar (
+        name: Importar o arquivo
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                -- Lê o arquivo de APEX_APPLICATION_TEMP_FILES, confere a conta (OFX), descarta
+                -- arquivo repetido (hash) e movimentos repetidos (FITID / data + valor).
+                :P84_IMPORTACAO_ID := pkg_extrato.importar_upload(
+                                          p_conta_id       => :P84_CONTA_ID,
+                                          p_temp_file_name => :P84_ARQUIVO,
+                                          p_formato        => :P84_FORMATO,
+                                          p_layout_id      => :P84_LAYOUT_ID);
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        successMessage {
+            successMessage: Extrato importado.
+        }
+        advanced {
+            executionMappingIdentifier: 7642135128
+        }
+        serverSideCondition {
+            whenButtonPressed: @importar
+        }
+    )
+
+    process excluir (
+        name: Excluir importação
+        type: executeCode
+        source {
+            plsqlCode: pkg_extrato.excluir_importacao(:P84_IMPORTACAO_ID);
+        }
+        execution {
+            sequence: 20
+        }
+        successMessage {
+            successMessage: Importação excluída.
+        }
+        advanced {
+            executionMappingIdentifier: 2342077805
+        }
+        serverSideCondition {
+            whenButtonPressed: @excluir
+        }
+    )
+
+    process close-dialog (
+        name: Fechar diálogo
+        type: closeDialog
+        settings {
+            showSuccessMessages: false
+        }
+        execution {
+            sequence: 50
+        }
+        advanced {
+            executionMappingIdentifier: 7017758251
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: EXCLUIR
+        }
+    )
+
+    branch reabrir (
+        name: Reabrir mostrando o resultado
+        execution {
+            sequence: 10
+        }
+        behavior {
+            type: pageOrUrl
+            target: {
+                page: 84
+                items: {
+                    P84_IMPORTACAO_ID: &P84_IMPORTACAO_ID.
+                }
+            }
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: IMPORTAR
+        }
+    )
+)

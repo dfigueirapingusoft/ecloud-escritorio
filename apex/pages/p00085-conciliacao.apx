@@ -1,0 +1,1477 @@
+page 85 (
+    name: Conciliação bancária
+    alias: CONCILIACAO
+    title: Conciliação bancária
+    pageGroup: @rural
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+    help {
+        helpText:
+            ```html
+            <p>Escolha a conta e o período. A conciliação automática só junta pares sem ambiguidade; o resto aparece como sugestão ou fica para tratar um a um: conciliar com um lançamento, lançar no livro caixa ou ignorar.</p>
+            ```
+    }
+    region breadcrumb (
+        name: Breadcrumb
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region filtros (
+        name: Filtros
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+            ]
+        }
+    )
+
+    pageItem P85_CLIENTE_ID (
+        type: selectList
+        label {
+            label: Produtor rural
+            alignment: right
+        }
+        layout {
+            sequence: 10
+            region: @filtros
+            slot: regionBody
+            columnSpan: 5
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        lov {
+            type: sharedComponent
+            lov: @produtores
+            displayNullValue: true
+            nullDisplayValue: - Selecione o produtor -
+        }
+        sessionState {
+            storage: session
+        }
+    )
+
+    pageItem P85_CONTA_ID (
+        type: selectList
+        label {
+            label: Conta
+            alignment: right
+        }
+        layout {
+            sequence: 20
+            region: @filtros
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 3
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select lpad(cod_conta, 3, '0') || ' - ' || apelido d, conta_id r
+                  from conta_bancaria
+                 where cliente_id = :P85_CLIENTE_ID
+                   and ativo = 'S'
+                   and tipo <> 'CAIXA'
+                 order by cod_conta
+                ```
+            displayNullValue: true
+            nullDisplayValue: - Selecione -
+        }
+        sessionState {
+            storage: session
+        }
+        cascadingLov {
+            parentItems: P85_CLIENTE_ID
+        }
+    )
+
+    pageItem P85_DATA_INICIO (
+        type: datePicker
+        label {
+            label: De
+            alignment: right
+        }
+        layout {
+            sequence: 30
+            region: @filtros
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 2
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        default {
+            type: expression
+            plsqlExpression: add_months(trunc(current_date, 'MM'), -1)
+        }
+        sessionState {
+            storage: session
+        }
+    )
+
+    pageItem P85_DATA_FIM (
+        type: datePicker
+        label {
+            label: Até
+            alignment: right
+        }
+        layout {
+            sequence: 40
+            region: @filtros
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 2
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        default {
+            type: expression
+            plsqlExpression: trunc(current_date)
+        }
+        sessionState {
+            storage: session
+        }
+    )
+
+    button aplicar (
+        buttonName: APLICAR
+        label: Aplicar filtros
+        layout {
+            sequence: 10
+            region: @filtros
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    region sem-produtor (
+        name: Selecione o produtor
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                <p>Selecione o produtor rural para ver os dados. Produtores são clientes pessoa física, cadastrados em Clientes.</p>
+                ```
+        }
+        layout {
+            sequence: 15
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P85_CLIENTE_ID
+        }
+    )
+
+    region acoes (
+        name: Ações
+        type: staticContent
+        layout {
+            sequence: 5
+            slot: body
+        }
+        appearance {
+            template: @/buttons-container
+            templateOptions: [
+                #DEFAULT#
+                t-ButtonRegion--noPadding
+                t-ButtonRegion--noUI
+            ]
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P85_CONTA_ID
+        }
+    )
+
+    region situacao (
+        name: Situação da conta
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select v.saldo_livro,
+                       v.saldo_banco,
+                       v.data_saldo_banco,
+                       v.saldo_livro_data_banco,
+                       v.saldo_banco - v.saldo_livro_data_banco as diferenca,
+                       v.itens_extrato_pendentes,
+                       v.lancamentos_pendentes,
+                       v.ultimo_movimento_extrato
+                  from vw_conta_conciliacao v
+                 where v.conta_id = :P85_CONTA_ID
+                ```
+            pageItemsToSubmit: P85_CLIENTE_ID,P85_CONTA_ID,P85_DATA_INICIO,P85_DATA_FIM
+        }
+        layout {
+            sequence: 20
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        reportLayout {
+            numberOfRows: 500
+        }
+        componentAppearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+            ]
+        }
+        messages {
+            whenNoDataFound: Nenhum registro.
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P85_CONTA_ID
+        }
+        column SALDO_LIVRO (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Saldo no livro (hoje)
+                alignment: end
+            }
+            layout {
+                sequence: 1
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G990D00
+            }
+        )
+        column SALDO_BANCO (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Último saldo do banco
+                alignment: end
+            }
+            layout {
+                sequence: 2
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G990D00
+            }
+        )
+        column DATA_SALDO_BANCO (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Data do saldo do banco
+            }
+            layout {
+                sequence: 3
+            }
+            appearance {
+                formatMask: DD/MM/YYYY
+            }
+        )
+        column SALDO_LIVRO_DATA_BANCO (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Saldo no livro nessa data
+                alignment: end
+            }
+            layout {
+                sequence: 4
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G990D00
+            }
+        )
+        column DIFERENCA (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Diferença a conciliar
+                alignment: end
+            }
+            layout {
+                sequence: 5
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G990D00
+            }
+        )
+        column ITENS_EXTRATO_PENDENTES (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Extrato pendente
+                alignment: end
+            }
+            layout {
+                sequence: 6
+                columnAlignment: end
+            }
+        )
+        column LANCAMENTOS_PENDENTES (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Livro pendente
+                alignment: end
+            }
+            layout {
+                sequence: 7
+                columnAlignment: end
+            }
+        )
+        column ULTIMO_MOVIMENTO_EXTRATO (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Último movimento do extrato
+            }
+            layout {
+                sequence: 8
+            }
+            appearance {
+                formatMask: DD/MM/YYYY
+            }
+        )
+    )
+
+    region sugestoes (
+        name: Sugestões de conciliação
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select s.item_id,
+                       s.lancamento_id,
+                       i.data_movimento,
+                       i.valor as valor_extrato,
+                       i.historico as historico_extrato,
+                       l.data_lancamento,
+                       l.valor as valor_livro,
+                       l.historico as historico_livro,
+                       s.pontuacao,
+                       s.motivo
+                  from table(pkg_conciliacao.sugerir(:P85_CONTA_ID,
+                                                     to_date(:P85_DATA_INICIO, 'DD/MM/YYYY'),
+                                                     to_date(:P85_DATA_FIM, 'DD/MM/YYYY'))) s
+                  join extrato_item i
+                    on i.item_id = s.item_id
+                  join livro_caixa l
+                    on l.lancamento_id = s.lancamento_id
+                 order by i.data_movimento, s.pontuacao desc
+                ```
+            pageItemsToSubmit: P85_CLIENTE_ID,P85_CONTA_ID,P85_DATA_INICIO,P85_DATA_FIM
+        }
+        layout {
+            sequence: 30
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        reportLayout {
+            numberOfRows: 500
+        }
+        componentAppearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+            ]
+        }
+        messages {
+            whenNoDataFound: Nenhuma sugestão no período.
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P85_CONTA_ID
+        }
+        column ITEM_ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Conciliar
+            }
+            layout {
+                sequence: 1
+            }
+            link {
+                target: {
+                    page: 86
+                    items: {
+                        P86_ITEM_ID: \#ITEM_ID#\
+                        P86_LANCAMENTO_ID: \#LANCAMENTO_ID#\
+                    }
+                }
+                linkText: <span class="fa fa-link" aria-hidden="true" title="Conciliar"></span><span class="u-VisuallyHidden">Conciliar</span>
+            }
+            sorting {
+                sortable: false
+            }
+        )
+        column LANCAMENTO_ID (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            type: hidden
+            layout {
+                sequence: 2
+            }
+        )
+        column DATA_MOVIMENTO (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Data no extrato
+            }
+            layout {
+                sequence: 3
+            }
+            appearance {
+                formatMask: DD/MM/YYYY
+            }
+        )
+        column VALOR_EXTRATO (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Valor no extrato
+                alignment: end
+            }
+            layout {
+                sequence: 4
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G990D00
+            }
+        )
+        column HISTORICO_EXTRATO (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Histórico do extrato
+            }
+            layout {
+                sequence: 5
+            }
+        )
+        column DATA_LANCAMENTO (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Data no livro
+            }
+            layout {
+                sequence: 6
+            }
+            appearance {
+                formatMask: DD/MM/YYYY
+            }
+        )
+        column VALOR_LIVRO (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Valor no livro
+                alignment: end
+            }
+            layout {
+                sequence: 7
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G990D00
+            }
+        )
+        column HISTORICO_LIVRO (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Histórico do livro
+            }
+            layout {
+                sequence: 8
+            }
+        )
+        column PONTUACAO (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: Pontuação
+                alignment: end
+            }
+            layout {
+                sequence: 9
+                columnAlignment: end
+            }
+        )
+        column MOTIVO (
+            reportColumnQueryId: 10
+            derivedColumn: N
+            heading {
+                heading: Motivo
+            }
+            layout {
+                sequence: 10
+            }
+        )
+    )
+
+    region itens (
+        name: Extrato a conciliar
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                     select i.item_id,
+                            i.data_movimento,
+                            i.valor,
+                            pkg_conciliacao.saldo_aberto_item(i.item_id) as saldo_aberto,
+                            i.historico,
+                            i.documento,
+                            i.tipo_transacao
+                       from extrato_item i
+                      where i.conta_id = :P85_CONTA_ID
+                        and i.status = 'PENDENTE'
+                and i.data_movimento >= to_date(:P85_DATA_INICIO, 'DD/MM/YYYY')
+                and i.data_movimento <  to_date(:P85_DATA_FIM, 'DD/MM/YYYY') + 1
+                      order by i.data_movimento, i.item_id
+                ```
+            pageItemsToSubmit: P85_CLIENTE_ID,P85_CONTA_ID,P85_DATA_INICIO,P85_DATA_FIM
+        }
+        layout {
+            sequence: 40
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        reportLayout {
+            numberOfRows: 500
+        }
+        componentAppearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+            ]
+        }
+        messages {
+            whenNoDataFound: Nada pendente no extrato.
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P85_CONTA_ID
+        }
+        column ITEM_ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Tratar
+            }
+            layout {
+                sequence: 1
+            }
+            link {
+                target: {
+                    page: 86
+                    items: {
+                        P86_ITEM_ID: \#ITEM_ID#\
+                    }
+                }
+                linkText: <span class="fa fa-edit" aria-hidden="true" title="Conciliar, lançar ou ignorar"></span><span class="u-VisuallyHidden">Tratar</span>
+            }
+            sorting {
+                sortable: false
+            }
+        )
+        column DATA_MOVIMENTO (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Data
+            }
+            layout {
+                sequence: 2
+            }
+            appearance {
+                formatMask: DD/MM/YYYY
+            }
+        )
+        column VALOR (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Valor
+                alignment: end
+            }
+            layout {
+                sequence: 3
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G990D00
+            }
+        )
+        column SALDO_ABERTO (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Em aberto
+                alignment: end
+            }
+            layout {
+                sequence: 4
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G990D00
+            }
+        )
+        column HISTORICO (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Histórico
+            }
+            layout {
+                sequence: 5
+            }
+        )
+        column DOCUMENTO (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Documento
+            }
+            layout {
+                sequence: 6
+            }
+        )
+        column TIPO_TRANSACAO (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Tipo
+            }
+            layout {
+                sequence: 7
+            }
+        )
+    )
+
+    region pendentes (
+        name: Livro caixa a conciliar
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                     select l.lancamento_id,
+                            l.data_lancamento,
+                            case l.natureza when 'E' then l.valor else -l.valor end as valor,
+                            pkg_conciliacao.saldo_aberto_lancamento(l.lancamento_id) as saldo_aberto,
+                            l.historico,
+                            c.codigo || ' - ' || c.nome as categoria
+                       from livro_caixa l
+                       join categoria_caixa c
+                         on c.categoria_id = l.categoria_id
+                      where l.conta_id = :P85_CONTA_ID
+                        and l.status_conciliacao = 'PENDENTE'
+                and l.data_lancamento >= to_date(:P85_DATA_INICIO, 'DD/MM/YYYY')
+                and l.data_lancamento <  to_date(:P85_DATA_FIM, 'DD/MM/YYYY') + 1
+                      order by l.data_lancamento, l.lancamento_id
+                ```
+            pageItemsToSubmit: P85_CLIENTE_ID,P85_CONTA_ID,P85_DATA_INICIO,P85_DATA_FIM
+        }
+        layout {
+            sequence: 50
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        reportLayout {
+            numberOfRows: 500
+        }
+        componentAppearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+            ]
+        }
+        messages {
+            whenNoDataFound: Nada pendente no livro caixa.
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P85_CONTA_ID
+        }
+        column LANCAMENTO_ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Abrir
+            }
+            layout {
+                sequence: 1
+            }
+            link {
+                target: {
+                    page: 81
+                    items: {
+                        P81_LANCAMENTO_ID: \#LANCAMENTO_ID#\
+                    }
+                }
+                linkText: <span class="fa fa-edit" aria-hidden="true" title="Abrir lançamento"></span><span class="u-VisuallyHidden">Abrir</span>
+            }
+            sorting {
+                sortable: false
+            }
+        )
+        column DATA_LANCAMENTO (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Data
+            }
+            layout {
+                sequence: 2
+            }
+            appearance {
+                formatMask: DD/MM/YYYY
+            }
+        )
+        column VALOR (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Valor
+                alignment: end
+            }
+            layout {
+                sequence: 3
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G990D00
+            }
+        )
+        column SALDO_ABERTO (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Em aberto
+                alignment: end
+            }
+            layout {
+                sequence: 4
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G990D00
+            }
+        )
+        column HISTORICO (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Histórico
+            }
+            layout {
+                sequence: 5
+            }
+        )
+        column CATEGORIA (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Categoria
+            }
+            layout {
+                sequence: 6
+            }
+        )
+    )
+
+    region conciliacoes (
+        name: Conciliados no período
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                     select i.item_id,
+                            i.data_movimento,
+                            i.historico as historico_extrato,
+                            c.valor,
+                            c.tipo,
+                            l.data_lancamento,
+                            l.historico as historico_livro,
+                            cast(c.criado_em as date) as conciliado_em,
+                            c.criado_por
+                       from conciliacao c
+                       join extrato_item i
+                         on i.item_id = c.item_id
+                       join livro_caixa l
+                         on l.lancamento_id = c.lancamento_id
+                      where i.conta_id = :P85_CONTA_ID
+                and i.data_movimento >= to_date(:P85_DATA_INICIO, 'DD/MM/YYYY')
+                and i.data_movimento <  to_date(:P85_DATA_FIM, 'DD/MM/YYYY') + 1
+                      order by i.data_movimento, c.conciliacao_id
+                ```
+            pageItemsToSubmit: P85_CLIENTE_ID,P85_CONTA_ID,P85_DATA_INICIO,P85_DATA_FIM
+        }
+        layout {
+            sequence: 60
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        reportLayout {
+            numberOfRows: 50
+        }
+        componentAppearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+            ]
+        }
+        messages {
+            whenNoDataFound: Nada conciliado no período.
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P85_CONTA_ID
+        }
+        column ITEM_ID (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            type: link
+            heading {
+                heading: Ver
+            }
+            layout {
+                sequence: 1
+            }
+            link {
+                target: {
+                    page: 86
+                    items: {
+                        P86_ITEM_ID: \#ITEM_ID#\
+                    }
+                }
+                linkText: <span class="fa fa-search" aria-hidden="true" title="Ver ou desfazer"></span><span class="u-VisuallyHidden">Ver</span>
+            }
+            sorting {
+                sortable: false
+            }
+        )
+        column DATA_MOVIMENTO (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Data no extrato
+            }
+            layout {
+                sequence: 2
+            }
+            appearance {
+                formatMask: DD/MM/YYYY
+            }
+        )
+        column HISTORICO_EXTRATO (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Histórico do extrato
+            }
+            layout {
+                sequence: 3
+            }
+        )
+        column VALOR (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Valor conciliado
+                alignment: end
+            }
+            layout {
+                sequence: 4
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G990D00
+            }
+        )
+        column TIPO (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Tipo
+            }
+            layout {
+                sequence: 5
+            }
+        )
+        column DATA_LANCAMENTO (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Data no livro
+            }
+            layout {
+                sequence: 6
+            }
+            appearance {
+                formatMask: DD/MM/YYYY
+            }
+        )
+        column HISTORICO_LIVRO (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Histórico do livro
+            }
+            layout {
+                sequence: 7
+            }
+        )
+        column CONCILIADO_EM (
+            reportColumnQueryId: 8
+            derivedColumn: N
+            heading {
+                heading: Conciliado em
+            }
+            layout {
+                sequence: 8
+            }
+            appearance {
+                formatMask: DD/MM/YYYY HH24:MI
+            }
+        )
+        column CRIADO_POR (
+            reportColumnQueryId: 9
+            derivedColumn: N
+            heading {
+                heading: Por
+            }
+            layout {
+                sequence: 9
+            }
+        )
+    )
+
+    button automatico (
+        buttonName: AUTOMATICO
+        label: Conciliar automaticamente
+        layout {
+            sequence: 10
+            region: @acoes
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text-with-icon
+            icon: fa-magic
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        security {
+            authorizationScheme: @contador-ou-administrador
+        }
+    )
+
+    dynamicAction refresh-sugestoes (
+        name: Atualizar após fechar o diálogo
+        execution {
+            sequence: 10
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @sugestoes
+        }
+        action refresh-situacao (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @situacao
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action refresh-sugestoes (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @sugestoes
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+        action refresh-itens (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @itens
+            }
+            execution {
+                sequence: 30
+                fireOnInit: false
+            }
+        )
+
+        action refresh-pendentes (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @pendentes
+            }
+            execution {
+                sequence: 40
+                fireOnInit: false
+            }
+        )
+
+        action refresh-conciliacoes (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @conciliacoes
+            }
+            execution {
+                sequence: 50
+                fireOnInit: false
+            }
+        )
+    )
+
+    dynamicAction refresh-itens (
+        name: Atualizar após fechar o diálogo
+        execution {
+            sequence: 20
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @itens
+        }
+        action refresh-situacao (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @situacao
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action refresh-sugestoes (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @sugestoes
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+        action refresh-itens (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @itens
+            }
+            execution {
+                sequence: 30
+                fireOnInit: false
+            }
+        )
+
+        action refresh-pendentes (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @pendentes
+            }
+            execution {
+                sequence: 40
+                fireOnInit: false
+            }
+        )
+
+        action refresh-conciliacoes (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @conciliacoes
+            }
+            execution {
+                sequence: 50
+                fireOnInit: false
+            }
+        )
+    )
+
+    dynamicAction refresh-pendentes (
+        name: Atualizar após fechar o diálogo
+        execution {
+            sequence: 30
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @pendentes
+        }
+        action refresh-situacao (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @situacao
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action refresh-sugestoes (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @sugestoes
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+        action refresh-itens (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @itens
+            }
+            execution {
+                sequence: 30
+                fireOnInit: false
+            }
+        )
+
+        action refresh-pendentes (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @pendentes
+            }
+            execution {
+                sequence: 40
+                fireOnInit: false
+            }
+        )
+
+        action refresh-conciliacoes (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @conciliacoes
+            }
+            execution {
+                sequence: 50
+                fireOnInit: false
+            }
+        )
+    )
+
+    dynamicAction refresh-conciliacoes (
+        name: Atualizar após fechar o diálogo
+        execution {
+            sequence: 40
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @conciliacoes
+        }
+        action refresh-situacao (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @situacao
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action refresh-sugestoes (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @sugestoes
+            }
+            execution {
+                sequence: 20
+                fireOnInit: false
+            }
+        )
+
+        action refresh-itens (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @itens
+            }
+            execution {
+                sequence: 30
+                fireOnInit: false
+            }
+        )
+
+        action refresh-pendentes (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @pendentes
+            }
+            execution {
+                sequence: 40
+                fireOnInit: false
+            }
+        )
+
+        action refresh-conciliacoes (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @conciliacoes
+            }
+            execution {
+                sequence: 50
+                fireOnInit: false
+            }
+        )
+    )
+
+    dynamicAction trocar-filtro (
+        name: Recarregar ao trocar o filtro
+        execution {
+            sequence: 50
+        }
+        when {
+            event: change
+            selectionType: items
+            items: P85_CLIENTE_ID
+        }
+        action native-submit (
+            action: submitPage
+            settings {
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+    )
+
+    process carregar-produtor (
+        name: Carregar o produtor escolhido
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                -- O produtor escolhido em qualquer página do módulo fica em F_PRODUTOR_ID.
+                if :F_PRODUTOR_ID is not null then
+                    if :P85_CLIENTE_ID is null or :P85_CLIENTE_ID <> :F_PRODUTOR_ID then
+                        :P85_CONTA_ID := null;
+                    end if;
+                    :P85_CLIENTE_ID := :F_PRODUTOR_ID;
+                end if;
+                ```
+        }
+        execution {
+            sequence: 5
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 2356172113
+        }
+    )
+
+    process guardar-produtor (
+        name: Guardar o produtor escolhido
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                if :F_PRODUTOR_ID is null or :F_PRODUTOR_ID <> :P85_CLIENTE_ID then
+                    :P85_CONTA_ID := null;
+                end if;
+                :F_PRODUTOR_ID := :P85_CLIENTE_ID;
+                ```
+        }
+        execution {
+            sequence: 1
+        }
+        advanced {
+            executionMappingIdentifier: 6400647576
+        }
+    )
+
+    process automatico (
+        name: Conciliar automaticamente
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                declare
+                    l_qtd number;
+                begin
+                    -- Concilia só os pares sem ambiguidade (valor exato, data em até 3 dias)
+                    -- e depois aplica as regras de conciliação aos movimentos que sobraram.
+                    l_qtd := pkg_conciliacao.conciliar_automatico(
+                                 p_conta_id    => :P85_CONTA_ID,
+                                 p_data_inicio => to_date(:P85_DATA_INICIO, 'DD/MM/YYYY'),
+                                 p_data_fim    => to_date(:P85_DATA_FIM, 'DD/MM/YYYY'));
+                    apex_application.g_print_success_message := l_qtd || ' movimento(s) conciliado(s).';
+                end;
+                ```
+        }
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 9175712717
+        }
+        serverSideCondition {
+            whenButtonPressed: @automatico
+        }
+    )
+
+    branch recarregar (
+        name: Recarregar a página
+        execution {
+            sequence: 99
+        }
+        behavior {
+            type: pageOrUrl
+            target: {
+                page: 85
+            }
+        }
+    )
+)

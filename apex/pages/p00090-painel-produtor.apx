@@ -1,0 +1,765 @@
+page 90 (
+    name: Painel do produtor
+    alias: PAINEL-PRODUTOR
+    title: Painel do produtor
+    pageGroup: @rural
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+    help {
+        helpText:
+            ```html
+            <p>Visão do produtor no período: saldos, entradas e saídas, resultado da atividade rural (tipos 1 e 3 menos tipo 2 do LCDPR) e o que falta para o LCDPR.</p>
+            ```
+    }
+    region breadcrumb (
+        name: Breadcrumb
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region filtros (
+        name: Filtros
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+            ]
+        }
+    )
+
+    pageItem P90_CLIENTE_ID (
+        type: selectList
+        label {
+            label: Produtor rural
+            alignment: right
+        }
+        layout {
+            sequence: 10
+            region: @filtros
+            slot: regionBody
+            columnSpan: 5
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        lov {
+            type: sharedComponent
+            lov: @produtores
+            displayNullValue: true
+            nullDisplayValue: - Selecione o produtor -
+        }
+        sessionState {
+            storage: session
+        }
+    )
+
+    pageItem P90_DATA_INICIO (
+        type: datePicker
+        label {
+            label: De
+            alignment: right
+        }
+        layout {
+            sequence: 20
+            region: @filtros
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 2
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        default {
+            type: expression
+            plsqlExpression: add_months(trunc(current_date, 'MM'), -11)
+        }
+        sessionState {
+            storage: session
+        }
+    )
+
+    pageItem P90_DATA_FIM (
+        type: datePicker
+        label {
+            label: Até
+            alignment: right
+        }
+        layout {
+            sequence: 30
+            region: @filtros
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 2
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        default {
+            type: expression
+            plsqlExpression: last_day(trunc(current_date))
+        }
+        sessionState {
+            storage: session
+        }
+    )
+
+    button aplicar (
+        buttonName: APLICAR
+        label: Aplicar filtros
+        layout {
+            sequence: 10
+            region: @filtros
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    region sem-produtor (
+        name: Selecione o produtor
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                <p>Selecione o produtor rural para ver os dados. Produtores são clientes pessoa física, cadastrados em Clientes.</p>
+                ```
+        }
+        layout {
+            sequence: 15
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P90_CLIENTE_ID
+        }
+    )
+
+    region contas (
+        name: Contas
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select lpad(v.cod_conta, 3, '0') || ' - ' || v.apelido as conta,
+                       v.saldo_livro,
+                       v.saldo_banco,
+                       v.data_saldo_banco,
+                       v.itens_extrato_pendentes,
+                       v.lancamentos_pendentes
+                  from vw_conta_conciliacao v
+                  join conta_bancaria cb
+                    on cb.conta_id = v.conta_id
+                 where v.cliente_id = :P90_CLIENTE_ID
+                   and cb.ativo = 'S'
+                 order by v.cod_conta
+                ```
+            pageItemsToSubmit: P90_CLIENTE_ID
+        }
+        layout {
+            sequence: 20
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        reportLayout {
+            numberOfRows: 500
+        }
+        componentAppearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+            ]
+        }
+        messages {
+            whenNoDataFound: Nenhuma conta cadastrada.
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P90_CLIENTE_ID
+        }
+        column CONTA (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Conta
+            }
+            layout {
+                sequence: 1
+            }
+        )
+        column SALDO_LIVRO (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Saldo no livro
+                alignment: end
+            }
+            layout {
+                sequence: 2
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G990D00
+            }
+        )
+        column SALDO_BANCO (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Último saldo do banco
+                alignment: end
+            }
+            layout {
+                sequence: 3
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G990D00
+            }
+        )
+        column DATA_SALDO_BANCO (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Data
+            }
+            layout {
+                sequence: 4
+            }
+            appearance {
+                formatMask: DD/MM/YYYY
+            }
+        )
+        column ITENS_EXTRATO_PENDENTES (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Extrato a conciliar
+                alignment: end
+            }
+            layout {
+                sequence: 5
+                columnAlignment: end
+            }
+        )
+        column LANCAMENTOS_PENDENTES (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Livro a conciliar
+                alignment: end
+            }
+            layout {
+                sequence: 6
+                columnAlignment: end
+            }
+        )
+    )
+
+    region entradas-saidas (
+        name: Entradas e saídas por mês
+        type: chart
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P90_CLIENTE_ID
+        }
+        layout {
+            sequence: 30
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
+        }
+        chart {
+            type: bar
+        }
+        performance {
+            lazyLoading: true
+        }
+        legend {
+            show: true
+        }
+        messages {
+            whenNoDataFound: Sem dados no período.
+        }
+        series entradas (
+            name: Entradas
+            execution {
+                sequence: 10
+            }
+            source {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    select to_char(r.mes, 'MM/YYYY') as mes, r.entradas as valor
+                              from table(pkg_livro_caixa.resumo_mensal(:P90_CLIENTE_ID,
+                                                                       to_date(:P90_DATA_INICIO, 'DD/MM/YYYY'),
+                                                                       to_date(:P90_DATA_FIM, 'DD/MM/YYYY'))) r
+                             order by r.mes
+                    ```
+                pageItemsToSubmit: P90_CLIENTE_ID,P90_DATA_INICIO,P90_DATA_FIM
+            }
+            columnMapping {
+                label: MES
+                value: VALOR
+            }
+        )
+        series saidas (
+            name: Saídas
+            execution {
+                sequence: 20
+            }
+            source {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    select to_char(r.mes, 'MM/YYYY') as mes, r.saidas as valor
+                              from table(pkg_livro_caixa.resumo_mensal(:P90_CLIENTE_ID,
+                                                                       to_date(:P90_DATA_INICIO, 'DD/MM/YYYY'),
+                                                                       to_date(:P90_DATA_FIM, 'DD/MM/YYYY'))) r
+                             order by r.mes
+                    ```
+                pageItemsToSubmit: P90_CLIENTE_ID,P90_DATA_INICIO,P90_DATA_FIM
+            }
+            columnMapping {
+                label: MES
+                value: VALOR
+            }
+        )
+        axis x (
+            name: x
+            majorTicks {
+                show: auto
+            }
+        )
+        axis y (
+            name: y
+            value {
+                format: decimal
+                decimalPlaces: 2
+            }
+            majorTicks {
+                show: auto
+            }
+        )
+    )
+
+    region saldo (
+        name: Saldo das contas no fim do mês
+        type: chart
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P90_CLIENTE_ID
+        }
+        layout {
+            sequence: 40
+            slot: body
+            startNewRow: false
+        }
+        appearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
+        }
+        chart {
+            type: line
+        }
+        performance {
+            lazyLoading: true
+        }
+        legend {
+            show: false
+        }
+        messages {
+            whenNoDataFound: Sem dados no período.
+        }
+        series saldo (
+            name: Saldo
+            execution {
+                sequence: 10
+            }
+            source {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    select to_char(r.mes, 'MM/YYYY') as mes, r.saldo_final as valor
+                              from table(pkg_livro_caixa.resumo_mensal(:P90_CLIENTE_ID,
+                                                                       to_date(:P90_DATA_INICIO, 'DD/MM/YYYY'),
+                                                                       to_date(:P90_DATA_FIM, 'DD/MM/YYYY'))) r
+                             order by r.mes
+                    ```
+                pageItemsToSubmit: P90_CLIENTE_ID,P90_DATA_INICIO,P90_DATA_FIM
+            }
+            columnMapping {
+                label: MES
+                value: VALOR
+            }
+        )
+        axis x (
+            name: x
+            majorTicks {
+                show: auto
+            }
+        )
+        axis y (
+            name: y
+            value {
+                format: decimal
+                decimalPlaces: 2
+            }
+            majorTicks {
+                show: auto
+            }
+        )
+    )
+
+    region resultado (
+        name: Resultado da atividade rural por mês
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select to_char(r.mes, 'MM/YYYY') as mes,
+                       r.receita_rural,
+                       r.despesa_rural,
+                       r.resultado_rural,
+                       r.entradas,
+                       r.saidas,
+                       r.saldo_final
+                  from table(pkg_livro_caixa.resumo_mensal(:P90_CLIENTE_ID,
+                                                           to_date(:P90_DATA_INICIO, 'DD/MM/YYYY'),
+                                                           to_date(:P90_DATA_FIM, 'DD/MM/YYYY'))) r
+                 order by r.mes
+                ```
+            pageItemsToSubmit: P90_CLIENTE_ID,P90_DATA_INICIO,P90_DATA_FIM
+        }
+        layout {
+            sequence: 50
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        reportLayout {
+            numberOfRows: 500
+        }
+        componentAppearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+            ]
+        }
+        messages {
+            whenNoDataFound: Nenhum registro.
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P90_CLIENTE_ID
+        }
+        column MES (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Mês
+            }
+            layout {
+                sequence: 1
+            }
+        )
+        column RECEITA_RURAL (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Receita rural
+                alignment: end
+            }
+            layout {
+                sequence: 2
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G990D00
+            }
+        )
+        column DESPESA_RURAL (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Despesa rural
+                alignment: end
+            }
+            layout {
+                sequence: 3
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G990D00
+            }
+        )
+        column RESULTADO_RURAL (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Resultado rural
+                alignment: end
+            }
+            layout {
+                sequence: 4
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G990D00
+            }
+        )
+        column ENTRADAS (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Entradas (todas)
+                alignment: end
+            }
+            layout {
+                sequence: 5
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G990D00
+            }
+        )
+        column SAIDAS (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Saídas (todas)
+                alignment: end
+            }
+            layout {
+                sequence: 6
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G990D00
+            }
+        )
+        column SALDO_FINAL (
+            reportColumnQueryId: 7
+            derivedColumn: N
+            heading {
+                heading: Saldo no fim do mês
+                alignment: end
+            }
+            layout {
+                sequence: 7
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G990D00
+            }
+        )
+    )
+
+    region pendencias (
+        name: Pendências para o LCDPR do ano
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select p.registro,
+                       p.mensagem
+                  from json_table(pkg_lcdpr.validar(:P90_CLIENTE_ID,
+                                                    extract(year from to_date(:P90_DATA_FIM, 'DD/MM/YYYY'))), '$[*]'
+                           columns (registro varchar2(10)   path '$.registro',
+                                    mensagem varchar2(4000) path '$.mensagem')) p
+                ```
+            pageItemsToSubmit: P90_CLIENTE_ID,P90_DATA_INICIO,P90_DATA_FIM
+        }
+        layout {
+            sequence: 60
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        reportLayout {
+            numberOfRows: 50
+        }
+        componentAppearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+            ]
+        }
+        messages {
+            whenNoDataFound: Nenhuma pendência.
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P90_CLIENTE_ID
+        }
+        column REGISTRO (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Registro
+            }
+            layout {
+                sequence: 1
+            }
+        )
+        column MENSAGEM (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: O que corrigir
+            }
+            layout {
+                sequence: 2
+            }
+        )
+    )
+
+    dynamicAction trocar-filtro (
+        name: Recarregar ao trocar o filtro
+        execution {
+            sequence: 50
+        }
+        when {
+            event: change
+            selectionType: items
+            items: P90_CLIENTE_ID
+        }
+        action native-submit (
+            action: submitPage
+            settings {
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+    )
+
+    process carregar-produtor (
+        name: Carregar o produtor escolhido
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                -- O produtor escolhido em qualquer página do módulo fica em F_PRODUTOR_ID.
+                if :F_PRODUTOR_ID is not null then
+                    :P90_CLIENTE_ID := :F_PRODUTOR_ID;
+                end if;
+                ```
+        }
+        execution {
+            sequence: 5
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 5323926063
+        }
+    )
+
+    process guardar-produtor (
+        name: Guardar o produtor escolhido
+        type: executeCode
+        source {
+            plsqlCode: :F_PRODUTOR_ID := :P90_CLIENTE_ID;
+        }
+        execution {
+            sequence: 1
+        }
+        advanced {
+            executionMappingIdentifier: 9645641682
+        }
+    )
+
+    branch recarregar (
+        name: Recarregar a página
+        execution {
+            sequence: 99
+        }
+        behavior {
+            type: pageOrUrl
+            target: {
+                page: 90
+            }
+        }
+    )
+)

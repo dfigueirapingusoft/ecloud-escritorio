@@ -1,0 +1,577 @@
+page 83 (
+    name: Extratos bancários
+    alias: EXTRATOS
+    title: Extratos bancários
+    pageGroup: @rural
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+    help {
+        helpText:
+            ```html
+            <p>OFX (versões 1 e 2) ou CSV com layout cadastrado, até 10 MiB. O mesmo arquivo não entra duas vezes e movimentos repetidos entre arquivos são descartados.</p>
+            ```
+    }
+    region breadcrumb (
+        name: Breadcrumb
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region filtros (
+        name: Filtros
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+            ]
+        }
+    )
+
+    pageItem P83_CLIENTE_ID (
+        type: selectList
+        label {
+            label: Produtor rural
+            alignment: right
+        }
+        layout {
+            sequence: 10
+            region: @filtros
+            slot: regionBody
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        lov {
+            type: sharedComponent
+            lov: @produtores
+            displayNullValue: true
+            nullDisplayValue: - Selecione o produtor -
+        }
+        sessionState {
+            storage: session
+        }
+    )
+
+    region sem-produtor (
+        name: Selecione o produtor
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                <p>Selecione o produtor rural para ver os dados. Produtores são clientes pessoa física, cadastrados em Clientes.</p>
+                ```
+        }
+        layout {
+            sequence: 15
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P83_CLIENTE_ID
+        }
+    )
+
+    region importacoes (
+        name: Extratos importados
+        type: interactiveReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select i.importacao_id,
+                       lpad(cb.cod_conta, 3, '0') || ' - ' || cb.apelido as conta,
+                       i.formato,
+                       i.nome_arquivo,
+                       i.data_inicio,
+                       i.data_fim,
+                       i.saldo_final,
+                       i.data_saldo_final,
+                       i.qtd_itens,
+                       i.qtd_novos,
+                       i.qtd_duplicados,
+                       (select count(*) from extrato_item e
+                         where e.importacao_id = i.importacao_id and e.status = 'PENDENTE') as pendentes,
+                       i.status,
+                       i.mensagem,
+                       cast(i.criado_em as date) as importado_em,
+                       i.criado_por
+                  from extrato_importacao i
+                  join conta_bancaria cb
+                    on cb.conta_id = i.conta_id
+                 where cb.cliente_id = :P83_CLIENTE_ID
+                ```
+            pageItemsToSubmit: P83_CLIENTE_ID
+        }
+        layout {
+            sequence: 20
+            slot: body
+        }
+        link {
+            linkColumn: customTarget
+            target: {
+                page: 84
+                items: {
+                    P84_IMPORTACAO_ID: \#IMPORTACAO_ID#\
+                }
+                action: resetPagination
+            }
+            linkIcon: <span aria-label="Abrir"><span class="fa fa-edit" aria-hidden="true" title="Abrir"></span></span>
+        }
+        pagination {
+            type: rowRangesXToY
+        }
+        messages {
+            whenNoDataFound: Nenhum registro encontrado.
+        }
+        actionsMenu {
+            subscription: false
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P83_CLIENTE_ID
+        }
+        column IMPORTACAO_ID (
+            type: hidden
+            heading {
+                heading: ID
+            }
+            layout {
+                sequence: 1
+            }
+            source {
+                dataType: number
+            }
+        )
+        column CONTA (
+            type: plainText
+            heading {
+                heading: Conta
+            }
+            layout {
+                sequence: 2
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+        column FORMATO (
+            type: plainTextBasedOnLov
+            heading {
+                heading: Formato
+            }
+            lov {
+                lov: @formato-extrato
+            }
+            layout {
+                sequence: 3
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+        column NOME_ARQUIVO (
+            type: plainText
+            heading {
+                heading: Arquivo
+            }
+            layout {
+                sequence: 4
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+        column DATA_INICIO (
+            type: plainText
+            heading {
+                heading: De
+            }
+            layout {
+                sequence: 5
+            }
+            appearance {
+                formatMask: DD/MM/YYYY
+            }
+            source {
+                dataType: date
+            }
+        )
+        column DATA_FIM (
+            type: plainText
+            heading {
+                heading: Até
+            }
+            layout {
+                sequence: 6
+            }
+            appearance {
+                formatMask: DD/MM/YYYY
+            }
+            source {
+                dataType: date
+            }
+        )
+        column SALDO_FINAL (
+            type: plainText
+            heading {
+                heading: Saldo do banco
+                alignment: end
+            }
+            layout {
+                sequence: 7
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G990D00
+            }
+            source {
+                dataType: number
+            }
+        )
+        column DATA_SALDO_FINAL (
+            type: plainText
+            heading {
+                heading: Data do saldo
+            }
+            layout {
+                sequence: 8
+            }
+            appearance {
+                formatMask: DD/MM/YYYY
+            }
+            source {
+                dataType: date
+            }
+        )
+        column QTD_ITENS (
+            type: plainText
+            heading {
+                heading: Movimentos
+                alignment: end
+            }
+            layout {
+                sequence: 9
+                columnAlignment: end
+            }
+            source {
+                dataType: number
+            }
+        )
+        column QTD_NOVOS (
+            type: plainText
+            heading {
+                heading: Novos
+                alignment: end
+            }
+            layout {
+                sequence: 10
+                columnAlignment: end
+            }
+            source {
+                dataType: number
+            }
+        )
+        column QTD_DUPLICADOS (
+            type: plainText
+            heading {
+                heading: Já importados
+                alignment: end
+            }
+            layout {
+                sequence: 11
+                columnAlignment: end
+            }
+            source {
+                dataType: number
+            }
+        )
+        column PENDENTES (
+            type: plainText
+            heading {
+                heading: A conciliar
+                alignment: end
+            }
+            layout {
+                sequence: 12
+                columnAlignment: end
+            }
+            source {
+                dataType: number
+            }
+        )
+        column STATUS (
+            type: plainTextBasedOnLov
+            heading {
+                heading: Status
+            }
+            lov {
+                lov: @status-extrato
+            }
+            layout {
+                sequence: 13
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+        column MENSAGEM (
+            type: plainText
+            heading {
+                heading: Mensagem
+            }
+            layout {
+                sequence: 14
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+        column IMPORTADO_EM (
+            type: plainText
+            heading {
+                heading: Importado em
+            }
+            layout {
+                sequence: 15
+            }
+            appearance {
+                formatMask: DD/MM/YYYY HH24:MI
+            }
+            source {
+                dataType: date
+            }
+        )
+        column CRIADO_POR (
+            type: plainText
+            heading {
+                heading: Por
+            }
+            layout {
+                sequence: 16
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+        savedReport 922368893 (
+            visibility: primaryDefault
+            view {
+                rowsPerPage: 50
+            }
+            displayColumn CONTA (
+                sequence: 1
+            )
+            displayColumn FORMATO (
+                sequence: 2
+            )
+            displayColumn NOME_ARQUIVO (
+                sequence: 3
+            )
+            displayColumn DATA_INICIO (
+                sequence: 4
+            )
+            displayColumn DATA_FIM (
+                sequence: 5
+            )
+            displayColumn SALDO_FINAL (
+                sequence: 6
+            )
+            displayColumn DATA_SALDO_FINAL (
+                sequence: 7
+            )
+            displayColumn QTD_ITENS (
+                sequence: 8
+            )
+            displayColumn QTD_NOVOS (
+                sequence: 9
+            )
+            displayColumn QTD_DUPLICADOS (
+                sequence: 10
+            )
+            displayColumn PENDENTES (
+                sequence: 11
+            )
+            displayColumn STATUS (
+                sequence: 12
+            )
+            displayColumn MENSAGEM (
+                sequence: 13
+            )
+            displayColumn IMPORTADO_EM (
+                sequence: 14
+            )
+            displayColumn CRIADO_POR (
+                sequence: 15
+            )
+            sort (
+                column: IMPORTADO_EM
+                sort {
+                    sequence: 1
+                    direction: desc
+                }
+            )
+        )
+    )
+
+    button importar (
+        buttonName: IMPORTAR
+        label: Importar extrato
+        layout {
+            sequence: 10
+            region: @importacoes
+            slot: rightOfInteractiveReportSearchBar
+        }
+        appearance {
+            buttonTemplate: @/text-with-icon
+            icon: fa-upload
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 84
+                clearCache: 84
+                items: {
+                    P84_CLIENTE_ID: &P83_CLIENTE_ID.
+                }
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+        security {
+            authorizationScheme: @contador-ou-administrador
+        }
+    )
+
+    dynamicAction refresh-after-dialog (
+        name: Atualizar após fechar o diálogo
+        execution {
+            sequence: 10
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @importacoes
+        }
+        action refresh-importacoes (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @importacoes
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+    )
+
+    dynamicAction trocar-filtro (
+        name: Recarregar ao trocar o filtro
+        execution {
+            sequence: 50
+        }
+        when {
+            event: change
+            selectionType: items
+            items: P83_CLIENTE_ID
+        }
+        action native-submit (
+            action: submitPage
+            settings {
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+    )
+
+    process carregar-produtor (
+        name: Carregar o produtor escolhido
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                -- O produtor escolhido em qualquer página do módulo fica em F_PRODUTOR_ID.
+                if :F_PRODUTOR_ID is not null then
+                    :P83_CLIENTE_ID := :F_PRODUTOR_ID;
+                end if;
+                ```
+        }
+        execution {
+            sequence: 5
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 3144430991
+        }
+    )
+
+    process guardar-produtor (
+        name: Guardar o produtor escolhido
+        type: executeCode
+        source {
+            plsqlCode: :F_PRODUTOR_ID := :P83_CLIENTE_ID;
+        }
+        execution {
+            sequence: 1
+        }
+        advanced {
+            executionMappingIdentifier: 5707313201
+        }
+    )
+
+    branch recarregar (
+        name: Recarregar a página
+        execution {
+            sequence: 99
+        }
+        behavior {
+            type: pageOrUrl
+            target: {
+                page: 83
+            }
+        }
+    )
+)

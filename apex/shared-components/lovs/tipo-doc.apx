@@ -1,0 +1,36 @@
+lov tipo-doc (
+    name: TIPO_DOC
+    source {
+        location: staticValues
+    }
+    entry tipo-doc-1 (
+        sequence: 1
+        display: 1 - Nota fiscal
+        return: 1
+    )
+    entry tipo-doc-2 (
+        sequence: 2
+        display: 2 - Fatura
+        return: 2
+    )
+    entry tipo-doc-3 (
+        sequence: 3
+        display: 3 - Recibo
+        return: 3
+    )
+    entry tipo-doc-4 (
+        sequence: 4
+        display: 4 - Contrato
+        return: 4
+    )
+    entry tipo-doc-5 (
+        sequence: 5
+        display: 5 - Folha de pagamento
+        return: 5
+    )
+    entry tipo-doc-6 (
+        sequence: 6
+        display: 6 - Outros
+        return: 6
+    )
+)

@@ -48,7 +48,32 @@ out = ['set serveroutput on size unlimited', 'set define off', 'declare',
        '        if dbms_sql.is_open(l_c) then dbms_sql.close_cursor(l_c); end if;',
        "        l_err := l_err + 1;",
        "        dbms_output.put_line('ERRO ' || p_onde || ': ' || sqlerrm);",
+       '    end;',
+       '    -- function body: vale se compilar retornando boolean ou texto',
+       '    procedure t2(p_onde varchar2, p_bool clob, p_texto clob) is',
+       '    begin',
+       '        l_c := dbms_sql.open_cursor;',
+       '        dbms_sql.parse(l_c, p_bool, dbms_sql.native);',
+       '        dbms_sql.close_cursor(l_c);',
+       '        l_ok := l_ok + 1;',
+       '    exception when others then',
+       '        if dbms_sql.is_open(l_c) then dbms_sql.close_cursor(l_c); end if;',
+       '        t(p_onde, p_texto);',
        '    end;', 'begin']
+# Bloco PL/SQL com bind não é compilado no PARSE (só na execução). Para o bloco
+# ser compilado de fato, cada bind de item (:P1_X, :F_X, :APP_X) vira variável local.
+BIND = re.compile(r':((?:P\d+|F|APP)_[A-Z0-9_]+)')
+
+
+def com_variaveis(sql, t_original):
+    nomes = sorted(set(BIND.findall(t_original)))
+    if not nomes:
+        return sql
+    decl = ''.join(f'b_{n} varchar2(32767); ' for n in nomes)
+    sql = BIND.sub(lambda m: 'b_' + m.group(1), sql)
+    return f'declare {decl}\nbegin\n{sql}\nend;'
+
+
 for rel, ln, prop, lang, txt in trechos:
     onde = f'{rel}:{ln} {prop}'
     t = txt.strip()
@@ -58,12 +83,14 @@ for rel, ln, prop, lang, txt in trechos:
         sql = f'declare x varchar2(32767); b boolean; begin\n-- {onde}\nif false then x := ({t}); end if;\nexception when others then null; end;'
         # tenta como booleano se falhar como texto: gera as duas versões
         sql_b = f'declare b boolean; begin if ({t}) then null; end if; end;'
+        sql, sql_b = com_variaveis(sql, t), com_variaveis(sql_b, t)
         out.append(f"    begin t('{onde} (bool)', q'~{sql_b}~'); end;") if any(w in t for w in (' is not null', ' is null', '<>', ' and ', 'not ', 'is_admin', 'persistent_cookies')) else out.append(f"    t('{onde}', q'~{sql}~');")
         continue
     elif prop == 'plsqlFunctionBody':
-        sql = f'declare function f return boolean is begin\n{t}\nend; begin null; end;'
-        if 'return pkg_' not in t and 'return true' not in t.lower() and 'l_qtd = 0' not in t:
-            sql = f'declare function f return varchar2 is begin\n{t}\nend; begin null; end;'
+        sql_b = com_variaveis(f'declare function f return boolean is begin\n{t}\nend; begin null; end;', t)
+        sql = com_variaveis(f'declare function f return varchar2 is begin\n{t}\nend; begin null; end;', t)
+        out.append(f"    t2('{onde}', q'~{sql_b}~', q'~{sql}~');")
+        continue
     elif prop in ('plsqlCode', 'initPlsqlCode', 'cleanupPlsqlCode'):
         if re.sub(r'(?m)^\s*--.*\n', '', t).lstrip().lower().startswith('procedure'):
             sql = f'declare\n{t}\nbegin null; end;'
@@ -73,6 +100,8 @@ for rel, ln, prop, lang, txt in trechos:
             sql = f'begin\n{t}\nend;'
     else:
         continue
+    if not (prop in ('sqlQuery', 'sqlQuerySingleValue') or lang == 'sql'):
+        sql = com_variaveis(sql, t)
     out.append(f"    t('{onde}', q'~{sql}~');")
 out += ["    dbms_output.put_line('Trechos OK: ' || l_ok || ', com erro: ' || l_err);", 'end;', '/']
 open(SAIDA, 'w').write('\n'.join(out) + '\n')

@@ -1,0 +1,575 @@
+page 76 (
+    name: Layouts de extrato CSV
+    alias: LAYOUTS-CSV
+    title: Layouts de extrato CSV
+    pageGroup: @rural
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+    help {
+        helpText:
+            ```html
+            <p>Colunas contadas a partir de 1. Informe a coluna de valor com sinal ou as colunas de débito e crédito.</p>
+            ```
+    }
+    region breadcrumb (
+        name: Breadcrumb
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region acoes (
+        name: Ações
+        type: staticContent
+        layout {
+            sequence: 5
+            slot: body
+        }
+        appearance {
+            template: @/buttons-container
+            templateOptions: [
+                #DEFAULT#
+                t-ButtonRegion--noPadding
+                t-ButtonRegion--noUI
+            ]
+        }
+    )
+
+    region layouts (
+        name: Layouts CSV
+        type: interactiveGrid
+        source {
+            location: localDatabase
+            tableName: EXTRATO_LAYOUT_CSV
+            orderByClause: nome
+        }
+        layout {
+            sequence: 20
+            slot: body
+        }
+        appearance {
+            template: @/interactive-report
+            templateOptions: #DEFAULT#
+        }
+        edit {
+            enabled: true
+            allowedOperations: [
+                add
+                update
+                delete
+            ]
+        }
+        pagination {
+            type: page
+        }
+        toolbar {
+            controls: [
+                searchCol
+                searchField
+                actionsMenu
+                resetButton
+            ]
+        }
+        advanced {
+            savedReportMappingIdentifier: 6442952631
+        }
+        savedReport 233637011 (
+            visibility: primary
+            view {
+                default: grid
+                rowsPerPage: 50
+            }
+            displayColumn (
+                column: @APEX$ROW_ACTION
+                layout {
+                    sequence: 0
+                }
+            )
+            displayColumn (
+                column: @LAYOUT_ID
+                layout {
+                    sequence: 1
+                }
+            )
+            displayColumn (
+                column: @NOME
+                layout {
+                    sequence: 2
+                }
+            )
+            displayColumn (
+                column: @SEPARADOR
+                layout {
+                    sequence: 3
+                }
+            )
+            displayColumn (
+                column: @SEPARADOR_DECIMAL
+                layout {
+                    sequence: 4
+                }
+            )
+            displayColumn (
+                column: @MASCARA_DATA
+                layout {
+                    sequence: 5
+                }
+            )
+            displayColumn (
+                column: @LINHAS_IGNORAR
+                layout {
+                    sequence: 6
+                }
+            )
+            displayColumn (
+                column: @CHARSET
+                layout {
+                    sequence: 7
+                }
+            )
+            displayColumn (
+                column: @COL_DATA
+                layout {
+                    sequence: 8
+                }
+            )
+            displayColumn (
+                column: @COL_HISTORICO
+                layout {
+                    sequence: 9
+                }
+            )
+            displayColumn (
+                column: @COL_DOCUMENTO
+                layout {
+                    sequence: 10
+                }
+            )
+            displayColumn (
+                column: @COL_VALOR
+                layout {
+                    sequence: 11
+                }
+            )
+            displayColumn (
+                column: @COL_DEBITO
+                layout {
+                    sequence: 12
+                }
+            )
+            displayColumn (
+                column: @COL_CREDITO
+                layout {
+                    sequence: 13
+                }
+            )
+            displayColumn (
+                column: @ATIVO
+                layout {
+                    sequence: 14
+                }
+            )
+        )
+        column APEX$ROW_ACTION (
+            type: actionsMenu
+            layout {
+                sequence: 20
+            }
+        )
+        column APEX$ROW_SELECTOR (
+            type: rowSelector
+            layout {
+                sequence: 10
+            }
+        )
+        column LAYOUT_ID (
+            type: hidden
+            heading {
+                heading: ID
+            }
+            layout {
+                sequence: 30
+            }
+            source {
+                databaseColumn: LAYOUT_ID
+                dataType: number
+                primaryKey: true
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+        column NOME (
+            type: textField
+            heading {
+                heading: Nome
+            }
+            layout {
+                sequence: 40
+            }
+            validation {
+                valueRequired: true
+                maxLength: 60
+            }
+            source {
+                databaseColumn: NOME
+                dataType: varchar2
+            }
+        )
+        column SEPARADOR (
+            type: selectList
+            heading {
+                heading: Separador
+            }
+            layout {
+                sequence: 50
+            }
+            validation {
+                valueRequired: true
+            }
+            lov {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    select 'Ponto e vírgula (;)' d, ';' r from dual
+                    union all select 'Vírgula (,)', ',' from dual
+                    union all select 'Barra vertical (|)', '|' from dual
+                    union all select 'Tabulação', chr(9) from dual
+                    ```
+            }
+            source {
+                databaseColumn: SEPARADOR
+                dataType: varchar2
+            }
+            default {
+                type: static
+                staticValue: ;
+            }
+            columnFilter {
+                lovType: none
+            }
+        )
+        column SEPARADOR_DECIMAL (
+            type: selectList
+            heading {
+                heading: Decimal
+            }
+            layout {
+                sequence: 60
+            }
+            validation {
+                valueRequired: true
+            }
+            lov {
+                type: sqlQuery
+                sqlQuery: select 'Vírgula (1.234,56)' d, ',' r from dual union all select 'Ponto (1,234.56)', '.' from dual
+            }
+            source {
+                databaseColumn: SEPARADOR_DECIMAL
+                dataType: varchar2
+            }
+            default {
+                type: static
+                staticValue: ,
+            }
+            columnFilter {
+                lovType: none
+            }
+        )
+        column MASCARA_DATA (
+            type: textField
+            heading {
+                heading: Máscara da data
+            }
+            layout {
+                sequence: 70
+            }
+            validation {
+                valueRequired: true
+                maxLength: 20
+            }
+            source {
+                databaseColumn: MASCARA_DATA
+                dataType: varchar2
+            }
+            default {
+                type: static
+                staticValue: DD/MM/YYYY
+            }
+        )
+        column LINHAS_IGNORAR (
+            type: numberField
+            heading {
+                heading: Linhas de cabeçalho
+                alignment: end
+            }
+            settings {
+                numberAlignment: end
+                virtualKeyboard: decimal
+            }
+            layout {
+                sequence: 80
+                columnAlignment: end
+            }
+            validation {
+                valueRequired: true
+            }
+            source {
+                databaseColumn: LINHAS_IGNORAR
+                dataType: number
+            }
+            default {
+                type: static
+                staticValue: 1
+            }
+        )
+        column CHARSET (
+            type: selectList
+            heading {
+                heading: Codificação
+            }
+            layout {
+                sequence: 90
+            }
+            validation {
+                valueRequired: true
+            }
+            lov {
+                type: staticValues
+                staticValues: STATIC:Windows-1252 (Excel);WE8MSWIN1252,UTF-8;AL32UTF8
+            }
+            source {
+                databaseColumn: CHARSET
+                dataType: varchar2
+            }
+            default {
+                type: static
+                staticValue: WE8MSWIN1252
+            }
+            columnFilter {
+                lovType: none
+            }
+        )
+        column COL_DATA (
+            type: numberField
+            heading {
+                heading: Coluna data
+                alignment: end
+            }
+            settings {
+                numberAlignment: end
+                virtualKeyboard: decimal
+            }
+            layout {
+                sequence: 100
+                columnAlignment: end
+            }
+            validation {
+                valueRequired: true
+            }
+            source {
+                databaseColumn: COL_DATA
+                dataType: number
+            }
+        )
+        column COL_HISTORICO (
+            type: numberField
+            heading {
+                heading: Coluna histórico
+                alignment: end
+            }
+            settings {
+                numberAlignment: end
+                virtualKeyboard: decimal
+            }
+            layout {
+                sequence: 110
+                columnAlignment: end
+            }
+            validation {
+                valueRequired: true
+            }
+            source {
+                databaseColumn: COL_HISTORICO
+                dataType: number
+            }
+        )
+        column COL_DOCUMENTO (
+            type: numberField
+            heading {
+                heading: Coluna documento
+                alignment: end
+            }
+            settings {
+                numberAlignment: end
+                virtualKeyboard: decimal
+            }
+            layout {
+                sequence: 120
+                columnAlignment: end
+            }
+            source {
+                databaseColumn: COL_DOCUMENTO
+                dataType: number
+            }
+        )
+        column COL_VALOR (
+            type: numberField
+            heading {
+                heading: Coluna valor (com sinal)
+                alignment: end
+            }
+            settings {
+                numberAlignment: end
+                virtualKeyboard: decimal
+            }
+            layout {
+                sequence: 130
+                columnAlignment: end
+            }
+            source {
+                databaseColumn: COL_VALOR
+                dataType: number
+            }
+        )
+        column COL_DEBITO (
+            type: numberField
+            heading {
+                heading: Coluna débito
+                alignment: end
+            }
+            settings {
+                numberAlignment: end
+                virtualKeyboard: decimal
+            }
+            layout {
+                sequence: 140
+                columnAlignment: end
+            }
+            source {
+                databaseColumn: COL_DEBITO
+                dataType: number
+            }
+        )
+        column COL_CREDITO (
+            type: numberField
+            heading {
+                heading: Coluna crédito
+                alignment: end
+            }
+            settings {
+                numberAlignment: end
+                virtualKeyboard: decimal
+            }
+            layout {
+                sequence: 150
+                columnAlignment: end
+            }
+            source {
+                databaseColumn: COL_CREDITO
+                dataType: number
+            }
+        )
+        column ATIVO (
+            type: selectList
+            heading {
+                heading: Ativo
+            }
+            layout {
+                sequence: 160
+            }
+            validation {
+                valueRequired: true
+            }
+            lov {
+                type: sharedComponent
+                lov: @sim-nao
+            }
+            source {
+                databaseColumn: ATIVO
+                dataType: varchar2
+            }
+            default {
+                type: static
+                staticValue: S
+            }
+            columnFilter {
+                lovType: none
+            }
+        )
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Salvar
+        layout {
+            sequence: 10
+            region: @acoes
+            slot: edit
+        }
+        appearance {
+            buttonTemplate: @/text-with-icon
+            icon: fa-save
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        security {
+            authorizationScheme: @contador-ou-administrador
+        }
+    )
+
+    process save-layouts (
+        name: Gravar layouts csv
+        type: interactiveGridAutoRowProcessing
+        editableRegion: @layouts
+        execution {
+            sequence: 20
+        }
+        successMessage {
+            successMessage: Alterações gravadas.
+        }
+        advanced {
+            executionMappingIdentifier: 8338189761
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+    branch recarregar (
+        name: Recarregar a página
+        execution {
+            sequence: 99
+        }
+        behavior {
+            type: pageOrUrl
+            target: {
+                page: 76
+            }
+        }
+    )
+)

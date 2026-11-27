@@ -1,0 +1,908 @@
+page 86 (
+    name: Conciliar movimento
+    alias: CONCILIAR-MOVIMENTO
+    title: Conciliar movimento
+    pageGroup: @rural
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @/modal-dialog
+        templateOptions: #DEFAULT#
+    }
+    dialog {
+        chained: false
+        resizable: false
+        width: 960
+    }
+    region buttons (
+        name: Botões
+        type: staticContent
+        layout {
+            sequence: 90
+            slot: dialogFooter
+        }
+        appearance {
+            template: @/buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region movimento (
+        name: Movimento do extrato
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region conciliar (
+        name: Conciliar com um lançamento do livro caixa
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: contentBody
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery: select 1 from extrato_item where item_id = :P86_ITEM_ID and status = 'PENDENTE'
+        }
+    )
+
+    region lancar (
+        name: Ou lançar no livro caixa
+        type: staticContent
+        layout {
+            sequence: 30
+            slot: contentBody
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery: select 1 from extrato_item where item_id = :P86_ITEM_ID and status = 'PENDENTE'
+        }
+    )
+
+    region ignorar (
+        name: Ou ignorar (não entra no livro caixa)
+        type: staticContent
+        layout {
+            sequence: 40
+            slot: contentBody
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery:
+                ```sql
+                select 1 from extrato_item where item_id = :P86_ITEM_ID and status = 'PENDENTE' and not exists (select 1 from conciliacao c where c.item_id = :P86_ITEM_ID)
+                ```
+        }
+    )
+
+    region feitas (
+        name: Conciliações deste movimento
+        type: classicReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select l.data_lancamento,
+                       l.historico,
+                       c.valor,
+                       c.tipo,
+                       cast(c.criado_em as date) as conciliado_em,
+                       c.criado_por
+                  from conciliacao c
+                  join livro_caixa l
+                    on l.lancamento_id = c.lancamento_id
+                 where c.item_id = :P86_ITEM_ID
+                 order by c.conciliacao_id
+                ```
+        }
+        layout {
+            sequence: 50
+            slot: contentBody
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        reportLayout {
+            numberOfRows: 500
+        }
+        componentAppearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Report--stretch
+                t-Report--altRowsDefault
+                t-Report--rowHighlight
+            ]
+        }
+        messages {
+            whenNoDataFound: Nenhum registro.
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery: select 1 from conciliacao where item_id = :P86_ITEM_ID
+        }
+        column DATA_LANCAMENTO (
+            reportColumnQueryId: 1
+            derivedColumn: N
+            heading {
+                heading: Data no livro
+            }
+            layout {
+                sequence: 1
+            }
+            appearance {
+                formatMask: DD/MM/YYYY
+            }
+        )
+        column HISTORICO (
+            reportColumnQueryId: 2
+            derivedColumn: N
+            heading {
+                heading: Histórico
+            }
+            layout {
+                sequence: 2
+            }
+        )
+        column VALOR (
+            reportColumnQueryId: 3
+            derivedColumn: N
+            heading {
+                heading: Valor
+                alignment: end
+            }
+            layout {
+                sequence: 3
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G999G990D00
+            }
+        )
+        column TIPO (
+            reportColumnQueryId: 4
+            derivedColumn: N
+            heading {
+                heading: Tipo
+            }
+            layout {
+                sequence: 4
+            }
+        )
+        column CONCILIADO_EM (
+            reportColumnQueryId: 5
+            derivedColumn: N
+            heading {
+                heading: Em
+            }
+            layout {
+                sequence: 5
+            }
+            appearance {
+                formatMask: DD/MM/YYYY HH24:MI
+            }
+        )
+        column CRIADO_POR (
+            reportColumnQueryId: 6
+            derivedColumn: N
+            heading {
+                heading: Por
+            }
+            layout {
+                sequence: 6
+            }
+        )
+    )
+
+    pageItem P86_ITEM_ID (
+        type: hidden
+        layout {
+            sequence: 1
+            region: @movimento
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P86_CLIENTE_ID (
+        type: hidden
+        layout {
+            sequence: 2
+            region: @movimento
+            slot: regionBody
+        }
+        source {
+            type: sqlQuerySingleValue
+            sqlQuery:
+                ```sql
+                select cb.cliente_id
+                  from extrato_item i
+                  join conta_bancaria cb
+                    on cb.conta_id = i.conta_id
+                 where i.item_id = :P86_ITEM_ID
+                ```
+        }
+    )
+
+    pageItem P86_RESUMO (
+        type: displayOnly
+        label {
+            label: Movimento
+            alignment: right
+        }
+        layout {
+            sequence: 10
+            region: @movimento
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        source {
+            type: sqlQuerySingleValue
+            sqlQuery:
+                ```sql
+                select to_char(i.data_movimento, 'DD/MM/YYYY') || ' | '
+                       || to_char(i.valor, 'FM999G999G999G990D00') || ' | ' || i.historico
+                       || case when i.documento is not null then ' | doc. ' || i.documento end
+                       || ' | em aberto: ' || to_char(pkg_conciliacao.saldo_aberto_item(i.item_id), 'FM999G999G999G990D00')
+                       || case i.status when 'IGNORADO' then ' | ignorado: ' || i.motivo_ignorado
+                                        when 'CONCILIADO' then ' | conciliado' end
+                  from extrato_item i
+                 where i.item_id = :P86_ITEM_ID
+                ```
+        }
+    )
+
+    pageItem P86_LANCAMENTO_ID (
+        type: selectList
+        label {
+            label: Lançamento
+            alignment: right
+        }
+        layout {
+            sequence: 10
+            region: @conciliar
+            slot: regionBody
+            columnSpan: 8
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select to_char(l.data_lancamento, 'DD/MM/YYYY') || ' | '
+                       || to_char(pkg_conciliacao.saldo_aberto_lancamento(l.lancamento_id), 'FM999G999G999G990D00')
+                       || ' | ' || l.historico d,
+                       l.lancamento_id r
+                  from livro_caixa l
+                  join extrato_item i
+                    on i.item_id = :P86_ITEM_ID
+                 where l.conta_id = i.conta_id
+                   and l.status_conciliacao = 'PENDENTE'
+                   and l.natureza = case when i.valor > 0 then 'E' else 'S' end
+                 order by abs(l.data_lancamento - i.data_movimento), l.lancamento_id
+                ```
+            displayNullValue: true
+            nullDisplayValue: - Selecione -
+        }
+    )
+
+    pageItem P86_VALOR (
+        type: numberField
+        label {
+            label: Valor (vazio = o menor saldo em aberto)
+            alignment: right
+        }
+        layout {
+            sequence: 20
+            region: @conciliar
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P86_CATEGORIA_ID (
+        type: popupLov
+        label {
+            label: Categoria
+            alignment: right
+        }
+        layout {
+            sequence: 10
+            region: @lancar
+            slot: regionBody
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        lov {
+            type: sharedComponent
+            lov: @categorias
+        }
+    )
+
+    pageItem P86_TIPO_DOC (
+        type: selectList
+        label {
+            label: Tipo de documento
+            alignment: right
+        }
+        layout {
+            sequence: 20
+            region: @lancar
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        lov {
+            type: sharedComponent
+            lov: @tipo-doc
+        }
+        default {
+            type: static
+            staticValue: 6
+        }
+    )
+
+    pageItem P86_IMOVEL_ID (
+        type: selectList
+        label {
+            label: Imóvel
+            alignment: right
+        }
+        layout {
+            sequence: 30
+            region: @lancar
+            slot: regionBody
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select lpad(cod_imovel, 3, '0') || ' - ' || nome d, imovel_id r
+                  from imovel_rural
+                 where cliente_id = :P86_CLIENTE_ID
+                   and ativo = 'S'
+                 order by cod_imovel
+                ```
+            displayNullValue: true
+            nullDisplayValue: 000 - Custo comum a vários imóveis
+        }
+    )
+
+    pageItem P86_CENTRO_CUSTO_ID (
+        type: selectList
+        label {
+            label: Centro de custo
+            alignment: right
+        }
+        layout {
+            sequence: 40
+            region: @lancar
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select codigo || ' - ' || nome d, centro_custo_id r
+                  from centro_custo
+                 where cliente_id = :P86_CLIENTE_ID
+                   and ativo = 'S'
+                 order by codigo
+                ```
+            displayNullValue: true
+            nullDisplayValue: - Nenhum -
+        }
+    )
+
+    pageItem P86_HISTORICO (
+        type: textField
+        label {
+            label: Histórico (vazio = o do extrato)
+            alignment: right
+        }
+        layout {
+            sequence: 50
+            region: @lancar
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 400
+        }
+    )
+
+    pageItem P86_PARTIC_TIPO_PESSOA (
+        type: radioGroup
+        label {
+            label: Participante
+            alignment: right
+        }
+        layout {
+            sequence: 60
+            region: @lancar
+            slot: regionBody
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        lov {
+            type: sharedComponent
+            lov: @tipos-pessoa
+        }
+        default {
+            type: static
+            staticValue: J
+        }
+    )
+
+    pageItem P86_PARTIC_DOCUMENTO (
+        type: textField
+        label {
+            label: CPF/CNPJ do participante
+            alignment: right
+        }
+        layout {
+            sequence: 70
+            region: @lancar
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 18
+        }
+    )
+
+    pageItem P86_PARTIC_NOME (
+        type: textField
+        label {
+            label: Nome do participante
+            alignment: right
+        }
+        layout {
+            sequence: 80
+            region: @lancar
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 150
+        }
+    )
+
+    pageItem P86_MOTIVO (
+        type: textField
+        label {
+            label: Motivo
+            alignment: right
+        }
+        layout {
+            sequence: 10
+            region: @ignorar
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 400
+        }
+        help {
+            inlineHelpText: Ex.: aplicação automática, estorno do próprio banco.
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Fechar
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button desfazer (
+        buttonName: DESFAZER
+        label: Desfazer conciliações
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: delete
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: [
+                #DEFAULT#
+                t-Button--danger
+                t-Button--simple
+            ]
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: Desfazer todas as conciliações deste movimento?
+            style: danger
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery: select 1 from conciliacao where item_id = :P86_ITEM_ID
+        }
+        security {
+            authorizationScheme: @contador-ou-administrador
+        }
+    )
+
+    button ignorar (
+        buttonName: IGNORAR
+        label: Ignorar movimento
+        layout {
+            sequence: 10
+            region: @ignorar
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        security {
+            authorizationScheme: @contador-ou-administrador
+        }
+    )
+
+    button lancar (
+        buttonName: LANCAR
+        label: Lançar e conciliar
+        layout {
+            sequence: 10
+            region: @lancar
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        security {
+            authorizationScheme: @contador-ou-administrador
+        }
+    )
+
+    button conciliar (
+        buttonName: CONCILIAR
+        label: Conciliar
+        layout {
+            sequence: 10
+            region: @conciliar
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        security {
+            authorizationScheme: @contador-ou-administrador
+        }
+    )
+
+    validation lancamento-obrigatorio (
+        name: Lançamento obrigatório
+        validation {
+            type: functionBodyReturningBoolean
+            plsqlFunctionBody: return :P86_LANCAMENTO_ID is not null;
+        }
+        error {
+            errorMessage: Escolha o lançamento do livro caixa.
+            associatedItem: @P86_LANCAMENTO_ID
+        }
+        execution {
+            sequence: 10
+        }
+        serverSideCondition {
+            whenButtonPressed: @conciliar
+        }
+    )
+
+    validation categoria-obrigatoria (
+        name: Categoria obrigatória
+        validation {
+            type: functionBodyReturningBoolean
+            plsqlFunctionBody: return :P86_CATEGORIA_ID is not null;
+        }
+        error {
+            errorMessage: Escolha a categoria do lançamento.
+            associatedItem: @P86_CATEGORIA_ID
+        }
+        execution {
+            sequence: 20
+        }
+        serverSideCondition {
+            whenButtonPressed: @lancar
+        }
+    )
+
+    validation participante (
+        name: Documento do participante
+        validation {
+            type: functionBodyReturningBoolean
+            plsqlFunctionBody:
+                ```plsql
+                return :P86_PARTIC_DOCUMENTO is null or pkg_rural_cadastro.documento_valido(:P86_PARTIC_TIPO_PESSOA, :P86_PARTIC_DOCUMENTO);
+                ```
+        }
+        error {
+            errorMessage: CPF ou CNPJ do participante inválido.
+            associatedItem: @P86_PARTIC_DOCUMENTO
+        }
+        execution {
+            sequence: 30
+        }
+        serverSideCondition {
+            whenButtonPressed: @lancar
+        }
+    )
+
+    validation motivo-obrigatorio (
+        name: Motivo obrigatório
+        validation {
+            type: functionBodyReturningBoolean
+            plsqlFunctionBody: return :P86_MOTIVO is not null;
+        }
+        error {
+            errorMessage: Informe o motivo para ignorar o movimento.
+            associatedItem: @P86_MOTIVO
+        }
+        execution {
+            sequence: 40
+        }
+        serverSideCondition {
+            whenButtonPressed: @ignorar
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancelar diálogo
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+    )
+
+    process conciliar (
+        name: Conciliar
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                declare
+                    l_id number;
+                begin
+                    l_id := pkg_conciliacao.conciliar(
+                                p_item_id       => :P86_ITEM_ID,
+                                p_lancamento_id => :P86_LANCAMENTO_ID,
+                                p_valor         => to_number(:P86_VALOR));
+                end;
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        successMessage {
+            successMessage: Movimento conciliado.
+        }
+        advanced {
+            executionMappingIdentifier: 8870334396
+        }
+        serverSideCondition {
+            whenButtonPressed: @conciliar
+        }
+    )
+
+    process lancar (
+        name: Lançar e conciliar
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                declare
+                    l_id number;
+                begin
+                    l_id := pkg_conciliacao.lancar_item(
+                                p_item_id            => :P86_ITEM_ID,
+                                p_categoria_id       => :P86_CATEGORIA_ID,
+                                p_imovel_id          => :P86_IMOVEL_ID,
+                                p_centro_custo_id    => :P86_CENTRO_CUSTO_ID,
+                                p_tipo_doc           => :P86_TIPO_DOC,
+                                p_historico          => :P86_HISTORICO,
+                                p_partic_tipo_pessoa => case when :P86_PARTIC_DOCUMENTO is not null then :P86_PARTIC_TIPO_PESSOA end,
+                                p_partic_documento   => :P86_PARTIC_DOCUMENTO,
+                                p_partic_nome        => :P86_PARTIC_NOME);
+                end;
+                ```
+        }
+        execution {
+            sequence: 20
+        }
+        successMessage {
+            successMessage: Lançamento criado e conciliado.
+        }
+        advanced {
+            executionMappingIdentifier: 6469813249
+        }
+        serverSideCondition {
+            whenButtonPressed: @lancar
+        }
+    )
+
+    process ignorar (
+        name: Ignorar movimento
+        type: executeCode
+        source {
+            plsqlCode: pkg_conciliacao.ignorar_item(:P86_ITEM_ID, :P86_MOTIVO);
+        }
+        execution {
+            sequence: 30
+        }
+        successMessage {
+            successMessage: Movimento ignorado.
+        }
+        advanced {
+            executionMappingIdentifier: 3274495763
+        }
+        serverSideCondition {
+            whenButtonPressed: @ignorar
+        }
+    )
+
+    process desfazer (
+        name: Desfazer conciliações
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                for c in (select conciliacao_id from conciliacao where item_id = :P86_ITEM_ID) loop
+                    pkg_conciliacao.desfazer(c.conciliacao_id);
+                end loop;
+                ```
+        }
+        execution {
+            sequence: 40
+        }
+        successMessage {
+            successMessage: Conciliações desfeitas.
+        }
+        advanced {
+            executionMappingIdentifier: 3191903914
+        }
+        serverSideCondition {
+            whenButtonPressed: @desfazer
+        }
+    )
+
+    process close-dialog (
+        name: Fechar diálogo
+        type: closeDialog
+        settings {
+            showSuccessMessages: false
+        }
+        execution {
+            sequence: 50
+        }
+        advanced {
+            executionMappingIdentifier: 8201250322
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CONCILIAR,LANCAR,IGNORAR,DESFAZER
+        }
+    )
+)

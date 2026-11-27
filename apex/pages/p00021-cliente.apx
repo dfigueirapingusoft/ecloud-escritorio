@@ -69,6 +69,72 @@ page 21 (
         }
     )
 
+    pageItem P21_TIPO_PESSOA (
+        type: radioGroup
+        label {
+            label: Tipo de pessoa
+            alignment: right
+        }
+        layout {
+            sequence: 15
+            region: @cliente
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        lov {
+            type: sharedComponent
+            lov: @tipos-pessoa
+        }
+        source {
+            formRegion: @cliente
+            column: TIPO_PESSOA
+            dataType: varchar2
+        }
+        default {
+            type: static
+            staticValue: J
+        }
+        help {
+            inlineHelpText: Produtor rural pessoa física: escolha Pessoa física e informe o CPF.
+        }
+    )
+
+    pageItem P21_CPF (
+        type: textField
+        label {
+            label: CPF
+            alignment: right
+        }
+        layout {
+            sequence: 22
+            region: @cliente
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 14
+        }
+        source {
+            formRegion: @cliente
+            column: CPF
+            dataType: varchar2
+        }
+        help {
+            inlineHelpText: Só para pessoa física; a máscara é opcional.
+        }
+    )
+
     pageItem P21_CNPJ (
         type: textField
         label {
@@ -82,11 +148,10 @@ page 21 (
             alignment: left
         }
         appearance {
-            template: @/required-floating
+            template: @/optional-floating
             templateOptions: #DEFAULT#
         }
         validation {
-            valueRequired: true
             maxLength: 18
         }
         source {
@@ -95,7 +160,7 @@ page 21 (
             dataType: varchar2
         }
         help {
-            inlineHelpText: Numérico ou alfanumérico; a máscara é opcional.
+            inlineHelpText: Só para pessoa jurídica. Numérico ou alfanumérico; a máscara é opcional.
         }
     )
 
@@ -396,6 +461,225 @@ page 21 (
         }
     )
 
+    pageItem P21_CAEPF (
+        type: textField
+        label {
+            label: CAEPF (produtor rural pessoa física)
+            alignment: right
+        }
+        layout {
+            sequence: 101
+            region: @cliente
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 18
+        }
+        source {
+            formRegion: @cliente
+            column: CAEPF
+            dataType: varchar2
+        }
+    )
+
+    pageItem P21_INSCRICAO_ESTADUAL (
+        type: textField
+        label {
+            label: Inscrição estadual
+            alignment: right
+        }
+        layout {
+            sequence: 102
+            region: @cliente
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 20
+        }
+        source {
+            formRegion: @cliente
+            column: INSCRICAO_ESTADUAL
+            dataType: varchar2
+        }
+    )
+
+    pageItem P21_ENDERECO (
+        type: textField
+        label {
+            label: Endereço
+            alignment: right
+        }
+        layout {
+            sequence: 103
+            region: @cliente
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 150
+        }
+        source {
+            formRegion: @cliente
+            column: ENDERECO
+            dataType: varchar2
+        }
+    )
+
+    pageItem P21_NUMERO (
+        type: textField
+        label {
+            label: Número
+            alignment: right
+        }
+        layout {
+            sequence: 104
+            region: @cliente
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 6
+        }
+        source {
+            formRegion: @cliente
+            column: NUMERO
+            dataType: varchar2
+        }
+    )
+
+    pageItem P21_COMPLEMENTO (
+        type: textField
+        label {
+            label: Complemento
+            alignment: right
+        }
+        layout {
+            sequence: 105
+            region: @cliente
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 50
+        }
+        source {
+            formRegion: @cliente
+            column: COMPLEMENTO
+            dataType: varchar2
+        }
+    )
+
+    pageItem P21_BAIRRO (
+        type: textField
+        label {
+            label: Bairro
+            alignment: right
+        }
+        layout {
+            sequence: 106
+            region: @cliente
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 50
+        }
+        source {
+            formRegion: @cliente
+            column: BAIRRO
+            dataType: varchar2
+        }
+    )
+
+    pageItem P21_CEP (
+        type: textField
+        label {
+            label: CEP
+            alignment: right
+        }
+        layout {
+            sequence: 107
+            region: @cliente
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 10
+        }
+        source {
+            formRegion: @cliente
+            column: CEP
+            dataType: varchar2
+        }
+    )
+
+    pageItem P21_FORMA_APURACAO_RURAL (
+        type: selectList
+        label {
+            label: Apuração do resultado rural (LCDPR)
+            alignment: right
+        }
+        layout {
+            sequence: 108
+            region: @cliente
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        lov {
+            type: sharedComponent
+            lov: @forma-apuracao
+        }
+        source {
+            formRegion: @cliente
+            column: FORMA_APURACAO_RURAL
+            dataType: varchar2
+        }
+        default {
+            type: static
+            staticValue: 1
+        }
+        help {
+            inlineHelpText: Só faz diferença para produtor rural pessoa física.
+        }
+    )
+
     button cancel (
         buttonName: CANCEL
         label: Cancelar
@@ -500,13 +784,74 @@ page 21 (
         }
     )
 
+    validation documento-obrigatorio (
+        name: Documento conforme o tipo de pessoa
+        validation {
+            type: functionBodyReturningBoolean
+            plsqlFunctionBody:
+                ```plsql
+                return (:P21_TIPO_PESSOA = 'J' and :P21_CNPJ is not null)
+                    or (:P21_TIPO_PESSOA = 'F' and :P21_CPF is not null);
+                ```
+        }
+        error {
+            errorMessage: Informe o CNPJ (pessoa jurídica) ou o CPF (pessoa física).
+            associatedItem: @P21_CNPJ
+        }
+        execution {
+            sequence: 5
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE
+        }
+    )
+
+    validation cpf-valido (
+        name: CPF válido
+        validation {
+            type: functionBodyReturningBoolean
+            plsqlFunctionBody: return :P21_TIPO_PESSOA = 'J' or :P21_CPF is null or pkg_rural_cadastro.cpf_valido(:P21_CPF);
+        }
+        error {
+            errorMessage: CPF inválido: confira os dígitos verificadores.
+            associatedItem: @P21_CPF
+        }
+        execution {
+            sequence: 15
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE
+        }
+    )
+
+    validation regime-pf (
+        name: Não contribuinte só para pessoa física
+        validation {
+            type: functionBodyReturningBoolean
+            plsqlFunctionBody: return :P21_REGIME <> 'NAO_CONTRIBUINTE' or :P21_TIPO_PESSOA = 'F';
+        }
+        error {
+            errorMessage: O regime "Produtor rural não contribuinte" é só para pessoa física.
+            associatedItem: @P21_REGIME
+        }
+        execution {
+            sequence: 30
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE
+        }
+    )
+
     validation cnpj-valido (
         name: CNPJ válido
         validation {
             type: functionBodyReturningBoolean
             plsqlFunctionBody:
                 ```plsql
-                return pkg_ecloud_util.cnpj_valido(:P21_CNPJ);
+                return :P21_TIPO_PESSOA = 'F' or :P21_CNPJ is null or pkg_ecloud_util.cnpj_valido(:P21_CNPJ);
                 ```
         }
         error {
@@ -575,6 +920,33 @@ page 21 (
         }
         advanced {
             executionMappingIdentifier: 4066995115
+        }
+    )
+
+    process limpar-documento (
+        name: Guardar só o documento do tipo de pessoa
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                -- CNPJ para pessoa jurídica, CPF para pessoa física (constraint CLIENTE_DOCUMENTO_CK).
+                if :P21_TIPO_PESSOA = 'F' then
+                    :P21_CNPJ := null;
+                else
+                    :P21_CPF := null;
+                    :P21_CAEPF := null;
+                end if;
+                ```
+        }
+        execution {
+            sequence: 5
+        }
+        advanced {
+            executionMappingIdentifier: 6453414852
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE
         }
     )
 

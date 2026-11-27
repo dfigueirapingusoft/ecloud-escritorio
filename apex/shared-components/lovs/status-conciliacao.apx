@@ -1,0 +1,21 @@
+lov status-conciliacao (
+    name: STATUS_CONCILIACAO
+    source {
+        location: staticValues
+    }
+    entry status-conciliacao-1 (
+        sequence: 1
+        display: Pendente
+        return: PENDENTE
+    )
+    entry status-conciliacao-2 (
+        sequence: 2
+        display: Conciliado
+        return: CONCILIADO
+    )
+    entry status-conciliacao-3 (
+        sequence: 3
+        display: Não se aplica
+        return: NAO_APLICA
+    )
+)

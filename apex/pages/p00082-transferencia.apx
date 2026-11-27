@@ -1,0 +1,338 @@
+page 82 (
+    name: Transferência entre contas
+    alias: TRANSFERENCIA
+    title: Transferência entre contas
+    pageGroup: @rural
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @/modal-dialog
+        templateOptions: #DEFAULT#
+    }
+    dialog {
+        chained: false
+        resizable: false
+        width: 720
+    }
+    region buttons (
+        name: Botões
+        type: staticContent
+        layout {
+            sequence: 90
+            slot: dialogFooter
+        }
+        appearance {
+            template: @/buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region transferencia (
+        name: Transferência
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @/blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P82_CLIENTE_ID (
+        type: hidden
+        layout {
+            sequence: 1
+            region: @transferencia
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+        default {
+            type: item
+            item: F_PRODUTOR_ID
+        }
+    )
+
+    pageItem P82_CONTA_ORIGEM_ID (
+        type: selectList
+        label {
+            label: Da conta
+            alignment: right
+        }
+        layout {
+            sequence: 10
+            region: @transferencia
+            slot: regionBody
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select lpad(cod_conta, 3, '0') || ' - ' || apelido d, conta_id r
+                  from conta_bancaria
+                 where cliente_id = :P82_CLIENTE_ID
+                   and ativo = 'S'
+                 order by cod_conta
+                ```
+            displayNullValue: true
+            nullDisplayValue: - Selecione -
+        }
+    )
+
+    pageItem P82_CONTA_DESTINO_ID (
+        type: selectList
+        label {
+            label: Para a conta
+            alignment: right
+        }
+        layout {
+            sequence: 20
+            region: @transferencia
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select lpad(cod_conta, 3, '0') || ' - ' || apelido d, conta_id r
+                  from conta_bancaria
+                 where cliente_id = :P82_CLIENTE_ID
+                   and ativo = 'S'
+                 order by cod_conta
+                ```
+            displayNullValue: true
+            nullDisplayValue: - Selecione -
+        }
+    )
+
+    pageItem P82_DATA (
+        type: datePicker
+        label {
+            label: Data
+            alignment: right
+        }
+        layout {
+            sequence: 30
+            region: @transferencia
+            slot: regionBody
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        default {
+            type: expression
+            plsqlExpression: trunc(current_date)
+        }
+    )
+
+    pageItem P82_VALOR (
+        type: numberField
+        label {
+            label: Valor
+            alignment: right
+        }
+        layout {
+            sequence: 40
+            region: @transferencia
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+    )
+
+    pageItem P82_HISTORICO (
+        type: textField
+        label {
+            label: Histórico
+            alignment: right
+        }
+        layout {
+            sequence: 50
+            region: @transferencia
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 400
+        }
+        help {
+            inlineHelpText: Vazio = "Transferência entre contas". Transferências ficam fora do LCDPR.
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Cancelar
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button transferir (
+        buttonName: TRANSFERIR
+        label: Transferir
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        security {
+            authorizationScheme: @contador-ou-administrador
+        }
+    )
+
+    validation contas-diferentes (
+        name: Contas diferentes
+        validation {
+            type: functionBodyReturningBoolean
+            plsqlFunctionBody: return :P82_CONTA_ORIGEM_ID <> :P82_CONTA_DESTINO_ID;
+        }
+        error {
+            errorMessage: Escolha contas diferentes.
+            associatedItem: @P82_CONTA_DESTINO_ID
+        }
+        execution {
+            sequence: 10
+        }
+    )
+
+    validation valor-positivo (
+        name: Valor positivo
+        validation {
+            type: functionBodyReturningBoolean
+            plsqlFunctionBody: return to_number(:P82_VALOR) > 0;
+        }
+        error {
+            errorMessage: Informe um valor maior que zero.
+            associatedItem: @P82_VALOR
+        }
+        execution {
+            sequence: 20
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancelar diálogo
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+    )
+
+    process transferir (
+        name: Transferir
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                declare
+                    l_transferencia_id number;
+                begin
+                    l_transferencia_id := pkg_livro_caixa.transferir(
+                        p_conta_origem_id  => :P82_CONTA_ORIGEM_ID,
+                        p_conta_destino_id => :P82_CONTA_DESTINO_ID,
+                        p_data             => to_date(:P82_DATA, 'DD/MM/YYYY'),
+                        p_valor            => to_number(:P82_VALOR),
+                        p_historico        => :P82_HISTORICO);
+                end;
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        successMessage {
+            successMessage: Transferência lançada.
+        }
+        advanced {
+            executionMappingIdentifier: 6754048255
+        }
+        serverSideCondition {
+            whenButtonPressed: @transferir
+        }
+    )
+
+    process close-dialog (
+        name: Fechar diálogo
+        type: closeDialog
+        settings {
+            showSuccessMessages: false
+        }
+        execution {
+            sequence: 50
+        }
+        advanced {
+            executionMappingIdentifier: 9317985156
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: TRANSFERIR
+        }
+    )
+)

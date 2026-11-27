@@ -1,0 +1,21 @@
+lov ind-sit-ini-per (
+    name: IND_SIT_INI_PER
+    source {
+        location: staticValues
+    }
+    entry ind-sit-ini-per-1 (
+        sequence: 1
+        display: 0 - Regular (início em 1º de janeiro)
+        return: 0
+    )
+    entry ind-sit-ini-per-2 (
+        sequence: 2
+        display: 1 - Início das atividades no ano
+        return: 1
+    )
+    entry ind-sit-ini-per-3 (
+        sequence: 3
+        display: 2 - Início da obrigatoriedade no ano
+        return: 2
+    )
+)

@@ -1,0 +1,494 @@
+page 70 (
+    name: Imóveis rurais
+    alias: IMOVEIS
+    title: Imóveis rurais
+    pageGroup: @rural
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+    help {
+        helpText:
+            ```html
+            <p>Imóveis do produtor (registro 0040 do LCDPR). Arrendamento, parceria, comodato e condomínio exigem as contrapartes (registro 0045).</p>
+            ```
+    }
+    region breadcrumb (
+        name: Breadcrumb
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region filtros (
+        name: Filtros
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+            ]
+        }
+    )
+
+    pageItem P70_CLIENTE_ID (
+        type: selectList
+        label {
+            label: Produtor rural
+            alignment: right
+        }
+        layout {
+            sequence: 10
+            region: @filtros
+            slot: regionBody
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        lov {
+            type: sharedComponent
+            lov: @produtores
+            displayNullValue: true
+            nullDisplayValue: - Selecione o produtor -
+        }
+        sessionState {
+            storage: session
+        }
+    )
+
+    region sem-produtor (
+        name: Selecione o produtor
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                <p>Selecione o produtor rural para ver os dados. Produtores são clientes pessoa física, cadastrados em Clientes.</p>
+                ```
+        }
+        layout {
+            sequence: 15
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P70_CLIENTE_ID
+        }
+    )
+
+    region imoveis (
+        name: Imóveis rurais
+        type: interactiveReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select i.imovel_id,
+                       lpad(i.cod_imovel, 3, '0') as cod_imovel,
+                       i.nome,
+                       i.cad_itr,
+                       i.car,
+                       i.uf,
+                       m.nome as municipio,
+                       i.area_total_ha,
+                       i.tipo_exploracao,
+                       i.participacao_pct,
+                       (select count(*) from imovel_contraparte c where c.imovel_id = i.imovel_id) as contrapartes,
+                       i.ativo
+                  from imovel_rural i
+                  left join rtc_da_municipio m
+                    on m.codigo = i.municipio_ibge
+                 where i.cliente_id = :P70_CLIENTE_ID
+                ```
+            pageItemsToSubmit: P70_CLIENTE_ID
+        }
+        layout {
+            sequence: 20
+            slot: body
+        }
+        link {
+            linkColumn: customTarget
+            target: {
+                page: 71
+                items: {
+                    P71_IMOVEL_ID: \#IMOVEL_ID#\
+                }
+                action: resetPagination
+            }
+            linkIcon: <span aria-label="Abrir"><span class="fa fa-edit" aria-hidden="true" title="Abrir"></span></span>
+        }
+        pagination {
+            type: rowRangesXToY
+        }
+        messages {
+            whenNoDataFound: Nenhum registro encontrado.
+        }
+        actionsMenu {
+            subscription: false
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P70_CLIENTE_ID
+        }
+        column IMOVEL_ID (
+            type: hidden
+            heading {
+                heading: ID
+            }
+            layout {
+                sequence: 1
+            }
+            source {
+                dataType: number
+            }
+        )
+        column COD_IMOVEL (
+            type: plainText
+            heading {
+                heading: Código
+            }
+            layout {
+                sequence: 2
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+        column NOME (
+            type: plainText
+            heading {
+                heading: Nome
+            }
+            layout {
+                sequence: 3
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+        column CAD_ITR (
+            type: plainText
+            heading {
+                heading: CIB/NIRF
+            }
+            layout {
+                sequence: 4
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+        column CAR (
+            type: plainText
+            heading {
+                heading: CAR
+            }
+            layout {
+                sequence: 5
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+        column UF (
+            type: plainText
+            heading {
+                heading: UF
+            }
+            layout {
+                sequence: 6
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+        column MUNICIPIO (
+            type: plainText
+            heading {
+                heading: Município
+            }
+            layout {
+                sequence: 7
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+        column AREA_TOTAL_HA (
+            type: plainText
+            heading {
+                heading: Área total (ha)
+                alignment: end
+            }
+            layout {
+                sequence: 8
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 999G999G990D0000
+            }
+            source {
+                dataType: number
+            }
+        )
+        column TIPO_EXPLORACAO (
+            type: plainTextBasedOnLov
+            heading {
+                heading: Exploração
+            }
+            lov {
+                lov: @tipo-exploracao
+            }
+            layout {
+                sequence: 9
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+        column PARTICIPACAO_PCT (
+            type: plainText
+            heading {
+                heading: Participação (%)
+                alignment: end
+            }
+            layout {
+                sequence: 10
+                columnAlignment: end
+            }
+            appearance {
+                formatMask: 990D00
+            }
+            source {
+                dataType: number
+            }
+        )
+        column CONTRAPARTES (
+            type: plainText
+            heading {
+                heading: Contrapartes
+                alignment: end
+            }
+            layout {
+                sequence: 11
+                columnAlignment: end
+            }
+            source {
+                dataType: number
+            }
+        )
+        column ATIVO (
+            type: plainTextBasedOnLov
+            heading {
+                heading: Ativo
+            }
+            lov {
+                lov: @sim-nao
+            }
+            layout {
+                sequence: 12
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+        savedReport 239611889 (
+            visibility: primaryDefault
+            view {
+                rowsPerPage: 50
+            }
+            displayColumn COD_IMOVEL (
+                sequence: 1
+            )
+            displayColumn NOME (
+                sequence: 2
+            )
+            displayColumn CAD_ITR (
+                sequence: 3
+            )
+            displayColumn CAR (
+                sequence: 4
+            )
+            displayColumn UF (
+                sequence: 5
+            )
+            displayColumn MUNICIPIO (
+                sequence: 6
+            )
+            displayColumn AREA_TOTAL_HA (
+                sequence: 7
+            )
+            displayColumn TIPO_EXPLORACAO (
+                sequence: 8
+            )
+            displayColumn PARTICIPACAO_PCT (
+                sequence: 9
+            )
+            displayColumn CONTRAPARTES (
+                sequence: 10
+            )
+            displayColumn ATIVO (
+                sequence: 11
+            )
+            sort (
+                column: COD_IMOVEL
+                sort {
+                    sequence: 1
+                }
+            )
+        )
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Cadastrar imóvel
+        layout {
+            sequence: 10
+            region: @imoveis
+            slot: rightOfInteractiveReportSearchBar
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 71
+                clearCache: 71
+                items: {
+                    P71_CLIENTE_ID: &P70_CLIENTE_ID.
+                }
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+        security {
+            authorizationScheme: @contador-ou-administrador
+        }
+    )
+
+    dynamicAction refresh-after-dialog (
+        name: Atualizar após fechar o diálogo
+        execution {
+            sequence: 10
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @imoveis
+        }
+        action refresh-imoveis (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @imoveis
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+    )
+
+    dynamicAction trocar-filtro (
+        name: Recarregar ao trocar o filtro
+        execution {
+            sequence: 50
+        }
+        when {
+            event: change
+            selectionType: items
+            items: P70_CLIENTE_ID
+        }
+        action native-submit (
+            action: submitPage
+            settings {
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+    )
+
+    process carregar-produtor (
+        name: Carregar o produtor escolhido
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                -- O produtor escolhido em qualquer página do módulo fica em F_PRODUTOR_ID.
+                if :F_PRODUTOR_ID is not null then
+                    :P70_CLIENTE_ID := :F_PRODUTOR_ID;
+                end if;
+                ```
+        }
+        execution {
+            sequence: 5
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 4544965215
+        }
+    )
+
+    process guardar-produtor (
+        name: Guardar o produtor escolhido
+        type: executeCode
+        source {
+            plsqlCode: :F_PRODUTOR_ID := :P70_CLIENTE_ID;
+        }
+        execution {
+            sequence: 1
+        }
+        advanced {
+            executionMappingIdentifier: 5510391098
+        }
+    )
+
+    branch recarregar (
+        name: Recarregar a página
+        execution {
+            sequence: 99
+        }
+        behavior {
+            type: pageOrUrl
+            target: {
+                page: 70
+            }
+        }
+    )
+)

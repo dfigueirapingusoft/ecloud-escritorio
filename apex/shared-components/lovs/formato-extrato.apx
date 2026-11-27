@@ -1,0 +1,16 @@
+lov formato-extrato (
+    name: FORMATO_EXTRATO
+    source {
+        location: staticValues
+    }
+    entry formato-extrato-1 (
+        sequence: 1
+        display: OFX
+        return: OFX
+    )
+    entry formato-extrato-2 (
+        sequence: 2
+        display: CSV
+        return: CSV
+    )
+)

@@ -104,13 +104,24 @@ participante em todo Q100, CNPJ alfanumérico). `pkg_lcdpr.gerar` monta o arquiv
 Erros de negócio: `-20100` não encontrado, `-20101` regra violada, `-20102` arquivo
 inválido, `-20103` arquivo já importado. Mensagens em português, prontas para a página.
 
-## 6. Páginas previstas (fase 3, APEXlang 26.2)
+## 6. Páginas (fase 3, APEXlang 26.2)
 
-Produtores (IR + formulário PF/PJ), Imóveis e contrapartes (master-detail), Safras/centros
-de custo, Contas e layouts CSV, Categorias, Livro caixa (IG com filtros por conta, mês,
-imóvel, safra), Importar extrato (modal), Conciliação (duas regiões + sugestões), Regras,
-LCDPR (validar, gerar, histórico, download) e painel do produtor (fluxo realizado mensal,
-saldo livro x banco, pendências).
+| Pág. | Página | O que faz |
+|---|---|---|
+| 21 | Cliente | Pessoa física: CPF, CAEPF, IE, endereço (0030) e forma de apuração (0010). |
+| 70/71 | Imóveis | 0040 e contrapartes 0045. |
+| 72/73 | Contas | 0050; caixa = 000. |
+| 74 | Centros de custo | Safra, atividade, talhão. |
+| 75 | Categorias | Plano do escritório e plano padrão. |
+| 76 | Layouts CSV | Leitura de extratos CSV. |
+| 77 | Regras | Regras de conciliação do produtor e gerais. |
+| 80/81/82 | Livro caixa | Relatório, lançamento e transferência. |
+| 83/84 | Extratos | Importação OFX/CSV e resultado. |
+| 85/86 | Conciliação | Situação, sugestões, pendências, conciliar, lançar, ignorar, desfazer. |
+| 88/89 | LCDPR | Pendências, geração e download. |
+| 90 | Painel do produtor | Saldos, fluxo realizado mensal, resultado rural e pendências. |
+
+Detalhes em `docs/02-app-apex.md` (seção 2 e 6).
 
 ## 7. Como testar a fase 1
 

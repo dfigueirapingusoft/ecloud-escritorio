@@ -17,3 +17,7 @@ pageGroup consultas (
 pageGroup administracao (
     name: Administração
 )
+
+pageGroup rural (
+    name: Produtor rural
+)

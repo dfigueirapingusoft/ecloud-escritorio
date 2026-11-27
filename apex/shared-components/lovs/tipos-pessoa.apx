@@ -1,0 +1,16 @@
+lov tipos-pessoa (
+    name: TIPOS_PESSOA
+    source {
+        location: staticValues
+    }
+    entry tipos-pessoa-1 (
+        sequence: 1
+        display: Pessoa física
+        return: F
+    )
+    entry tipos-pessoa-2 (
+        sequence: 2
+        display: Pessoa jurídica
+        return: J
+    )
+)

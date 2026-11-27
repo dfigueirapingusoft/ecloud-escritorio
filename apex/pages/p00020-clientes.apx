@@ -40,7 +40,8 @@ page 20 (
             sqlQuery:
                 ```sql
                 select c.cliente_id,
-                       pkg_ecloud_util.formatar_cnpj(c.cnpj) as cnpj,
+                       pkg_rural_cadastro.formatar_documento(coalesce(c.cnpj, c.cpf)) as cnpj,
+                       c.tipo_pessoa,
                        c.razao_social,
                        c.nome_fantasia,
                        c.uf,
@@ -97,10 +98,26 @@ page 20 (
         column CNPJ (
             type: plainText
             heading {
-                heading: CNPJ
+                heading: CPF/CNPJ
             }
             layout {
                 sequence: 2
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        column TIPO_PESSOA (
+            type: plainTextBasedOnLov
+            heading {
+                heading: Pessoa
+            }
+            lov {
+                lov: @tipos-pessoa
+            }
+            layout {
+                sequence: 13
             }
             source {
                 dataType: varchar2
@@ -294,6 +311,10 @@ page 20 (
 
             displayColumn ATIVO (
                 sequence: 11
+            )
+
+            displayColumn TIPO_PESSOA (
+                sequence: 12
             )
 
             sort (

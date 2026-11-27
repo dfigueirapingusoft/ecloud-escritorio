@@ -196,4 +196,147 @@ breadcrumb breadcrumb (
         }
     )
 
+    entry imoveis (
+        name: Imóveis rurais
+        pageNumber: 70
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 70
+            }
+        }
+    )
+
+    entry contas (
+        name: Contas bancárias
+        pageNumber: 72
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 72
+            }
+        }
+    )
+
+    entry centros-custo (
+        name: Centros de custo
+        pageNumber: 74
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 74
+            }
+        }
+    )
+
+    entry categorias (
+        name: Categorias do livro caixa
+        pageNumber: 75
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 75
+            }
+        }
+    )
+
+    entry layouts-csv (
+        name: Layouts de extrato CSV
+        pageNumber: 76
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 76
+            }
+        }
+    )
+
+    entry regras (
+        name: Regras de conciliação
+        pageNumber: 77
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 77
+            }
+        }
+    )
+
+    entry livro-caixa (
+        name: Livro caixa
+        pageNumber: 80
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 80
+            }
+        }
+    )
+
+    entry extratos (
+        name: Extratos bancários
+        pageNumber: 83
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 83
+            }
+        }
+    )
+
+    entry conciliacao (
+        name: Conciliação bancária
+        pageNumber: 85
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 85
+            }
+        }
+    )
+
+    entry lcdpr (
+        name: LCDPR
+        pageNumber: 88
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 88
+            }
+        }
+    )
+
+    entry painel-produtor (
+        name: Painel do produtor
+        pageNumber: 90
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 90
+            }
+        }
+    )
+
 )

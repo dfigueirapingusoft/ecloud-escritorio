@@ -1,0 +1,596 @@
+page 74 (
+    name: Centros de custo
+    alias: CENTROS-CUSTO
+    title: Centros de custo
+    pageGroup: @rural
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+    help {
+        helpText:
+            ```html
+            <p>Centros de custo são opcionais no lançamento e servem para o resultado por safra, atividade ou talhão.</p>
+            ```
+    }
+    region breadcrumb (
+        name: Breadcrumb
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region filtros (
+        name: Filtros
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--noUI
+            ]
+        }
+    )
+
+    pageItem P74_CLIENTE_ID (
+        type: selectList
+        label {
+            label: Produtor rural
+            alignment: right
+        }
+        layout {
+            sequence: 10
+            region: @filtros
+            slot: regionBody
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        lov {
+            type: sharedComponent
+            lov: @produtores
+            displayNullValue: true
+            nullDisplayValue: - Selecione o produtor -
+        }
+        sessionState {
+            storage: session
+        }
+    )
+
+    region sem-produtor (
+        name: Selecione o produtor
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                <p>Selecione o produtor rural para ver os dados. Produtores são clientes pessoa física, cadastrados em Clientes.</p>
+                ```
+        }
+        layout {
+            sequence: 15
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P74_CLIENTE_ID
+        }
+    )
+
+    region acoes (
+        name: Ações
+        type: staticContent
+        layout {
+            sequence: 5
+            slot: body
+        }
+        appearance {
+            template: @/buttons-container
+            templateOptions: [
+                #DEFAULT#
+                t-ButtonRegion--noPadding
+                t-ButtonRegion--noUI
+            ]
+        }
+    )
+
+    region centros (
+        name: Centros de custo (safras, atividades, talhões)
+        type: interactiveGrid
+        source {
+            location: localDatabase
+            tableName: CENTRO_CUSTO
+            whereClause: cliente_id = :P74_CLIENTE_ID
+            orderByClause: codigo
+            pageItemsToSubmit: P74_CLIENTE_ID
+        }
+        layout {
+            sequence: 20
+            slot: body
+        }
+        appearance {
+            template: @/interactive-report
+            templateOptions: #DEFAULT#
+        }
+        edit {
+            enabled: true
+            allowedOperations: [
+                add
+                update
+                delete
+            ]
+        }
+        pagination {
+            type: page
+        }
+        toolbar {
+            controls: [
+                searchCol
+                searchField
+                actionsMenu
+                resetButton
+            ]
+        }
+        advanced {
+            savedReportMappingIdentifier: 9728003153
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P74_CLIENTE_ID
+        }
+        savedReport 230012726 (
+            visibility: primary
+            view {
+                default: grid
+                rowsPerPage: 50
+            }
+            displayColumn (
+                column: @APEX$ROW_ACTION
+                layout {
+                    sequence: 0
+                }
+            )
+            displayColumn (
+                column: @CENTRO_CUSTO_ID
+                layout {
+                    sequence: 1
+                }
+            )
+            displayColumn (
+                column: @CLIENTE_ID
+                layout {
+                    sequence: 2
+                }
+            )
+            displayColumn (
+                column: @CODIGO
+                layout {
+                    sequence: 3
+                }
+            )
+            displayColumn (
+                column: @NOME
+                layout {
+                    sequence: 4
+                }
+            )
+            displayColumn (
+                column: @TIPO
+                layout {
+                    sequence: 5
+                }
+            )
+            displayColumn (
+                column: @IMOVEL_ID
+                layout {
+                    sequence: 6
+                }
+            )
+            displayColumn (
+                column: @CULTURA
+                layout {
+                    sequence: 7
+                }
+            )
+            displayColumn (
+                column: @DATA_INICIO
+                layout {
+                    sequence: 8
+                }
+            )
+            displayColumn (
+                column: @DATA_FIM
+                layout {
+                    sequence: 9
+                }
+            )
+            displayColumn (
+                column: @AREA_HA
+                layout {
+                    sequence: 10
+                }
+            )
+            displayColumn (
+                column: @ATIVO
+                layout {
+                    sequence: 11
+                }
+            )
+        )
+        column APEX$ROW_ACTION (
+            type: actionsMenu
+            layout {
+                sequence: 20
+            }
+        )
+        column APEX$ROW_SELECTOR (
+            type: rowSelector
+            layout {
+                sequence: 10
+            }
+        )
+        column CENTRO_CUSTO_ID (
+            type: hidden
+            heading {
+                heading: ID
+            }
+            layout {
+                sequence: 30
+            }
+            source {
+                databaseColumn: CENTRO_CUSTO_ID
+                dataType: number
+                primaryKey: true
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+        column CLIENTE_ID (
+            type: hidden
+            heading {
+                heading: Produtor
+            }
+            layout {
+                sequence: 40
+            }
+            source {
+                databaseColumn: CLIENTE_ID
+                dataType: number
+            }
+            default {
+                type: item
+                item: P74_CLIENTE_ID
+            }
+            exportPrinting {
+                includeInExportPrint: false
+            }
+        )
+        column CODIGO (
+            type: textField
+            heading {
+                heading: Código
+            }
+            layout {
+                sequence: 50
+            }
+            validation {
+                valueRequired: true
+                maxLength: 20
+            }
+            source {
+                databaseColumn: CODIGO
+                dataType: varchar2
+            }
+        )
+        column NOME (
+            type: textField
+            heading {
+                heading: Nome
+            }
+            layout {
+                sequence: 60
+            }
+            validation {
+                valueRequired: true
+                maxLength: 100
+            }
+            source {
+                databaseColumn: NOME
+                dataType: varchar2
+            }
+        )
+        column TIPO (
+            type: selectList
+            heading {
+                heading: Tipo
+            }
+            layout {
+                sequence: 70
+            }
+            validation {
+                valueRequired: true
+            }
+            lov {
+                type: sharedComponent
+                lov: @tipo-centro-custo
+                displayNullValue: true
+            }
+            source {
+                databaseColumn: TIPO
+                dataType: varchar2
+            }
+            default {
+                type: static
+                staticValue: SAFRA
+            }
+            columnFilter {
+                lovType: none
+            }
+        )
+        column IMOVEL_ID (
+            type: selectList
+            heading {
+                heading: Imóvel
+            }
+            layout {
+                sequence: 80
+            }
+            lov {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    select lpad(cod_imovel, 3, '0') || ' - ' || nome d, imovel_id r
+                      from imovel_rural
+                     where cliente_id = :P74_CLIENTE_ID
+                       and ativo = 'S'
+                     order by cod_imovel
+                    ```
+                displayNullValue: true
+            }
+            source {
+                databaseColumn: IMOVEL_ID
+                dataType: number
+            }
+            columnFilter {
+                lovType: none
+            }
+        )
+        column CULTURA (
+            type: textField
+            heading {
+                heading: Cultura
+            }
+            layout {
+                sequence: 90
+            }
+            validation {
+                maxLength: 60
+            }
+            source {
+                databaseColumn: CULTURA
+                dataType: varchar2
+            }
+        )
+        column DATA_INICIO (
+            type: datePicker
+            heading {
+                heading: Início
+            }
+            layout {
+                sequence: 100
+            }
+            appearance {
+                formatMask: DD/MM/YYYY
+            }
+            source {
+                databaseColumn: DATA_INICIO
+                dataType: date
+            }
+        )
+        column DATA_FIM (
+            type: datePicker
+            heading {
+                heading: Fim
+            }
+            layout {
+                sequence: 110
+            }
+            appearance {
+                formatMask: DD/MM/YYYY
+            }
+            source {
+                databaseColumn: DATA_FIM
+                dataType: date
+            }
+        )
+        column AREA_HA (
+            type: numberField
+            heading {
+                heading: Área (ha)
+                alignment: end
+            }
+            settings {
+                numberAlignment: end
+                virtualKeyboard: decimal
+            }
+            layout {
+                sequence: 120
+                columnAlignment: end
+            }
+            source {
+                databaseColumn: AREA_HA
+                dataType: number
+            }
+        )
+        column ATIVO (
+            type: selectList
+            heading {
+                heading: Ativo
+            }
+            layout {
+                sequence: 130
+            }
+            validation {
+                valueRequired: true
+            }
+            lov {
+                type: sharedComponent
+                lov: @sim-nao
+            }
+            source {
+                databaseColumn: ATIVO
+                dataType: varchar2
+            }
+            default {
+                type: static
+                staticValue: S
+            }
+            columnFilter {
+                lovType: none
+            }
+        )
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Salvar
+        layout {
+            sequence: 10
+            region: @acoes
+            slot: edit
+        }
+        appearance {
+            buttonTemplate: @/text-with-icon
+            icon: fa-save
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        security {
+            authorizationScheme: @contador-ou-administrador
+        }
+    )
+
+    dynamicAction trocar-filtro (
+        name: Recarregar ao trocar o filtro
+        execution {
+            sequence: 50
+        }
+        when {
+            event: change
+            selectionType: items
+            items: P74_CLIENTE_ID
+        }
+        action native-submit (
+            action: submitPage
+            settings {
+                showProcessing: true
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+    )
+
+    process carregar-produtor (
+        name: Carregar o produtor escolhido
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                -- O produtor escolhido em qualquer página do módulo fica em F_PRODUTOR_ID.
+                if :F_PRODUTOR_ID is not null then
+                    :P74_CLIENTE_ID := :F_PRODUTOR_ID;
+                end if;
+                ```
+        }
+        execution {
+            sequence: 5
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 2234552889
+        }
+    )
+
+    process guardar-produtor (
+        name: Guardar o produtor escolhido
+        type: executeCode
+        source {
+            plsqlCode: :F_PRODUTOR_ID := :P74_CLIENTE_ID;
+        }
+        execution {
+            sequence: 1
+        }
+        advanced {
+            executionMappingIdentifier: 8514312969
+        }
+    )
+
+    process save-centros (
+        name: Gravar centros de custo (safras, atividades, talhões)
+        type: interactiveGridAutoRowProcessing
+        editableRegion: @centros
+        execution {
+            sequence: 20
+        }
+        successMessage {
+            successMessage: Alterações gravadas.
+        }
+        advanced {
+            executionMappingIdentifier: 8772742484
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+    branch recarregar (
+        name: Recarregar a página
+        execution {
+            sequence: 99
+        }
+        behavior {
+            type: pageOrUrl
+            target: {
+                page: 74
+            }
+        }
+    )
+)
