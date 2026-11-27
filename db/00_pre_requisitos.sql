@@ -24,8 +24,15 @@ declare
     l_schema varchar2(128) := upper(trim('&schema_app'));
     l_qtd    number;
 begin
-    -- Quem roda precisa poder conceder privilégios (ADMIN no Autonomous, DBA on-premises)
-    select count(*) into l_qtd from session_privs where privilege = 'GRANT ANY PRIVILEGE';
+    -- Quem roda precisa poder conceder privilégios. No Autonomous o ADMIN não
+    -- tem GRANT ANY PRIVILEGE em SESSION_PRIVS (recebe os privilégios com
+    -- ADMIN OPTION e o papel PDB_DBA), então aceita também ADMIN/SYS/SYSTEM e
+    -- os papéis DBA e PDB_DBA. Na dúvida, o próprio GRANT falha e o script para.
+    select count(*) into l_qtd
+      from dual
+     where user in ('ADMIN', 'SYS', 'SYSTEM')
+        or exists (select null from session_privs where privilege = 'GRANT ANY PRIVILEGE')
+        or exists (select null from session_roles where role in ('DBA', 'PDB_DBA'));
     if l_qtd = 0 then
         raise_application_error(-20003,
             'Conectado como ' || user || ', que não pode conceder privilégios. '
