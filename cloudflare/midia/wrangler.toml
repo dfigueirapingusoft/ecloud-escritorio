@@ -1,0 +1,23 @@
+# Worker de mídia do Ecloud (imagens dos anúncios no R2). Ver README.md.
+name = "ecloud-midia"
+main = "worker.js"
+compatibility_date = "2026-09-01"
+
+# Domínio do Worker: a Cloudflare cria o DNS e o certificado.
+# Troque pelo seu domínio e grave a mesma URL em RTC_CONFIG MIDIA_BASE_URL.
+routes = [
+  { pattern = "midia.SEU-DOMINIO.com.br", custom_domain = true }
+]
+
+# Bucket do R2 (crie antes: wrangler r2 bucket create ecloud-midia).
+[[r2_buckets]]
+binding = "MIDIA"
+bucket_name = "ecloud-midia"
+
+[vars]
+PASTAS_PERMITIDAS = "anuncios"
+TAMANHO_MAXIMO = "2097152"
+ORIGENS_PERMITIDAS = "*"
+
+# Segredo (não vai para o repositório):
+#   wrangler secret put UPLOAD_TOKEN
