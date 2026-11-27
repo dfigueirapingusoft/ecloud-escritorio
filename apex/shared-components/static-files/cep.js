@@ -75,6 +75,13 @@
             setCity();
             return;
         }
+        // A UF precisa existir na lista; se não existir, o APEX volta para a
+        // primeira opção ("- Selecione -") e o usuário precisa saber disso.
+        if (!apex.jQuery("#" + uf + " option").filter(function () { return this.value === addr.state; }).length) {
+            setCity();
+            showError(uf, "A UF " + addr.state + " do CEP não está na lista. Escolha a UF.");
+            return;
+        }
         if (exists(mun)) {
             apex.jQuery("#" + mun).one("apexafterrefresh", setCity);
         }
