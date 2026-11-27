@@ -1,7 +1,8 @@
 --------------------------------------------------------------------------------
 -- 06_pacotes_body.sql
 -- Bodies dos pacotes declarados em 03_pacotes_spec.sql. No fim chama
--- 06b_pacotes_body_rural.sql (módulo A – produtor rural).
+-- 06b_pacotes_body_rural.sql (módulo A – produtor rural) e
+-- 06c_pacotes_body_vitrine.sql (anúncios e depoimentos do login).
 --
 -- Dependências: APEX 26.2 instalado na base (APEX_WEB_SERVICE, APEX_UTIL,
 -- APEX_APPLICATION_TEMP_FILES) e XML DB (XMLTYPE/XMLEXISTS).
@@ -2124,3 +2125,6 @@ end pkg_rtc_danfse;
 
 -- Módulo A – Produtor rural
 @@06b_pacotes_body_rural.sql
+
+-- Vitrine da tela de login: anúncios e depoimentos
+@@06c_pacotes_body_vitrine.sql

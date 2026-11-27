@@ -13,7 +13,7 @@ multi-escritório com VPD). Decisões do Daniel em 27/11/2026:
 | Fase | Conteúdo | Arquivos |
 |---|---|---|
 | 1 | Tabelas, VPD, specs, contrato do Worker | `db/01c_tabelas_vitrine.sql`, `db/02_vpd.sql`, `db/03c_pacotes_spec_vitrine.sql`, `docs/contratos/openapi-midia.json`, `db/testes/fase1_vpd.sql` |
-| 2 | Bodies, Worker, testes | `db/06c_pacotes_body_vitrine.sql`, `cloudflare/midia/`, `db/testes/fase2_vitrine.sql` |
+| 2 | Bodies, Worker, testes | `db/06c_pacotes_body_vitrine.sql`, `cloudflare/midia/` (publicação no README), `db/testes/fase2_vitrine.sql`, `db/testes/fase2_vitrine_integracao.sql` |
 | 3 | APEXlang: tema, CSS, login e telas | `apex/` |
 
 ## Modelo de dados
