@@ -56,6 +56,10 @@ grant create any context to &schema_app;
 -- Sincronização agendada dos caches de dados abertos (fase 2)
 grant create job to &schema_app;
 
+-- Login próprio (hash PBKDF2 das senhas, tokens de "esqueci a senha") e token
+-- aleatório da URL do aviso da Stone (01d/05/06d)
+grant execute on sys.dbms_crypto to &schema_app;
+
 -- Objetos usados pela aplicação
 grant create table, create view, create procedure, create trigger, create sequence to &schema_app;
 
@@ -67,6 +71,7 @@ whenever sqlerror continue
 --   hosts públicos com certificado válido (o Caddy usa Let's Encrypt).
 -- * On-premises: o APEX_WEB_SERVICE roda como o usuário do APEX da instância
 --   (APEX_260100 no 26.1, APEX_260200 no 26.2), que precisa de ACL para o host.
+--   Repita o bloco abaixo com host => 'api.pagar.me' para a cobrança da Stone.
 --   Descomente e ajuste o principal_name antes de executar:
 --
 -- begin

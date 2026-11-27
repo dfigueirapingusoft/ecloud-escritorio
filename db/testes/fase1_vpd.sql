@@ -34,6 +34,16 @@ declare
     l_dep_a   number;
     l_dep_b   number;
     l_anu     number;
+    -- autocadastro e assinatura (01d_tabelas_assinatura.sql)
+    l_plano   number;
+    l_ass_a   number;
+    l_ass_b   number;
+    l_fat_a   number;
+    l_fat_b   number;
+    l_aviso   number;
+    l_tok_a   number;
+    l_usu_a   number;
+    l_tabelas_assinatura t_nomes;
     type t_nomes is table of varchar2(30);
     l_tabelas_rurais t_nomes := t_nomes(
         'IMOVEL_RURAL','IMOVEL_CONTRAPARTE','CENTRO_CUSTO','CONTA_BANCARIA',
@@ -65,6 +75,7 @@ declare
             return sqlcode = p_ora;
     end espera_erro;
 begin
+    l_tabelas_assinatura := t_nomes('ASSINATURA','ASSINATURA_FATURA','ASSINATURA_WEBHOOK','USUARIO_SENHA_TOKEN');
     savepoint inicio_teste;
 
     ----------------------------------------------------------------------------
@@ -403,6 +414,115 @@ begin
     confere('página pública (sem usuário no APEX) não grava anúncio (ORA-20121)',
         espera_erro('begin pkg_ecloud_ctx.definir_contexto(''NOBODY''); update anuncio set titulo = ''X'' where anuncio_id = '
                     || l_anu || '; end;', -20121));
+
+    ----------------------------------------------------------------------------
+    -- Autocadastro e assinatura: PLANO (global), ASSINATURA, ASSINATURA_FATURA,
+    -- ASSINATURA_WEBHOOK, USUARIO_SENHA_TOKEN e colunas novas de ESCRITORIO.
+    ----------------------------------------------------------------------------
+    pkg_ecloud_ctx.definir_contexto('TESTE_ADMIN_B');
+    confere('administrador de escritório não cria plano (ORA-20160)',
+        espera_erro(q'[insert into plano (codigo, nome, preco_mensal) values ('X', 'X', 10)]', -20160));
+    confere('contexto guarda a situação do escritório (ATIVO para quem já existia)',
+        pkg_ecloud_ctx.situacao_escritorio = 'ATIVO');
+
+    pkg_ecloud_ctx.definir_contexto('TESTE_PLATAFORMA');
+    insert into plano (codigo, nome, preco_mensal, meses_cobranca)
+    values (' teste_fase1 ', 'Plano Teste', 10, 1)
+    returning plano_id into l_plano;
+    select count(*) into l_qtd from plano where plano_id = l_plano and codigo = 'TESTE_FASE1';
+    confere('admin plataforma cria plano (código normalizado)', l_qtd = 1);
+    confere('plano de 2 meses é rejeitado (ORA-02290)',
+        espera_erro('update plano set meses_cobranca = 2 where plano_id = ' || l_plano, -2290));
+
+    pkg_ecloud_ctx.definir_contexto_sistema;
+    confere('escritório em TESTE sem fim do teste é rejeitado (ORA-02290)',
+        espera_erro('update escritorio set situacao = ''TESTE'' where escritorio_id = ' || l_esc_a, -2290));
+    confere('situação desconhecida é rejeitada (ORA-02290)',
+        espera_erro('update escritorio set situacao = ''GRATIS'' where escritorio_id = ' || l_esc_a, -2290));
+    update escritorio
+       set situacao = 'TESTE', teste_ate = trunc(sysdate) + 14, plano_id = l_plano,
+           origem_cadastro = 'AUTOCADASTRO', cep = '90.010-000'
+     where escritorio_id = l_esc_a;
+    select count(*) into l_qtd from escritorio where escritorio_id = l_esc_a and cep = '90010000';
+    confere('trigger tira a máscara do CEP', l_qtd = 1);
+
+    insert into assinatura (escritorio_id, plano_id, periodo_fim)
+    values (l_esc_a, l_plano, trunc(sysdate) + 14)
+    returning assinatura_id into l_ass_a;
+    insert into assinatura (escritorio_id, plano_id, periodo_fim)
+    values (l_esc_b, l_plano, trunc(sysdate) + 30)
+    returning assinatura_id into l_ass_b;
+    confere('segunda assinatura em vigor do mesmo escritório é rejeitada (ORA-00001)',
+        espera_erro('insert into assinatura (escritorio_id, plano_id, periodo_fim) values ('
+                    || l_esc_a || ', ' || l_plano || ', trunc(sysdate) + 1)', -1));
+    insert into assinatura_fatura (escritorio_id, assinatura_id, periodo_inicio, periodo_fim, valor, vencimento)
+    values (l_esc_a, l_ass_a, trunc(sysdate) + 14, add_months(trunc(sysdate) + 14, 1), 10, trunc(sysdate) + 14)
+    returning fatura_id into l_fat_a;
+    insert into assinatura_fatura (escritorio_id, assinatura_id, periodo_inicio, periodo_fim, valor, vencimento)
+    values (l_esc_b, l_ass_b, trunc(sysdate) + 30, add_months(trunc(sysdate) + 30, 1), 10, trunc(sysdate) + 30)
+    returning fatura_id into l_fat_b;
+    confere('fatura apontando assinatura de outro escritório é rejeitada (ORA-02291)',
+        espera_erro('insert into assinatura_fatura (escritorio_id, assinatura_id, periodo_inicio, periodo_fim, valor, vencimento) values ('
+                    || l_esc_a || ', ' || l_ass_b || ', sysdate, sysdate + 30, 10, sysdate)', -2291));
+    confere('fatura PAGA sem data de pagamento é rejeitada (ORA-02290)',
+        espera_erro('update assinatura_fatura set situacao = ''PAGA'' where fatura_id = ' || l_fat_a, -2290));
+    insert into assinatura_webhook (evento_id, tipo, stone_pedido_id, corpo)
+    values ('hook_teste_fase1', 'order.paid', 'or_teste', '{"id":"hook_teste_fase1","type":"order.paid","data":{"id":"or_teste"}}')
+    returning webhook_id into l_aviso;
+    confere('aviso repetido (mesmo id) é descartado (ORA-00001)',
+        espera_erro(q'[insert into assinatura_webhook (evento_id, corpo) values ('hook_teste_fase1', '{}')]', -1));
+    confere('aviso com corpo que não é JSON é rejeitado (ORA-02290)',
+        espera_erro(q'[insert into assinatura_webhook (corpo) values ('não é json')]', -2290));
+    select usuario_id into l_usu_a from usuario where username = 'TESTE_CONTADOR_A';
+    insert into usuario_senha_token (escritorio_id, usuario_id, token_hash, expira_em)
+    values (l_esc_a, l_usu_a, rpad('a', 64, 'a'), systimestamp + interval '1' hour)
+    returning token_id into l_tok_a;
+    confere('senha fora do formato pbkdf2 é rejeitada (ORA-02290)',
+        espera_erro('update usuario set senha_hash = ''texto-puro'' where usuario_id = ' || l_usu_a, -2290));
+
+    pkg_ecloud_ctx.definir_contexto('teste_contador_a');
+    confere('contexto A: situação TESTE', pkg_ecloud_ctx.situacao_escritorio = 'TESTE');
+    select count(*) into l_qtd from assinatura;
+    confere('A vê só a própria assinatura', l_qtd = 1);
+    select count(*) into l_qtd from assinatura_fatura where fatura_id = l_fat_b;
+    confere('A não vê fatura de B', l_qtd = 0);
+    select count(*) into l_qtd from assinatura_fatura where fatura_id = l_fat_a;
+    confere('A vê a própria fatura', l_qtd = 1);
+    select count(*) into l_qtd from assinatura_webhook where webhook_id = l_aviso;
+    confere('A não vê aviso sem escritório', l_qtd = 0);
+    select count(*) into l_qtd from usuario_senha_token where token_id = l_tok_a;
+    confere('A vê o token do próprio escritório', l_qtd = 1);
+    confere('A não insere fatura em B (ORA-28115)',
+        espera_erro('insert into assinatura_fatura (escritorio_id, assinatura_id, periodo_inicio, periodo_fim, valor, vencimento) values ('
+                    || l_esc_b || ', ' || l_ass_b || ', sysdate + 60, sysdate + 90, 10, sysdate + 60)', -28115));
+    update assinatura set situacao = 'ATIVA' where assinatura_id = l_ass_b;
+    confere('A não altera assinatura de B (0 linhas)', sql%rowcount = 0);
+    select count(*) into l_qtd from plano where plano_id = l_plano;
+    confere('plano visível para o escritório (tabela global)', l_qtd = 1);
+
+    pkg_ecloud_ctx.definir_contexto('TESTE_ADMIN_B');
+    select count(*) into l_qtd from usuario_senha_token where token_id = l_tok_a;
+    confere('B não vê token de A', l_qtd = 0);
+
+    pkg_ecloud_ctx.definir_contexto('TESTE_PLATAFORMA');
+    select count(*) into l_qtd from assinatura_fatura where fatura_id in (l_fat_a, l_fat_b);
+    confere('admin plataforma vê as faturas de todos os escritórios', l_qtd = 2);
+    select count(*) into l_qtd from assinatura_webhook where webhook_id = l_aviso;
+    confere('admin plataforma vê aviso sem escritório', l_qtd = 1);
+
+    pkg_ecloud_ctx.limpar_contexto;
+    for i in 1 .. l_tabelas_assinatura.count loop
+        confere('sem contexto: 0 linhas em ' || l_tabelas_assinatura(i), contar(l_tabelas_assinatura(i)) = 0);
+    end loop;
+
+    -- Cancelar o escritório B desliga o login (ATIVO = 'N' pelo trigger)
+    pkg_ecloud_ctx.definir_contexto_sistema;
+    update escritorio set situacao = 'CANCELADO' where escritorio_id = l_esc_b;
+    select count(*) into l_qtd from escritorio where escritorio_id = l_esc_b and ativo = 'N';
+    confere('escritório CANCELADO fica inativo', l_qtd = 1);
+    pkg_ecloud_ctx.definir_contexto('TESTE_ADMIN_B');
+    confere('usuário de escritório cancelado fica sem escritório no contexto',
+        pkg_ecloud_ctx.escritorio_id is null);
 
     ----------------------------------------------------------------------------
     -- Limpeza

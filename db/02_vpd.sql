@@ -4,8 +4,8 @@
 --
 -- Como funciona:
 --   1. O contexto CTX_ECLOUD (local à sessão) guarda USERNAME, USUARIO_ID,
---      ESCRITORIO_ID, PERFIL, ADMIN_PLATAFORMA e MODO. Só PKG_ECLOUD_CTX pode
---      gravá-lo.
+--      ESCRITORIO_ID, PERFIL, ADMIN_PLATAFORMA, SITUACAO (situação da
+--      assinatura do escritório) e MODO. Só PKG_ECLOUD_CTX pode gravá-lo.
 --   2. No APEX, "Initialization PL/SQL Code" chama
 --      PKG_ECLOUD_CTX.definir_contexto a cada requisição e "Cleanup PL/SQL
 --      Code" chama PKG_ECLOUD_CTX.limpar_contexto (a sessão de banco é
@@ -78,6 +78,10 @@ as
     function is_admin_plataforma return boolean;
     function is_sistema        return boolean;
 
+    -- Situação da assinatura do escritório do contexto (ESCRITORIO.SITUACAO:
+    -- TESTE, ATIVO, SUSPENSO ou CANCELADO). Nula sem escritório.
+    function situacao_escritorio return varchar2;
+
     -- true se o perfil do usuário está na lista separada por vírgulas
     -- (ex.: 'ADMINISTRADOR,CONTADOR'). Usado nos Authorization Schemes do APEX.
     function tem_perfil(p_perfis in varchar2) return boolean;
@@ -143,9 +147,10 @@ as
         set_attr('ESCRITORIO_ID',    to_char(l_usuario.escritorio_id));
 
         declare
-            l_ativo escritorio.ativo%type;
+            l_ativo    escritorio.ativo%type;
+            l_situacao escritorio.situacao%type;
         begin
-            select e.ativo into l_ativo
+            select e.ativo, e.situacao into l_ativo, l_situacao
               from escritorio e
              where e.escritorio_id = l_usuario.escritorio_id;
             if l_ativo <> 'S' and l_usuario.admin_plataforma <> 'S' then
@@ -153,6 +158,9 @@ as
                 set_attr('MODO', l_modo);
                 return;
             end if;
+            -- Lida pelo processo do APEX que leva o escritório SUSPENSO para
+            -- Minha assinatura (01d_tabelas_assinatura.sql).
+            set_attr('SITUACAO', l_situacao);
         end;
 
         if p_registrar_acesso then
@@ -220,6 +228,11 @@ as
         return sys_context(c_namespace, 'MODO') = c_modo_sistema;
     end is_sistema;
 
+    function situacao_escritorio return varchar2 is
+    begin
+        return sys_context(c_namespace, 'SITUACAO');
+    end situacao_escritorio;
+
     function tem_perfil(p_perfis in varchar2) return boolean is
         l_perfil varchar2(20) := perfil;
     begin
@@ -239,15 +252,17 @@ as
     -- tabelas do módulo A (IMOVEL_RURAL ... LCDPR_ARQUIVO)
     function fn_escritorio(p_schema in varchar2, p_objeto in varchar2) return varchar2;
 
-    -- ESCRITORIO: admin da plataforma vê todos; usuário vê só o seu.
+    -- ESCRITORIO, ASSINATURA e ASSINATURA_FATURA: admin da plataforma vê
+    -- todos; usuário vê só o seu.
     function fn_tabela_escritorio(p_schema in varchar2, p_objeto in varchar2) return varchar2;
 
     -- USUARIO: admin da plataforma vê todos; demais veem o próprio escritório
     -- e sempre a própria linha (necessário para montar o contexto).
     function fn_usuario(p_schema in varchar2, p_objeto in varchar2) return varchar2;
 
-    -- RTC_CHAMADA_LOG: escritório vê o seu; linhas sem escritório (jobs,
-    -- teste de conexão) só para o admin da plataforma e o sistema.
+    -- RTC_CHAMADA_LOG e ASSINATURA_WEBHOOK: escritório vê o seu; linhas sem
+    -- escritório (jobs, teste de conexão, aviso ainda não processado) só
+    -- para o admin da plataforma e o sistema.
     function fn_log(p_schema in varchar2, p_objeto in varchar2) return varchar2;
 
     -- DEPOIMENTO, leitura (SELECT): o APROVADO é público, porque a tela de
@@ -372,7 +387,13 @@ declare
         t_pol('EXTRATO_ITEM',        'PKG_RTC_VPD.FN_ESCRITORIO'),
         t_pol('CONCILIACAO',         'PKG_RTC_VPD.FN_ESCRITORIO'),
         t_pol('REGRA_CONCILIACAO',   'PKG_RTC_VPD.FN_ESCRITORIO'),
-        t_pol('LCDPR_ARQUIVO',       'PKG_RTC_VPD.FN_ESCRITORIO'));
+        t_pol('LCDPR_ARQUIVO',       'PKG_RTC_VPD.FN_ESCRITORIO'),
+        -- Autocadastro e assinatura (01d_tabelas_assinatura.sql). PLANO é
+        -- global (sem ESCRITORIO_ID): o trigger PLANO_BIU controla a gravação.
+        t_pol('ASSINATURA',          'PKG_RTC_VPD.FN_TABELA_ESCRITORIO'),
+        t_pol('ASSINATURA_FATURA',   'PKG_RTC_VPD.FN_TABELA_ESCRITORIO'),
+        t_pol('ASSINATURA_WEBHOOK',  'PKG_RTC_VPD.FN_LOG'),
+        t_pol('USUARIO_SENHA_TOKEN', 'PKG_RTC_VPD.FN_ESCRITORIO'));
     l_existe number;
 begin
     for i in 1 .. l_pols.count loop

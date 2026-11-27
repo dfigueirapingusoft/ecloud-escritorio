@@ -20,7 +20,9 @@
 --                           (a tela de login roda sem escritório); o resto,
 --                           e qualquer gravação, só o escritório dono.
 --   4. RTC_CHAMADA_LOG          aceita o serviço MIDIA (Worker de mídia),
---                           os métodos PUT/DELETE e a referência ANUNCIO.
+--                           os métodos PUT/DELETE e a referência ANUNCIO
+--                           (a lista já inclui STONE e ASSINATURA_FATURA do
+--                           01d, para a reinstalação não recusar o log).
 --
 -- Idempotente: só ignora erros de "já existe".
 -- Compatível com 19c e 23ai (flags em VARCHAR2(1) S/N, sem BOOLEAN de SQL).
@@ -216,11 +218,11 @@ begin
     ----------------------------------------------------------------------------
     contexto_migracao(true);
     trocar_check('rtc_chamada_log', 'rtc_chamada_log_serv_ck',
-                 q'[servico in ('REGIME','SIMPLES','DANFSE','MIDIA')]');
+                 q'[servico in ('REGIME','SIMPLES','DANFSE','MIDIA','STONE')]');
     trocar_check('rtc_chamada_log', 'rtc_chamada_log_met_ck',
                  q'[metodo in ('GET','POST','PUT','DELETE')]');
     trocar_check('rtc_chamada_log', 'rtc_chamada_log_ref_ck',
-                 q'[referencia_tipo in ('SIMULACAO','DANFSE','CACHE','ERRO_CATALOGO','TESTE_CONEXAO','ANUNCIO')]');
+                 q'[referencia_tipo in ('SIMULACAO','DANFSE','CACHE','ERRO_CATALOGO','TESTE_CONEXAO','ANUNCIO','ASSINATURA_FATURA')]');
     contexto_migracao(false);
 
     inserir_anuncios_da_casa;

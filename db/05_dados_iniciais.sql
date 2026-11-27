@@ -3,7 +3,11 @@
 -- Carga inicial idempotente (MERGE): configuração e controle de cache.
 -- Não contém segredos: a X-API-Key fica somente na Web Credential do APEX
 -- (Static ID RTC_API_KEY, tipo HTTP Header) e o token do Worker de mídia na
--- Web Credential MIDIA_UPLOAD_TOKEN (HTTP Header X-Upload-Token).
+-- Web Credential MIDIA_UPLOAD_TOKEN (HTTP Header X-Upload-Token). A chave
+-- secreta da Stone fica só na Web Credential STONE_API_KEY (HTTP Header
+-- Authorization = "Basic " + base64 de "<chave secreta>:").
+-- O token da URL do webhook da Stone (STONE_WEBHOOK_TOKEN) é sorteado aqui,
+-- no banco de cada ambiente, e nunca vai para o repositório.
 --------------------------------------------------------------------------------
 set define off
 
@@ -36,7 +40,24 @@ using (
     select 'MIDIA_CREDENCIAL_STATIC_ID', 'MIDIA_UPLOAD_TOKEN', 'TEXTO',
            'Static ID da Web Credential do APEX com o header X-Upload-Token do Worker de mídia' from dual union all
     select 'CACHE_DATA_REFERENCIA', null, 'TEXTO',
-           'Data (AAAA-MM-DD) das consultas de dados abertos. Vazio = maior entre hoje e 2027-01-01' from dual
+           'Data (AAAA-MM-DD) das consultas de dados abertos. Vazio = maior entre hoje e 2027-01-01' from dual union all
+    -- Assinatura (mensalidade) cobrada pela Stone / Pagar.me API v5
+    select 'STONE_BASE_URL', 'https://api.pagar.me/core/v5', 'URL',
+           'URL base da API v5 da Pagar.me (Stone), sem barra final. Sandbox e produção usam a mesma URL; a chave (sk_test_ ou sk_) decide o ambiente' from dual union all
+    select 'STONE_CREDENCIAL_STATIC_ID', 'STONE_API_KEY', 'TEXTO',
+           'Static ID da Web Credential do APEX com o header Authorization (Basic) da Stone da plataforma' from dual union all
+    select 'STONE_WEBHOOK_TOKEN', null, 'TEXTO',
+           'Token aleatório da URL do aviso (webhook) da Stone. Gerado na instalação; trocar exige atualizar a URL no painel da Stone' from dual union all
+    select 'WEBHOOK_BASE_URL', null, 'URL',
+           'Base pública do ORDS para os avisos, sem barra final (ex.: https://xxxx.adb.sa-saopaulo-1.oraclecloudapps.com/ords/wksp_ecloud). Vazio = descoberta pelo ORDS' from dual union all
+    select 'ASSINATURA_TESTE_DIAS', '14', 'NUMERO',
+           'Dias de teste grátis do escritório que se cadastra pela tela' from dual union all
+    select 'ASSINATURA_FATURA_DIAS', '5', 'NUMERO',
+           'Dias antes do fim do período (ou do teste) em que a fatura é gerada' from dual union all
+    select 'ASSINATURA_TOLERANCIA_DIAS', '5', 'NUMERO',
+           'Dias depois do vencimento até o escritório ficar suspenso' from dual union all
+    select 'EMAIL_REMETENTE', null, 'TEXTO',
+           'Remetente dos e-mails de conta (boas-vindas, senha). Precisa ser Approved Sender no OCI Email Delivery' from dual
 ) o
 on (d.chave = o.chave)
 when not matched then
@@ -61,6 +82,29 @@ when not matched then
 when matched then
     update set d.descricao = o.descricao;
 
+-- Token do webhook da Stone: sorteado uma vez por banco (32 bytes em hex).
+update rtc_config
+   set valor = lower(rawtohex(dbms_crypto.randombytes(32)))
+ where chave = 'STONE_WEBHOOK_TOKEN'
+   and valor is null;
+
+-- Planos da mensalidade. Valores de exemplo (os mesmos do Mecânico VIP), a
+-- ajustar na página Planos: só entram na primeira instalação; depois o MERGE
+-- não mexe em preço nem nome já alterados pela plataforma.
+merge into plano d
+using (
+    select 'MENSAL' codigo, 'Mensal' nome, 149.00 preco, 1 meses, 10 ordem,
+           'Pague mês a mês, sem fidelidade.' descricao from dual union all
+    select 'TRIMESTRAL', 'Trimestral', 129.00, 3, 20,
+           'Cobrança a cada 3 meses com desconto.' from dual union all
+    select 'ANUAL', 'Anual', 99.00, 12, 30,
+           'Cobrança anual com o maior desconto.' from dual
+) o
+on (d.codigo = o.codigo)
+when not matched then
+    insert (codigo, nome, preco_mensal, meses_cobranca, ordem, descricao)
+    values (o.codigo, o.nome, o.preco, o.meses, o.ordem, o.descricao);
+
 commit;
 
-prompt 05_dados_iniciais.sql: configuração e controle de cache carregados.
+prompt 05_dados_iniciais.sql: configuração, controle de cache e planos carregados.
