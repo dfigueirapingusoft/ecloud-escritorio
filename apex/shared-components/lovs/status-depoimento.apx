@@ -1,0 +1,25 @@
+lov status-depoimento (
+    name: STATUS_DEPOIMENTO
+    source {
+        location: staticValues
+    }
+
+    entry status-depoimento-1 (
+        sequence: 1
+        display: Pendente
+        return: PENDENTE
+    )
+
+    entry status-depoimento-2 (
+        sequence: 2
+        display: Aprovado
+        return: APROVADO
+    )
+
+    entry status-depoimento-3 (
+        sequence: 3
+        display: Reprovado
+        return: REPROVADO
+    )
+
+)

@@ -50,7 +50,13 @@ editável e gráficos seguem o `example-1`.
 | 86 | Conciliar movimento (modal) | idem | Conciliar com lançamento (valor parcial opcional), lançar e conciliar, ignorar com motivo, desfazer. |
 | 88/89 | LCDPR | idem | Ano, situação inicial/especial e responsável; pendências (`pkg_lcdpr.validar`); **Gerar arquivo**; histórico e download (CR LF, UTF-8). |
 | 90 | Painel do produtor | todos | Saldos por conta, entradas e saídas por mês, saldo no fim do mês, resultado rural mensal e pendências do LCDPR do ano. |
-| 9999 | Entrar | público | Login. |
+| 100 | Anúncios do login | admin. plataforma | Lista com situação (no ar, agendado, encerrado, inativo), período, onde aparece e exibições/cliques dos últimos 30 dias. |
+| 101 | Anúncio | admin. plataforma | Modal: textos, etiquetas, botão e link, cor de destaque, período, ordem, imagem enviada ao R2 pelo Worker de mídia, remover imagem, excluir. |
+| 102 | Depoimentos | admin. plataforma | Todos os depoimentos, pendentes primeiro. |
+| 103 | Revisar depoimento | admin. plataforma | Modal: aprovar e publicar, reprovar com motivo (o escritório vê), remover. |
+| 104 | Meu depoimento | todos | Escrever ou editar o próprio depoimento (nota em estrelas) e acompanhar a situação. No menu do usuário. |
+| 105 | Ofertas e parceiros | todos | Anúncios marcados para ofertas, em cartões. |
+| 9999 | Entrar | público | Cartão de vidro com o logo e, à esquerda, a vitrine: carrossel de anúncios e depoimentos aprovados (docs/06-vitrine-login.md). |
 
 ## 3. Pré-requisitos no workspace
 

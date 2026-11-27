@@ -47,7 +47,8 @@ db/        00_pre_requisitos.sql e 00b_acesso_proxy.sql (DBA), 01_tabelas.sql (+
            03c_pacotes_spec_vitrine.sql), 04_views.sql, 05_dados_iniciais.sql,
            06_pacotes_body.sql (+ 06b_pacotes_body_rural.sql, 06c_pacotes_body_vitrine.sql),
            07_primeiro_admin.sql, instalar.sql, testes/
-apex/      fonte APEXlang 26.2 (fase 3): application.apx, shared-components/, pages/
+apex/      fonte APEXlang 26.2 (fase 3): application.apx, shared-components/ (static-files/app.css com a
+           paleta Ecloud, anuncios.js, depoimentos.js, app-processes.apx), pages/
 docs/      01-arquitetura.md, 02-app-apex.md, 03-deploy.md, 04-escopo-agro.md (roadmap Agro),
            05-modulo-a-rural.md, 06-vitrine-login.md (layout do Mecânico VIP, anúncios e depoimentos),
            contratos/ (OpenAPI, exemplos, lcdpr-leiaute-1.3.md, openapi-midia.json do Worker de mídia)
@@ -79,6 +80,9 @@ python3 tools/verificar_sql_apex.py /tmp/v.sql && sql ECLOUD@base @/tmp/v.sql
   No APEX local de teste use `apex import -input apex -id 100`.
 * Item de data em SQL de gráfico chega como texto: use `to_date(:ITEM, 'DD/MM/YYYY')`. Padrão de item
   data/hora: devolva texto na máscara (`to_char(current_timestamp, 'DD/MM/YYYY HH24:MI')`).
+* Processo de aplicação (`app-processes.apx`) não aceita `advanced.staticId`;
+  Ajax Callback é `execution.point: ajaxCallback`. Item `hidden` e
+  `starRating` não aceitam `layout.alignment`.
 * Teste local do app: `db/testes/dados_demo.sql <workspace> <usuario> <senha>` cria usuário e dados fictícios.
 * No PL/SQL, `JSON_VALUE` nativo ignora item methods (`type()`, `size()`): use SQL.
 * Função privada de pacote não pode ser usada dentro de SQL (PLS-00231): torne-a

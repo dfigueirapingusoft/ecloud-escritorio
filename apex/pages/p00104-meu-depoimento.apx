@@ -1,0 +1,376 @@
+page 104 (
+    name: Meu depoimento
+    alias: MEU-DEPOIMENTO
+    title: Meu depoimento
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+
+    region breadcrumb (
+        name: Breadcrumb
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region situacao (
+        name: Situação
+        type: dynamicContent
+        source {
+            plsqlFunctionBody:
+                ```plsql
+                -- Aviso da situação: convite, aguardando, aprovado ou reprovado com o motivo.
+                return pkg_ecloud_depoimento.situacao_html(pkg_ecloud_depoimento.meu_id);
+                ```
+        }
+        layout {
+            sequence: 15
+            slot: body
+        }
+        appearance {
+            template: @/blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region meu (
+        name: Meu depoimento
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P104_DEPOIMENTO_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @meu
+            slot: regionBody
+        }
+    )
+    pageItem P104_AUTOR_NOME (
+        type: textField
+        label {
+            label: Seu nome
+            alignment: right
+        }
+        layout {
+            sequence: 20
+            region: @meu
+            slot: regionBody
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+            maxLength: 120
+        }
+    )
+    pageItem P104_AUTOR_CARGO (
+        type: textField
+        label {
+            label: Cargo
+            alignment: right
+        }
+        layout {
+            sequence: 30
+            region: @meu
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 60
+        }
+        help {
+            inlineHelpText: Por exemplo: sócio, contadora, analista fiscal.
+        }
+    )
+    pageItem P104_ESCRITORIO_NOME (
+        type: textField
+        label {
+            label: Escritório
+            alignment: right
+        }
+        layout {
+            sequence: 40
+            region: @meu
+            slot: regionBody
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+            maxLength: 120
+        }
+    )
+    pageItem P104_CIDADE (
+        type: textField
+        label {
+            label: Cidade
+            alignment: right
+        }
+        layout {
+            sequence: 50
+            region: @meu
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 120
+        }
+    )
+    pageItem P104_NOTA (
+        type: starRating
+        label {
+            label: Sua nota para o Ecloud
+            alignment: right
+        }
+        layout {
+            sequence: 60
+            region: @meu
+            slot: regionBody
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        default {
+            type: static
+            staticValue: 5
+        }
+    )
+    pageItem P104_TEXTO (
+        type: textarea
+        label {
+            label: Depoimento (de 20 a 300 caracteres)
+            alignment: right
+        }
+        layout {
+            sequence: 70
+            region: @meu
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+            maxLength: 300
+        }
+    )
+
+    button excluir (
+        buttonName: EXCLUIR
+        label: Excluir meu depoimento
+        layout {
+            sequence: 10
+            region: @meu
+            slot: delete
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: [
+                #DEFAULT#
+                t-Button--danger
+                t-Button--simple
+            ]
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: Excluir o seu depoimento? Se estiver no ar, ele sai da tela de entrada.
+            style: danger
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P104_DEPOIMENTO_ID
+        }
+    )
+
+    button enviar (
+        buttonName: ENVIAR
+        label: Enviar para aprovação
+        layout {
+            sequence: 20
+            region: @meu
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    validation texto-minimo (
+        name: Pelo menos 20 caracteres
+        validation {
+            type: functionBodyReturningBoolean
+            plsqlFunctionBody:
+                ```plsql
+                return length(trim(regexp_replace(:P104_TEXTO, '\s+', ' '))) >= 20;
+                ```
+        }
+        error {
+            errorMessage: Escreva pelo menos 20 caracteres no depoimento.
+            associatedItem: @P104_TEXTO
+        }
+        execution {
+            sequence: 10
+        }
+        serverSideCondition {
+            whenButtonPressed: @enviar
+        }
+    )
+
+    process carregar (
+        name: Carregar meu depoimento
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                -- Depoimento já enviado ou, na primeira vez, sugestões do cadastro do usuário
+                -- e do escritório (o usuário confere antes de enviar).
+                :P104_DEPOIMENTO_ID := pkg_ecloud_depoimento.meu_id;
+                if :P104_DEPOIMENTO_ID is not null then
+                    select autor_nome, autor_cargo, escritorio_nome, cidade, nota, texto
+                      into :P104_AUTOR_NOME, :P104_AUTOR_CARGO, :P104_ESCRITORIO_NOME, :P104_CIDADE, :P104_NOTA, :P104_TEXTO
+                      from depoimento
+                     where depoimento_id = :P104_DEPOIMENTO_ID;
+                else
+                    :P104_AUTOR_NOME      := pkg_ecloud_depoimento.sugestao_autor;
+                    :P104_ESCRITORIO_NOME := pkg_ecloud_depoimento.sugestao_escritorio;
+                    :P104_CIDADE          := pkg_ecloud_depoimento.sugestao_cidade;
+                end if;
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 8507268493
+        }
+    )
+
+    process enviar (
+        name: Enviar depoimento
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                -- Inserir ou mudar o texto sempre volta para PENDENTE (trigger DEPOIMENTO_BIU).
+                pkg_ecloud_depoimento.salvar_meu(
+                    p_autor_nome      => :P104_AUTOR_NOME,
+                    p_autor_cargo     => :P104_AUTOR_CARGO,
+                    p_escritorio_nome => :P104_ESCRITORIO_NOME,
+                    p_cidade          => :P104_CIDADE,
+                    p_texto           => :P104_TEXTO,
+                    p_nota            => to_number(:P104_NOTA));
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 9737919927
+        }
+        successMessage {
+            successMessage: Depoimento enviado. Ele aparece no login depois da aprovação.
+        }
+        serverSideCondition {
+            whenButtonPressed: @enviar
+        }
+    )
+
+    process excluir (
+        name: Excluir meu depoimento
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                pkg_ecloud_depoimento.excluir_meu;
+                ```
+        }
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 5429515342
+        }
+        successMessage {
+            successMessage: Depoimento excluído.
+        }
+        serverSideCondition {
+            whenButtonPressed: @excluir
+        }
+    )
+
+    branch voltar (
+        name: Voltar para a página
+        execution {
+            sequence: 10
+        }
+        behavior {
+            type: pageOrUrl
+            target: {
+                page: 104
+            }
+        }
+    )
+
+)

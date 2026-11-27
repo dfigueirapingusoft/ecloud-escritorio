@@ -1,0 +1,931 @@
+/*
+ * Ecloud - Escritório Cloud: identidade visual sobre o Universal Theme.
+ * Azul e ciano do logo (#3A8BFF / #6FD0FF) sobre grafite, fundo claro azulado e
+ * cartões brancos arredondados. Adaptado do layout do Mecânico VIP (vitrine do
+ * login, anúncios e depoimentos); as classes ec-* são geradas pelos pacotes
+ * PKG_ECLOUD_ANUNCIO e PKG_ECLOUD_DEPOIMENTO (db/06c_pacotes_body_vitrine.sql).
+ */
+:root {
+    --ec-brand: #3a8bff;
+    --ec-brand-strong: #1f6fe5;
+    --ec-brand-soft: #e3efff;
+    --ec-brand-light: #6fd0ff;
+    --ec-brand-deep: #1658c0;
+    --ec-brand-contrast: #ffffff;
+    --ec-ink: #1c2230;
+    --ec-ink-soft: #283044;
+    --ec-sand: #f4f6fa;
+    --ec-line: #e3e7ef;
+    --ec-muted: #5b6475;
+    --ec-radius: 16px;
+    --ec-radius-sm: 10px;
+    --ec-shadow: 0 1px 2px rgba(28, 34, 48, .06), 0 1px 1px rgba(28, 34, 48, .03);
+    --ec-font: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+    --a-base-font-family: var(--ec-font);
+    --ut-body-background-color: var(--ec-sand);
+    --ut-body-text-color: var(--ec-ink);
+    --ut-component-border-radius: var(--ec-radius);
+    --ut-header-background-color: #ffffff;
+    --ut-header-text-color: var(--ec-ink);
+    --ut-header-border-color: var(--ec-line);
+    --ut-palette-primary: var(--ec-brand);
+    --ut-palette-primary-contrast: var(--ec-brand-contrast);
+
+    --u-page-background: var(--ec-sand);
+    --u-text-link: var(--ec-ink);
+    --u-text-link-hover: #1f6fe5;
+    --u-border-focus: var(--ec-brand-strong);
+    --u-overlay-selected: var(--ec-brand-soft);
+
+    /* Botão principal (hot) do Universal Theme na cor da marca. */
+    /* Azul mais escuro no botão para o texto branco ter contraste (AA). */
+    --a-button-hot-background-color: var(--ec-brand-strong);
+    --a-button-hot-text-color: var(--ec-brand-contrast);
+    --a-button-hot-hover-background-color: var(--ec-brand-deep);
+    --a-button-hot-border-color: var(--ec-brand-strong);
+}
+
+body,
+.t-PageBody {
+    font-family: var(--ec-font);
+    color: var(--ec-ink);
+}
+
+.t-Body,
+.t-Body-main,
+.t-Body-content {
+    background-color: var(--ec-sand);
+}
+
+/* Cabeçalho branco e menu lateral grafite. */
+.t-Header {
+    background: #ffffff;
+    border-bottom: 1px solid var(--ec-line);
+    box-shadow: none;
+}
+
+.t-Header-logo-link,
+.t-Header-logo {
+    color: var(--ec-ink);
+    font-weight: 800;
+    letter-spacing: -.01em;
+}
+
+/* Logotipo do cabeçalho (logo do app = #APP_FILES#logo-ecloud.png). */
+.t-Header-logo img,
+.t-Header-logo .apex-logo-img {
+    display: block;
+    height: 30px;
+    width: auto;
+    max-width: 60vw;
+}
+
+/* O tema original tinha cabeçalho escuro: ícones e textos do topo vinham
+   brancos e sumiam no fundo branco (botão do menu e usuário logado). */
+.t-Header .t-Button--header,
+.t-Header .t-Button--header .t-Icon,
+.t-Header .t-Button--header .t-Button-label,
+.t-Header .t-NavigationBar-item .t-Button,
+.t-Header .t-NavigationBar-item .t-Icon,
+.t-Header .t-NavigationBar-item .t-Button-label,
+.t-Header .t-Header-controls .t-Button,
+.t-Header .t-Header-controls .t-Icon {
+    color: var(--ec-ink);
+}
+
+.t-Header .t-Button--header:hover,
+.t-Header .t-Button--header:focus-visible,
+.t-Header .t-Button--header.is-active {
+    background-color: var(--ec-sand);
+    color: var(--ec-ink);
+}
+
+.t-Body-nav,
+.t-Body-nav .t-TreeNav,
+.t-TreeNav {
+    background-color: var(--ec-ink);
+}
+
+.t-TreeNav .a-TreeView-content,
+.t-TreeNav .a-TreeView-label,
+.t-TreeNav .a-TreeView-node .fa,
+.t-TreeNav .a-Icon {
+    color: #d3dae6;
+}
+
+.t-TreeNav .a-TreeView-content {
+    border-radius: var(--ec-radius-sm);
+    margin: 2px 8px;
+}
+
+.t-TreeNav .a-TreeView-content:hover,
+.t-TreeNav .a-TreeView-content.is-hover {
+    background-color: var(--ec-ink-soft);
+}
+
+.t-TreeNav .a-TreeView-content.is-current,
+.t-TreeNav .a-TreeView-content.is-current--top,
+.t-TreeNav .a-TreeView-content.is-selected {
+    background-color: rgba(58, 139, 255, .14);
+}
+
+.t-TreeNav .a-TreeView-content.is-current .a-TreeView-label,
+.t-TreeNav .a-TreeView-content.is-current--top .a-TreeView-label,
+.t-TreeNav .a-TreeView-content.is-current .fa,
+.t-TreeNav .a-TreeView-content.is-current--top .fa {
+    color: var(--ec-brand);
+    font-weight: 600;
+}
+
+/* Regiões e cartões: brancos, cantos arredondados, sombra leve. */
+.t-Region,
+.t-IRR-region,
+.t-Card .t-Card-wrap,
+.a-CardView {
+    border: 0;
+    border-radius: var(--ec-radius);
+    box-shadow: var(--ec-shadow);
+    background-color: #ffffff;
+}
+
+/* Barra de botões das páginas (modelo Buttons Container): mesmo cartão das
+   regiões e afastada do cabeçalho de cima. O rodapé dos diálogos tem estilo
+   próprio mais abaixo. */
+.t-Body-content .t-ButtonRegion:not(.t-Dialog-footer .t-ButtonRegion) {
+    margin-block: 16px;
+    border: 0;
+    border-radius: var(--ec-radius);
+    box-shadow: var(--ec-shadow);
+    background-color: #ffffff;
+}
+
+.t-Region-header {
+    background-color: #ffffff;
+    border-bottom: 1px solid var(--ec-line);
+    border-radius: var(--ec-radius) var(--ec-radius) 0 0;
+}
+
+.t-Region-title {
+    font-weight: 700;
+    font-size: 1rem;
+}
+
+.t-Button {
+    border-radius: var(--ec-radius-sm);
+    font-weight: 600;
+}
+
+.t-Button--hot {
+    font-weight: 700;
+}
+
+/* Reforço: alguns estilos do tema ignoram as variáveis --a-button-hot-*. */
+.t-Button--hot:not(.t-Button--simple, .t-Button--link) {
+    background-color: var(--ec-brand-strong);
+    border-color: var(--ec-brand-strong);
+    color: var(--ec-brand-contrast);
+}
+
+.t-Button--hot:not(.t-Button--simple, .t-Button--link):hover,
+.t-Button--hot:not(.t-Button--simple, .t-Button--link):focus-visible {
+    background-color: var(--ec-brand-deep);
+    border-color: var(--ec-brand-deep);
+    color: var(--ec-brand-contrast);
+}
+
+.t-Button--hot:not(.t-Button--simple, .t-Button--link) .t-Icon {
+    color: inherit;
+}
+
+/* Botões de link: grafite em vez do azul do tema. */
+.t-Button--link,
+.t-Button--link .t-Button-label {
+    color: var(--ec-ink);
+}
+
+.t-Button--link:hover,
+.t-Button--link:focus-visible,
+.t-Button--link:hover .t-Button-label {
+    color: #1f6fe5;
+    background: transparent;
+}
+
+/* Links do cartão de login, cadastro e senha: menores e discretos. */
+.t-Login-region .t-Button--link {
+    min-height: 2.25rem;
+    font-size: .875rem;
+    font-weight: 600;
+    letter-spacing: 0;
+}
+
+.t-Login-region .t-Button--link,
+.t-Login-region .t-Button--link .t-Button-label {
+    color: var(--ec-muted);
+}
+
+.t-Login-region .t-Button--link:hover,
+.t-Login-region .t-Button--link:focus-visible,
+.t-Login-region .t-Button--link:hover .t-Button-label {
+    color: var(--ec-ink);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+/* "Ainda não tem conta?" separado do "Esqueci minha senha" por uma linha. */
+.t-Login-region .t-Button--link + .t-Button--link {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--ec-line);
+    border-radius: 0;
+}
+
+.t-Form-inputContainer input,
+.t-Form-inputContainer select,
+.t-Form-inputContainer textarea,
+.apex-item-text,
+.apex-item-select,
+.apex-item-textarea {
+    border-radius: var(--ec-radius-sm);
+}
+
+/* Páginas públicas (login, cadastro, senha): fundo grafite, cartão branco. */
+.t-PageBody--login {
+    background:
+        radial-gradient(circle at 12% 8%, rgba(58, 139, 255, .22) 0, transparent 38%),
+        radial-gradient(circle at 90% 95%, rgba(58, 139, 255, .10) 0, transparent 40%),
+        var(--ec-ink);
+    min-height: 100dvh;
+}
+
+.t-PageBody--login .t-Body,
+.t-PageBody--login .t-Body-main,
+.t-PageBody--login .t-Body-content {
+    background: transparent;
+}
+
+.t-PageBody--login .t-Login-region {
+    border: 0;
+    border-radius: 20px;
+    box-shadow: 0 24px 48px rgba(0, 0, 0, .28);
+    background: #ffffff;
+}
+
+
+/*
+ * Marca: logotipo do Ecloud (quadrado azul com a dobra ciano e "ECloud").
+ * URLs relativas a este app.css, que fica em #APP_FILES#.
+ *   .ec-brand-mark  só o símbolo (logo-ecloud-marca.svg)
+ *   .ec-logo        logotipo completo (logo-ecloud.png, 1707 x 380)
+ */
+.ec-brand-mark {
+    display: inline-block;
+    flex: none;
+    width: 3rem;
+    height: 3rem;
+    background: url("logo-ecloud-marca.svg") center / contain no-repeat;
+}
+
+.ec-logo {
+    display: inline-block;
+    flex: none;
+    height: 2.25rem;
+    aspect-ratio: 1707 / 380;
+    background: url("logo-ecloud.png") left center / contain no-repeat;
+    vertical-align: middle;
+}
+
+.ec-logo--auth {
+    height: 2.75rem;
+    max-width: 100%;
+    background-position: center;
+}
+
+.ec-auth-title {
+    margin: 0;
+    line-height: 1;
+}
+
+.ec-auth-subtitle {
+    margin: 0;
+    font-size: .875rem;
+    color: var(--ec-muted);
+}
+
+
+.ec-auth-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0 16px;
+    text-align: center;
+}
+
+/*
+ * Login em tela única (página 9999): um fundo grafite com ondas cobre a tela
+ * toda; à esquerda ficam os anúncios (PKG_ECLOUD_ANUNCIO.LOGIN_HTML) e embaixo deles o
+ * carrossel de depoimentos aprovados (PKG_ECLOUD_DEPOIMENTO.LOGIN_HTML), dentro de
+ * .ec-showcase; à direita, o cartão de vidro com o formulário. Sem anúncio nem
+ * depoimento, sobra o cartão centralizado no mesmo fundo. A vitrine é fixa na
+ * parte esquerda, então o layout não depende da marcação do template de login.
+ */
+.t-PageBody--login.ec-login-stage {
+    --ec-stage-left: clamp(480px, 56vw, 960px);
+    color: #ffffff;
+    background:
+        /* Anéis decorativos atrás do cartão. */
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 600' fill='none'%3E%3Ccircle cx='300' cy='300' r='298' stroke='%23ffffff' stroke-opacity='.06' stroke-width='2'/%3E%3Ccircle cx='300' cy='300' r='210' stroke='%23ffffff' stroke-opacity='.07' stroke-width='2'/%3E%3Ccircle cx='300' cy='300' r='120' fill='%233a8bff' fill-opacity='.035'/%3E%3C/svg%3E") right -140px top -180px / min(52vw, 640px) auto no-repeat,
+        /* Ondas no pé da tela, em grafite claro e um fio na cor da marca. */
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 400' preserveAspectRatio='none'%3E%3Cpath d='M0 170C240 90 420 110 640 170S1080 260 1440 150V400H0Z' fill='%23ffffff' fill-opacity='.035'/%3E%3Cpath d='M0 250C260 180 520 210 760 260S1180 320 1440 230V400H0Z' fill='%233a8bff' fill-opacity='.07'/%3E%3Cpath d='M0 320C300 270 560 300 820 330S1240 360 1440 300V400H0Z' fill='%23101521' fill-opacity='.55'/%3E%3Cpath d='M0 250C260 180 520 210 760 260S1180 320 1440 230' fill='none' stroke='%233a8bff' stroke-opacity='.35' stroke-width='1.5'/%3E%3C/svg%3E") left bottom / 100% 42vh no-repeat,
+        radial-gradient(circle at 18% 12%, rgba(58, 139, 255, .16) 0, transparent 38%),
+        radial-gradient(rgba(255, 255, 255, .045) 1px, transparent 1px) 0 0 / 24px 24px,
+        linear-gradient(160deg, #253047 0%, #1a2133 52%, #121826 100%);
+    background-color: #1a2133;
+}
+
+/* Tela larga: o fundo fica parado e a vitrine fixa parece um quadro só. */
+@media (min-width: 1024px) {
+    .t-PageBody--login.ec-login-stage {
+        background-attachment: fixed;
+    }
+}
+
+/* Cartão de vidro: claro e translúcido sobre o fundo escuro. */
+.ec-login-stage .t-Login-region {
+    border: 1px solid rgba(255, 255, 255, .55);
+    border-radius: 24px;
+    background: rgba(255, 255, 255, .9);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, .38), inset 0 1px 0 rgba(255, 255, 255, .6);
+    color: var(--ec-ink);
+}
+
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .ec-login-stage .t-Login-region {
+        background: rgba(255, 255, 255, .94);
+        -webkit-backdrop-filter: blur(18px) saturate(140%);
+        backdrop-filter: blur(18px) saturate(140%);
+    }
+}
+
+
+.ec-login-stage .ec-auth-title {
+    font-size: 2rem;
+}
+
+.ec-showcase {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(28px, 5vh, 56px);
+    box-sizing: border-box;
+}
+
+@media (min-width: 1024px) {
+    .t-PageBody--login.ec-login-stage:has(.ec-showcase) {
+        padding-left: var(--ec-stage-left);
+        box-sizing: border-box;
+    }
+
+    .ec-login-stage .ec-showcase {
+        position: fixed;
+        inset: 0 auto 0 0;
+        z-index: 1;
+        width: var(--ec-stage-left);
+        justify-content: center;
+        padding: clamp(32px, 6vh, 72px) clamp(32px, 4vw, 72px) clamp(32px, 6vh, 72px) clamp(40px, 9vw, 160px);
+        overflow-y: auto;
+        scrollbar-width: none;
+    }
+}
+
+@media (max-width: 1023.98px) {
+    .ec-login-stage .ec-showcase {
+        width: 100%;
+        max-width: 34rem;
+        margin: 32px auto 0;
+        padding: 0 16px 40px;
+    }
+}
+
+/* Anúncio dentro da vitrine: sem painel próprio, direto sobre o fundo. */
+.ec-showcase .ec-ads {
+    gap: 20px;
+    width: auto;
+    max-width: 40rem;
+    margin: 0;
+    padding: 0;
+    border-radius: 0;
+    overflow: visible;
+    background: none;
+}
+
+.ec-showcase .ec-ad-orbit {
+    display: none;
+}
+
+/* As etiquetas viram a lista com "check" do lado do anúncio. */
+.ec-showcase .ec-ad-tags {
+    flex-direction: column;
+    gap: 12px;
+}
+
+.ec-showcase .ec-ad-tags li {
+    position: relative;
+    padding: 0 0 0 34px;
+    border: 0;
+    background: none;
+    font-size: .9375rem;
+    font-weight: 500;
+    line-height: 22px;
+    color: #e6ebf3;
+}
+
+.ec-showcase .ec-ad-tags li::before {
+    content: "\2713";
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--ec-ad-accent) 22%, transparent);
+    color: var(--ec-ad-accent);
+    font-size: .75rem;
+    font-weight: 800;
+    line-height: 22px;
+    text-align: center;
+}
+
+.ec-showcase .ec-ads-foot {
+    justify-content: flex-start;
+}
+
+/* Depoimentos: cartão translúcido que troca sozinho, pontos embaixo. */
+.ec-quotes {
+    max-width: 36rem;
+}
+
+.ec-quotes-label {
+    margin: 0 0 12px;
+    font-size: .6875rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: #8a93a6;
+}
+
+.ec-quote {
+    margin: 0;
+    padding: 22px 26px;
+    border: 1px solid rgba(255, 255, 255, .1);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, .07);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    animation: ec-ad-in .45s ease both;
+}
+
+.ec-quote[hidden] {
+    display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ec-quote { animation: none; }
+}
+
+.ec-quote-stars {
+    display: block;
+    margin-bottom: 8px;
+    font-size: .875rem;
+    letter-spacing: 2px;
+    color: var(--ec-brand-light);
+}
+
+.ec-quote-stars-off {
+    color: rgba(255, 255, 255, .22);
+}
+
+.ec-quote-text {
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.ec-quote-text p {
+    margin: 0;
+    font-size: 1.0625rem;
+    line-height: 1.55;
+    color: #ffffff;
+}
+
+.ec-quote-author {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 16px;
+    font-size: .875rem;
+    line-height: 1.35;
+}
+
+.ec-quote-author strong {
+    display: block;
+    color: #ffffff;
+}
+
+.ec-quote-avatar {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--ec-brand);
+    color: var(--ec-brand-contrast);
+    font-weight: 800;
+}
+
+.ec-quote-meta {
+    color: #b3bccd;
+}
+
+.ec-quotes-dots {
+    display: flex;
+    gap: 4px;
+    margin-top: 12px;
+}
+
+/* Aviso da situação (página "Meu depoimento"). */
+.ec-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 18px;
+    border-radius: var(--ec-radius-sm);
+    border: 1px solid var(--ec-line);
+    background: #ffffff;
+}
+
+.ec-notice p {
+    margin: 0;
+}
+
+.ec-notice .fa {
+    margin-top: 2px;
+    font-size: 1.125rem;
+}
+
+.ec-notice--info { background: #f4f7ff; border-color: #dbe4ff; }
+.ec-notice--info .fa { color: #2f6fed; }
+.ec-notice--success { background: #effaf3; border-color: #cdeedb; }
+.ec-notice--success .fa { color: #1f9d55; }
+.ec-notice--warning { background: var(--ec-brand-soft); border-color: #bfd8ff; }
+.ec-notice--warning .fa { color: #1f6fe5; }
+.ec-notice--danger { background: #fdf0f0; border-color: #f6d0d1; }
+.ec-notice--danger .fa { color: #e5484d; }
+
+/* Painel de anúncios (fora da vitrine: base escura própria). */
+.ec-ads {
+    --ec-ads-pad: clamp(32px, 5vw, 80px);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 32px;
+    padding: var(--ec-ads-pad);
+    box-sizing: border-box;
+    overflow: hidden;
+    color: #ffffff;
+    background:
+        radial-gradient(circle at 85% 15%, rgba(255, 255, 255, .06) 0, transparent 35%),
+        radial-gradient(rgba(255, 255, 255, .05) 1px, transparent 1px) 0 0 / 22px 22px,
+        var(--ec-ink);
+}
+
+@media (max-width: 1023.98px) {
+    .ec-ads {
+        width: 100%;
+        max-width: 30rem;
+        margin: 24px auto 0;
+        padding: 32px 24px;
+        border-radius: 20px;
+    }
+
+    .ec-ad-orbit {
+        display: none;
+    }
+}
+
+.ec-ads-track {
+    display: flex;
+    align-items: center;
+}
+
+.ec-ad {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 24px;
+    width: 100%;
+    animation: ec-ad-in .45s ease both;
+}
+
+.ec-ad[hidden] {
+    display: none;
+}
+
+/* Só opacidade: transform faria a órbita se posicionar pelo anúncio, não pelo painel. */
+@keyframes ec-ad-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ec-ad { animation: none; }
+}
+
+.ec-ad-content {
+    position: relative;
+    z-index: 1;
+    min-width: 0;
+    max-width: 32rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.ec-ad-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--ec-ad-accent) 55%, transparent);
+    background: color-mix(in srgb, var(--ec-ad-accent) 10%, transparent);
+    color: var(--ec-ad-accent);
+    font-size: .75rem;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.ec-ad-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--ec-ad-accent);
+}
+
+.ec-ad-sponsor {
+    margin: 0;
+    font-size: .75rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: #a3acbe;
+}
+
+.ec-ad-title {
+    margin: 0;
+    font-size: clamp(2rem, 3.2vw, 3rem);
+    line-height: 1.05;
+    font-weight: 800;
+    letter-spacing: -.02em;
+    color: #ffffff;
+}
+
+.ec-ad-highlight {
+    display: block;
+    color: var(--ec-ad-accent);
+}
+
+.ec-ad-body {
+    margin: 0;
+    max-width: 28rem;
+    font-size: 1rem;
+    line-height: 1.6;
+    color: #c9d1df;
+}
+
+.ec-ad-tags {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.ec-ad-tags li {
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, .12);
+    background: rgba(255, 255, 255, .06);
+    font-size: .8125rem;
+    font-weight: 600;
+    color: #e6ebf3;
+}
+
+.ec-ad-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 48px;
+    margin-top: 8px;
+    padding: 0 24px;
+    border-radius: 12px;
+    background: var(--ec-ad-accent);
+    color: var(--ec-ad-on-accent, var(--ec-ink));
+    font-weight: 800;
+    text-decoration: none;
+    box-shadow: 0 12px 32px color-mix(in srgb, var(--ec-ad-accent) 35%, transparent);
+    transition: transform .15s ease, filter .15s ease;
+}
+
+.ec-ad-cta:hover,
+.ec-ad-cta:focus-visible {
+    color: var(--ec-ad-on-accent, var(--ec-ink));
+    filter: brightness(1.06);
+    transform: translateY(-1px);
+    text-decoration: none;
+}
+
+.ec-ad-cta:focus-visible {
+    outline: 3px solid #ffffff;
+    outline-offset: 3px;
+}
+
+.ec-ad-media {
+    position: relative;
+    z-index: 1;
+    max-width: 32rem;
+}
+
+.ec-ad-media img {
+    display: block;
+    max-width: 100%;
+    max-height: 15rem;
+    border-radius: 20px;
+    object-fit: contain;
+}
+
+/* Sem imagem: órbita decorativa na cor do anúncio, no canto do painel. */
+.ec-ad-orbit {
+    position: absolute;
+    right: -70px;
+    bottom: -70px;
+    width: min(30vw, 380px);
+    aspect-ratio: 1;
+    opacity: .7;
+    pointer-events: none;
+}
+
+.ec-ad-orbit span {
+    position: absolute;
+    border-radius: 50%;
+}
+
+.ec-ad-orbit span:nth-child(1) {
+    inset: 0;
+    border: 1px solid rgba(255, 255, 255, .14);
+}
+
+.ec-ad-orbit span:nth-child(2) {
+    inset: 14%;
+    border: 1px solid rgba(255, 255, 255, .18);
+}
+
+.ec-ad-orbit span:nth-child(1)::after,
+.ec-ad-orbit span:nth-child(2)::after {
+    content: "";
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--ec-ad-accent);
+    box-shadow: 0 0 12px var(--ec-ad-accent);
+}
+
+.ec-ad-orbit span:nth-child(1)::after { right: 12%; bottom: 10%; }
+.ec-ad-orbit span:nth-child(2)::after { left: 4%; bottom: 28%; }
+
+.ec-ad-orbit span:nth-child(3) {
+    inset: 31%;
+    background: radial-gradient(circle at 35% 30%,
+        color-mix(in srgb, var(--ec-ad-accent) 60%, #ffffff) 0,
+        var(--ec-ad-accent) 45%,
+        color-mix(in srgb, var(--ec-ad-accent) 70%, #000000) 100%);
+    box-shadow: 0 0 90px color-mix(in srgb, var(--ec-ad-accent) 45%, transparent);
+}
+
+.ec-ads-foot {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.ec-ads-label {
+    font-size: .6875rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: #8a93a6;
+}
+
+.ec-ads-dots {
+    display: flex;
+    gap: 4px;
+}
+
+.ec-ads-dot {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+}
+
+.ec-ads-dot::before {
+    content: "";
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .28);
+    transition: width .2s ease, background-color .2s ease;
+}
+
+.ec-ads-dot.is-active::before {
+    width: 28px;
+    background: var(--ec-brand-light);
+}
+
+.ec-ads-dot:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
+    border-radius: 6px;
+}
+
+/* Ofertas e parceiros (página da escritório): os anúncios em cartões escuros. */
+.ec-ads-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr));
+    gap: 24px;
+    margin-top: 16px;
+}
+
+.ec-ad-card {
+    position: relative;
+    box-sizing: border-box;
+    overflow: hidden;
+    padding: 28px;
+    border-radius: 20px;
+    color: #ffffff;
+    background:
+        radial-gradient(circle at 100% 0, color-mix(in srgb, var(--ec-ad-accent) 22%, transparent) 0, transparent 45%),
+        var(--ec-ink);
+    box-shadow: 0 12px 32px rgba(28, 34, 48, .14);
+    animation: none;
+}
+
+.ec-ad-card .ec-ad-media,
+.ec-ad-card .ec-ad-media img {
+    max-width: 100%;
+}
+
+.ec-ad-card .ec-ad-media img {
+    max-height: 11rem;
+    border-radius: 14px;
+}
+
+.ec-ad-card .ec-ad-title {
+    font-size: clamp(1.5rem, 2vw, 1.875rem);
+}
+
+.ec-ad-card .ec-ad-cta {
+    margin-top: 4px;
+}
+
+/* Mensagem de lista vazia (ofertas sem anúncio). */
+.ec-empty {
+    margin: 16px 0 0;
+    color: var(--ec-muted);
+}
+
+/* Prévia da imagem do anúncio no cadastro (página 101). */
+.ec-ad-preview {
+    display: block;
+    max-width: 100%;
+    max-height: 12rem;
+    border-radius: var(--ec-radius-sm);
+    border: 1px solid var(--ec-line);
+    background: var(--ec-sand);
+    object-fit: contain;
+}

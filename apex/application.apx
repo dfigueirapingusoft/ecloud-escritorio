@@ -2,8 +2,8 @@ app ECLOUD (
     name: Ecloud - Escritório Cloud
     version: Release 1.0
     logo {
-        type: text
-        text: Ecloud - Escritório Cloud
+        type: image
+        imageUrl: #APP_FILES#logo-ecloud.png
     }
     navigation {
         homeUrl: {
@@ -58,6 +58,12 @@ app ECLOUD (
     }
     errorHandling {
         errorHandlingFunctionName: pkg_ecloud_util.tratar_erro_apex
+    }
+    css {
+        fileUrls: [
+            https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap
+            #APP_FILES#app.css
+        ]
     }
     authentication {
         scheme: @oracle-apex-accounts

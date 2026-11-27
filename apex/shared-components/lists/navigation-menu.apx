@@ -414,6 +414,21 @@ list navigation-menu (
         }
     )
 
+    entry ofertas (
+        label: Ofertas e parceiros
+        icon {
+            imageIconCssClasses: fa-gift
+        }
+        layout {
+            sequence: 105
+        }
+        link {
+            target: {
+                page: 105
+            }
+        }
+    )
+
     entry administracao (
         label: Administração
         icon {
@@ -520,6 +535,58 @@ list navigation-menu (
         }
         security {
             authorizationScheme: @administrador
+        }
+    )
+
+    entry anuncios (
+        label: Anúncios do login
+        icon {
+            imageIconCssClasses: fa-bullhorn
+        }
+        layout {
+            sequence: 160
+            parentEntry: @administracao
+        }
+        isCurrent {
+            type: pages
+            pages: [
+                100
+                101
+            ]
+        }
+        link {
+            target: {
+                page: 100
+            }
+        }
+        security {
+            authorizationScheme: @admin-plataforma
+        }
+    )
+
+    entry depoimentos (
+        label: Depoimentos
+        icon {
+            imageIconCssClasses: fa-comments-o
+        }
+        layout {
+            sequence: 170
+            parentEntry: @administracao
+        }
+        isCurrent {
+            type: pages
+            pages: [
+                102
+                103
+            ]
+        }
+        link {
+            target: {
+                page: 102
+            }
+        }
+        security {
+            authorizationScheme: @admin-plataforma
         }
     )
 

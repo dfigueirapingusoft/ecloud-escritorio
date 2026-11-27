@@ -1,0 +1,24 @@
+appProcess anuncio-evento (
+    name: ANUNCIO_EVENTO
+    type: executeCode
+    source {
+        plsqlCode:
+            ```plsql
+            -- Exibição ou clique de anúncio vindo do carrossel (anuncios.js):
+            -- x01 = id do anúncio, x02 = EXIBICAO ou CLIQUE. Público, porque a
+            -- vitrine aparece na tela de login. O pacote grava em transação
+            -- autônoma e ignora id inválido; a resposta é só um "ok".
+            pkg_ecloud_anuncio.registrar_evento(
+                p_anuncio_id => to_number(apex_application.g_x01 default null on conversion error),
+                p_evento     => substr(apex_application.g_x02, 1, 20));
+            htp.p('ok');
+            ```
+    }
+    execution {
+        sequence: 10
+        point: ajaxCallback
+    }
+    comments {
+        comments: Contagem de exibições e cliques dos anúncios (tela de login e Ofertas e parceiros).
+    }
+)

@@ -1,0 +1,891 @@
+page 101 (
+    name: Anúncio
+    alias: ANUNCIO
+    title: Anúncio
+    pageGroup: @administracao
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @/modal-dialog
+        templateOptions: #DEFAULT#
+    }
+    dialog {
+        chained: false
+        resizable: false
+    }
+    security {
+        authorizationScheme: @admin-plataforma
+    }
+
+    region buttons (
+        name: Botões
+        type: staticContent
+        layout {
+            sequence: 30
+            slot: dialogFooter
+        }
+        appearance {
+            template: @/buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region anuncio (
+        name: Anúncio
+        type: form
+        source {
+            location: localDatabase
+            tableName: ANUNCIO
+        }
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @/blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        edit {
+            enabled: true
+            allowedOperations: [
+                add
+                update
+                delete
+            ]
+        }
+    )
+
+    region imagem (
+        name: Imagem
+        type: dynamicContent
+        source {
+            plsqlFunctionBody:
+                ```plsql
+                -- Imagem atual (lida do Worker de mídia) e estatística dos últimos 30 dias.
+                declare
+                    l_url   varchar2(2000);
+                    l_html  varchar2(4000);
+                begin
+                    if :P101_ANUNCIO_ID is null then
+                        return '<p class="u-text-secondary">Grave o anúncio junto com a imagem ou envie a imagem depois.</p>';
+                    end if;
+                    l_url := pkg_ecloud_anuncio.imagem_url(:P101_ANUNCIO_ID);
+                    l_html := case
+                                  when l_url is not null then
+                                      '<img class="ec-ad-preview" alt="Imagem atual do anúncio" src="'
+                                      || apex_escape.html_attribute(l_url) || '">'
+                                  else '<p class="u-text-secondary">Sem imagem.</p>'
+                              end;
+                    return l_html || '<p class="u-text-secondary">'
+                        || apex_escape.html(pkg_ecloud_anuncio.estatistica_rotulo(:P101_ANUNCIO_ID, 30))
+                        || ' nos últimos 30 dias.</p>';
+                end;
+                ```
+        }
+        layout {
+            sequence: 20
+            slot: contentBody
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P101_ANUNCIO_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @anuncio
+            slot: regionBody
+        }
+        source {
+            formRegion: @anuncio
+            column: ANUNCIO_ID
+            dataType: number
+            primaryKey: true
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+    pageItem P101_PATROCINADOR (
+        type: textField
+        label {
+            label: Patrocinador
+            alignment: right
+        }
+        layout {
+            sequence: 20
+            region: @anuncio
+            slot: regionBody
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+            maxLength: 120
+        }
+        source {
+            formRegion: @anuncio
+            column: PATROCINADOR
+            dataType: varchar2
+        }
+    )
+    pageItem P101_CHAMADA (
+        type: textField
+        label {
+            label: Chamada (selo)
+            alignment: right
+        }
+        layout {
+            sequence: 30
+            region: @anuncio
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 60
+        }
+        source {
+            formRegion: @anuncio
+            column: CHAMADA
+            dataType: varchar2
+        }
+        help {
+            inlineHelpText: Texto curto do selo acima do título, por exemplo "Parceiro Ecloud".
+        }
+    )
+    pageItem P101_TITULO (
+        type: textField
+        label {
+            label: Título
+            alignment: right
+        }
+        layout {
+            sequence: 40
+            region: @anuncio
+            slot: regionBody
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+            maxLength: 120
+        }
+        source {
+            formRegion: @anuncio
+            column: TITULO
+            dataType: varchar2
+        }
+    )
+    pageItem P101_DESTAQUE (
+        type: textField
+        label {
+            label: Destaque do título
+            alignment: right
+        }
+        layout {
+            sequence: 50
+            region: @anuncio
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 80
+        }
+        source {
+            formRegion: @anuncio
+            column: DESTAQUE
+            dataType: varchar2
+        }
+        help {
+            inlineHelpText: Segunda linha do título, na cor de destaque.
+        }
+    )
+    pageItem P101_TEXTO (
+        type: textarea
+        label {
+            label: Texto
+            alignment: right
+        }
+        layout {
+            sequence: 60
+            region: @anuncio
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 400
+        }
+        source {
+            formRegion: @anuncio
+            column: TEXTO
+            dataType: varchar2
+        }
+    )
+    pageItem P101_ETIQUETAS (
+        type: textField
+        label {
+            label: Etiquetas
+            alignment: right
+        }
+        layout {
+            sequence: 70
+            region: @anuncio
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 400
+        }
+        source {
+            formRegion: @anuncio
+            column: ETIQUETAS
+            dataType: varchar2
+        }
+        help {
+            inlineHelpText: Separe por ponto e vírgula. No login viram uma lista com marcação.
+        }
+    )
+    pageItem P101_BOTAO_ROTULO (
+        type: textField
+        label {
+            label: Texto do botão
+            alignment: right
+        }
+        layout {
+            sequence: 80
+            region: @anuncio
+            slot: regionBody
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 40
+        }
+        source {
+            formRegion: @anuncio
+            column: BOTAO_ROTULO
+            dataType: varchar2
+        }
+    )
+    pageItem P101_BOTAO_URL (
+        type: textField
+        label {
+            label: Link do anunciante
+            alignment: right
+        }
+        layout {
+            sequence: 90
+            region: @anuncio
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 8
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 1000
+        }
+        source {
+            formRegion: @anuncio
+            column: BOTAO_URL
+            dataType: varchar2
+        }
+        help {
+            inlineHelpText: Endereço completo com https://. Abre em outra aba; o clique é contado.
+        }
+    )
+    pageItem P101_COR_DESTAQUE (
+        type: colorPicker
+        label {
+            label: Cor de destaque
+            alignment: right
+        }
+        layout {
+            sequence: 100
+            region: @anuncio
+            slot: regionBody
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        source {
+            formRegion: @anuncio
+            column: COR_DESTAQUE
+            dataType: varchar2
+        }
+        settings {
+            useDefaults: false
+            mode: simple
+            displayAs: popup
+            colorPreset: custom
+            colors: #3A8BFF:#6FD0FF:#1F6FE5:#22C55E:#F59E0B:#EF4444:#A855F7:#FFFFFF
+            contrastWith: staticColor
+            contrastColor: #1C2230
+            returnValueAs: hex
+        }
+        default {
+            type: static
+            staticValue: #3A8BFF
+        }
+    )
+    pageItem P101_INICIO_EM (
+        type: datePicker
+        label {
+            label: Início
+            alignment: right
+        }
+        layout {
+            sequence: 110
+            region: @anuncio
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        source {
+            formRegion: @anuncio
+            column: INICIO_EM
+            dataType: date
+        }
+    )
+    pageItem P101_FIM_EM (
+        type: datePicker
+        label {
+            label: Fim
+            alignment: right
+        }
+        layout {
+            sequence: 120
+            region: @anuncio
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        source {
+            formRegion: @anuncio
+            column: FIM_EM
+            dataType: date
+        }
+        help {
+            inlineHelpText: Em branco: sem data para sair do ar.
+        }
+    )
+    pageItem P101_ORDEM (
+        type: numberField
+        label {
+            label: Ordem
+            alignment: right
+        }
+        layout {
+            sequence: 130
+            region: @anuncio
+            slot: regionBody
+            columnSpan: 3
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        source {
+            formRegion: @anuncio
+            column: ORDEM
+            dataType: number
+        }
+        default {
+            type: static
+            staticValue: 10
+        }
+    )
+    pageItem P101_EXIBIR_LOGIN (
+        type: switch
+        label {
+            label: Mostrar no login
+            alignment: right
+        }
+        layout {
+            sequence: 140
+            region: @anuncio
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 3
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        source {
+            formRegion: @anuncio
+            column: EXIBIR_LOGIN
+            dataType: varchar2
+        }
+        settings {
+            useDefaults: false
+            onValue: S
+            offValue: N
+        }
+        default {
+            type: static
+            staticValue: S
+        }
+    )
+    pageItem P101_EXIBIR_OFERTAS (
+        type: switch
+        label {
+            label: Mostrar em Ofertas e parceiros
+            alignment: right
+        }
+        layout {
+            sequence: 150
+            region: @anuncio
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 3
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        source {
+            formRegion: @anuncio
+            column: EXIBIR_OFERTAS
+            dataType: varchar2
+        }
+        settings {
+            useDefaults: false
+            onValue: S
+            offValue: N
+        }
+        default {
+            type: static
+            staticValue: S
+        }
+    )
+    pageItem P101_ATIVO (
+        type: switch
+        label {
+            label: Ativo
+            alignment: right
+        }
+        layout {
+            sequence: 160
+            region: @anuncio
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 3
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        source {
+            formRegion: @anuncio
+            column: ATIVO
+            dataType: varchar2
+        }
+        settings {
+            useDefaults: false
+            onValue: S
+            offValue: N
+        }
+        default {
+            type: static
+            staticValue: S
+        }
+    )
+    pageItem P101_IMAGEM (
+        type: fileUpload
+        label {
+            label: Nova imagem (PNG, JPEG, WebP ou GIF, até 2 MiB)
+            alignment: right
+        }
+        layout {
+            sequence: 20
+            region: @imagem
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        display {
+            displayAs: inlineDropzone
+            dropzoneTitle: Arraste a imagem do anúncio
+            dropzoneDesc: ou clique para escolher o arquivo
+        }
+        storage {
+            type: appTempFiles
+            purgeFileAt: endOfRequest
+            fileTypes: image/png,image/jpeg,image/webp,image/gif
+            maxFileSize: 2048
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Cancelar
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button delete (
+        buttonName: DELETE
+        label: Excluir
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: delete
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: [
+                #DEFAULT#
+                t-Button--danger
+                t-Button--simple
+            ]
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: delete
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: &APP_TEXT$DELETE_MSG!RAW.
+            style: danger
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P101_ANUNCIO_ID
+        }
+    )
+
+    button remover-imagem (
+        buttonName: REMOVER_IMAGEM
+        label: Remover imagem
+        layout {
+            sequence: 10
+            region: @imagem
+            slot: edit
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: [
+                #DEFAULT#
+                t-Button--danger
+                t-Button--simple
+            ]
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: Remover a imagem deste anúncio? O arquivo também é apagado do armazenamento.
+            style: danger
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery: select 1 from anuncio where anuncio_id = :P101_ANUNCIO_ID and imagem_chave is not null
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Salvar alterações
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: update
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P101_ANUNCIO_ID
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Criar
+        layout {
+            sequence: 40
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: insert
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P101_ANUNCIO_ID
+        }
+    )
+
+    validation periodo (
+        name: Fim depois do início
+        validation {
+            type: functionBodyReturningBoolean
+            plsqlFunctionBody:
+                ```plsql
+                return :P101_INICIO_EM is null or :P101_FIM_EM is null
+                    or to_date(:P101_FIM_EM, 'DD/MM/YYYY') >= to_date(:P101_INICIO_EM, 'DD/MM/YYYY');
+                ```
+        }
+        error {
+            errorMessage: O fim precisa ser igual ou posterior ao início.
+            associatedItem: @P101_FIM_EM
+        }
+        execution {
+            sequence: 10
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE
+        }
+    )
+
+    validation url-https (
+        name: Link com http ou https
+        validation {
+            type: functionBodyReturningBoolean
+            plsqlFunctionBody:
+                ```plsql
+                return :P101_BOTAO_URL is null
+                    or lower(:P101_BOTAO_URL) like 'https://%'
+                    or lower(:P101_BOTAO_URL) like 'http://%';
+                ```
+        }
+        error {
+            errorMessage: Informe o endereço completo, começando com https://.
+            associatedItem: @P101_BOTAO_URL
+        }
+        execution {
+            sequence: 20
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancelar diálogo
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    process initialize-form (
+        name: Inicializar formulário
+        type: formInitialization
+        formRegion: @anuncio
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 4598601618
+        }
+    )
+
+    process apagar-imagem-antes-de-excluir (
+        name: Apagar a imagem do R2 antes de excluir
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                -- Sem isto o arquivo ficaria órfão no bucket depois do DELETE.
+                pkg_ecloud_anuncio.remover_imagem(:P101_ANUNCIO_ID);
+                ```
+        }
+        execution {
+            sequence: 5
+        }
+        advanced {
+            executionMappingIdentifier: 6011953177
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: DELETE
+        }
+    )
+
+    process process-form (
+        name: Gravar formulário
+        type: formAutoRowProcessing
+        formRegion: @anuncio
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 2690404090
+        }
+    )
+
+    process salvar-imagem (
+        name: Enviar a imagem ao Worker de mídia
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                -- O arquivo está em APEX_APPLICATION_TEMP_FILES até o fim desta requisição.
+                -- O pacote valida tipo e tamanho, envia ao R2 pelo Worker (PKG_RTC_HTTP,
+                -- com log) e apaga a imagem anterior.
+                pkg_ecloud_anuncio.salvar_imagem(
+                    p_anuncio_id     => :P101_ANUNCIO_ID,
+                    p_temp_file_name => :P101_IMAGEM);
+                ```
+        }
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 5989536573
+        }
+        serverSideCondition {
+            type: expression
+            plsqlExpression: :REQUEST in ('CREATE', 'SAVE') and :P101_IMAGEM is not null
+        }
+    )
+
+    process remover-imagem (
+        name: Remover imagem
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                pkg_ecloud_anuncio.remover_imagem(:P101_ANUNCIO_ID);
+                ```
+        }
+        execution {
+            sequence: 30
+        }
+        advanced {
+            executionMappingIdentifier: 4939828323
+        }
+        successMessage {
+            successMessage: Imagem removida.
+        }
+        serverSideCondition {
+            whenButtonPressed: @remover-imagem
+        }
+    )
+
+    process close-dialog (
+        name: Fechar diálogo
+        type: closeDialog
+        settings {
+            showSuccessMessages: false
+        }
+        execution {
+            sequence: 50
+        }
+        advanced {
+            executionMappingIdentifier: 4201558812
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE,DELETE
+        }
+    )
+
+)

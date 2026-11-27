@@ -23,3 +23,28 @@ file "icons/app-icon-512.png" (
     charSet: utf-8
 )
 
+
+file "anuncios.js" (
+    mimeType: text/javascript
+    charSet: utf-8
+)
+
+file "app.css" (
+    mimeType: text/css
+    charSet: utf-8
+)
+
+file "depoimentos.js" (
+    mimeType: text/javascript
+    charSet: utf-8
+)
+
+file "logo-ecloud-marca.svg" (
+    mimeType: image/svg+xml
+    charSet: utf-8
+)
+
+file "logo-ecloud.png" (
+    mimeType: image/png
+    charSet: utf-8
+)
