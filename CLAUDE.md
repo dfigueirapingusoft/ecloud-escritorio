@@ -83,6 +83,7 @@ python3 tools/verificar_sql_apex.py /tmp/v.sql && sql ECLOUD@base @/tmp/v.sql
 * Processo de aplicação (`app-processes.apx`) não aceita `advanced.staticId`;
   Ajax Callback é `execution.point: ajaxCallback`. Item `hidden` e
   `starRating` não aceitam `layout.alignment`.
+* UF aparece só pela sigla ("SP") em todo o app: LOV compartilhada `ufs` (27 UFs fixas, sem depender do cache).
 * Teste local do app: `db/testes/dados_demo.sql <workspace> <usuario> <senha>` cria usuário e dados fictícios.
 * No PL/SQL, `JSON_VALUE` nativo ignora item methods (`type()`, `size()`): use SQL.
 * Função privada de pacote não pode ser usada dentro de SQL (PLS-00231): torne-a

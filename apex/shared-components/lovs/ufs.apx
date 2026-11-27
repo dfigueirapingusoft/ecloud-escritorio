@@ -4,40 +4,38 @@ lov ufs (
         type: sqlQuery
         sqlQuery:
             ```sql
-            -- As 27 UFs ficam fixas aqui: a lista não pode depender do cache dos dados
-            -- abertos (RTC_DA_UF), que fica vazio até a primeira sincronização. Sem a UF
-            -- na lista, a busca por CEP não conseguia preenchê-la.
-            -- O nome do cache, quando existe, tem preferência.
-            select u.sigla || ' - ' || coalesce(c.nome, u.nome) d, u.sigla r
-              from (select 'AC' sigla, 'Acre' nome from dual
-                    union all select 'AL', 'Alagoas' from dual
-                    union all select 'AP', 'Amapá' from dual
-                    union all select 'AM', 'Amazonas' from dual
-                    union all select 'BA', 'Bahia' from dual
-                    union all select 'CE', 'Ceará' from dual
-                    union all select 'DF', 'Distrito Federal' from dual
-                    union all select 'ES', 'Espírito Santo' from dual
-                    union all select 'GO', 'Goiás' from dual
-                    union all select 'MA', 'Maranhão' from dual
-                    union all select 'MT', 'Mato Grosso' from dual
-                    union all select 'MS', 'Mato Grosso do Sul' from dual
-                    union all select 'MG', 'Minas Gerais' from dual
-                    union all select 'PA', 'Pará' from dual
-                    union all select 'PB', 'Paraíba' from dual
-                    union all select 'PR', 'Paraná' from dual
-                    union all select 'PE', 'Pernambuco' from dual
-                    union all select 'PI', 'Piauí' from dual
-                    union all select 'RJ', 'Rio de Janeiro' from dual
-                    union all select 'RN', 'Rio Grande do Norte' from dual
-                    union all select 'RS', 'Rio Grande do Sul' from dual
-                    union all select 'RO', 'Rondônia' from dual
-                    union all select 'RR', 'Roraima' from dual
-                    union all select 'SC', 'Santa Catarina' from dual
-                    union all select 'SP', 'São Paulo' from dual
-                    union all select 'SE', 'Sergipe' from dual
-                    union all select 'TO', 'Tocantins' from dual) u
-              left join rtc_da_uf c on c.sigla = u.sigla
-             order by u.sigla
+            -- As 27 UFs, exibidas só pela sigla (padrão do projeto: "SP", sem o nome).
+            -- A lista é fixa: não depende do cache dos dados abertos (RTC_DA_UF), que
+            -- fica vazio até a primeira sincronização e impedia a busca por CEP.
+            select sigla d, sigla r
+              from (select 'AC' sigla from dual
+                    union all select 'AL' from dual
+                    union all select 'AP' from dual
+                    union all select 'AM' from dual
+                    union all select 'BA' from dual
+                    union all select 'CE' from dual
+                    union all select 'DF' from dual
+                    union all select 'ES' from dual
+                    union all select 'GO' from dual
+                    union all select 'MA' from dual
+                    union all select 'MT' from dual
+                    union all select 'MS' from dual
+                    union all select 'MG' from dual
+                    union all select 'PA' from dual
+                    union all select 'PB' from dual
+                    union all select 'PR' from dual
+                    union all select 'PE' from dual
+                    union all select 'PI' from dual
+                    union all select 'RJ' from dual
+                    union all select 'RN' from dual
+                    union all select 'RS' from dual
+                    union all select 'RO' from dual
+                    union all select 'RR' from dual
+                    union all select 'SC' from dual
+                    union all select 'SP' from dual
+                    union all select 'SE' from dual
+                    union all select 'TO' from dual)
+             order by sigla
             ```
     }
     columnMapping {
