@@ -20,8 +20,8 @@ Decisões de 27/11/2026 (Daniel):
 
 | Fase | Entrega | Situação |
 | --- | --- | --- |
-| 1 | Tabelas (`01d`), VPD (`02`), specs (`03d`), serviço STONE no `PKG_RTC_HTTP`, dados iniciais, contrato `openapi-stone.json`, teste VPD | este PR |
-| 2 | Bodies (`06d`), webhook no ORDS (`08_ords_webhook_stone.sql`), jobs, testes `fase2_assinatura.sql` (sem HTTP) e `fase2_assinatura_integracao.sql` (sandbox) | a fazer |
+| 1 | Tabelas (`01d`), VPD (`02`), specs (`03d`), serviço STONE no `PKG_RTC_HTTP`, dados iniciais, contrato `openapi-stone.json`, teste VPD | feita (PR #8) |
+| 2 | Bodies (`06d`), webhook no ORDS (`08_ords_aviso_stone.sql`), jobs, testes `fase2_assinatura.sql` (sem HTTP) e `fase2_assinatura_integracao.sql` (sandbox) | este PR |
 | 3 | App: autenticação custom, páginas Cadastre seu escritório, Esqueci/Redefinir/Trocar senha, Minha assinatura, Planos, Escritórios com situação e Liberar acesso, aviso e bloqueio | a fazer |
 
 ## Ciclo da assinatura
@@ -71,8 +71,8 @@ ficam em `RTC_CHAMADA_LOG` com referência `ASSINATURA_FATURA`.
      dois-pontos no fim e senha vazia). No terminal:
      `printf 'sk_test_xxx:' | base64` (use `sk_` em produção);
    * Valid for URLs: `https://api.pagar.me/`.
-3. **Remetente de e-mail**: `RTC_CONFIG.EMAIL_REMETENTE` com um Approved Sender do
-   OCI Email Delivery.
+3. **Remetente de e-mail**: `RTC_CONFIG.EMAIL_REMETENTE` = `nao-responda@escritoriocloud.com.br`,
+   já criado como Approved Sender no OCI Email Delivery (o `05_dados_iniciais.sql` preenche).
 4. **Webhook** (fase 2): `WEBHOOK_BASE_URL` em `RTC_CONFIG` se o ORDS responder por
    outro domínio; a URL pronta aparece na página Planos para colar no painel da
    Stone, com os eventos `order.*` e `charge.*`.
@@ -85,11 +85,32 @@ sql ECLOUD@base @testes/fase1_vpd.sql      # seção "Autocadastro e assinatura"
 python3 ../tools/validar_contratos.py      # inclui o recorte da Stone
 ```
 
+## Testar a fase 2
+
+```bash
+# como ADMIN, uma vez: grant em DBMS_CRYPTO (hash das senhas)
+sql ADMIN@base @00_pre_requisitos.sql WKSP_ECLOUD
+cd db && sql ECLOUD@base @instalar.sql            # cria também o endpoint no ORDS (08)
+sql ECLOUD@base @testes/fase2_assinatura.sql       # sem HTTP: cadastro, senha, ciclo, avisos
+sql ECLOUD@base @testes/fase2_assinatura_integracao.sql   # sandbox: Web Credential com sk_test_
+sql ECLOUD@base                                    # depois, uma vez:
+  exec pkg_ecloud_assinatura.criar_jobs
+```
+
+`select pkg_ecloud_assinatura.url_aviso from dual` mostra a URL do webhook quando
+`WEBHOOK_BASE_URL` está preenchido (na página Planos, fase 3, ela aparece sozinha).
+
 ## Pontos em aberto
 
 * CNPJ alfanumérico: a documentação da Pagar.me não diz se `customer.document`
   aceita letras. Até confirmar, o cadastro aceita o alfanumérico (regra do
   Ecloud) e a fatura envia o documento como está.
+* Pedido de checkout sem cobrança: no `checkout` a cobrança (`ch_...`) só nasce
+  quando o cliente escolhe a forma de pagamento. Se a fatura sair (troca de plano,
+  liberação) antes disso, o recorte do contrato não tem como fechar o pedido na
+  Stone; um pagamento atrasado desse link chega como aviso `IGNORADO` e precisa
+  de estorno manual. Falta confirmar na documentação oficial a chamada de
+  fechar/cancelar pedido para incluir no contrato.
 * Respostas reais: o teste sem HTTP da fase 2 precisa de um `GET /orders/{id}`
   real da conta da plataforma (pode vir de `MV_SUBSCRIPTION_INVOICES.LAST_RESPONSE`
   do Mecânico VIP, sem dados pessoais) para entrar em `contratos/exemplos-respostas.txt`.

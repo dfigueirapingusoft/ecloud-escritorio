@@ -174,11 +174,17 @@ as
     -- em ASSINATURA.PERIODO_FIM, e cria o pedido na Stone. Não faz commit.
     function garantir_fatura(p_assinatura_id in number) return number;
 
-    -- Relê o pedido na Stone e aplica: paid/overpaid/underpaid -> fatura PAGA,
-    -- assinatura ATIVA, período avança, escritório ATIVO; canceled -> fatura
-    -- CANCELADA. Usado pelo aviso, pelo botão "Já paguei, atualizar" e pelo
-    -- job. Faz commit.
+    -- Relê o pedido na Stone (PKG_STONE_API.obter_pedido) e chama
+    -- APLICAR_PEDIDO. Usado pelo aviso, pelo botão "Já paguei, atualizar" e
+    -- pelo job. Faz commit.
     procedure atualizar_fatura(p_fatura_id in number);
+
+    -- Aplica na fatura o JSON de um pedido (schema Pedido do contrato):
+    -- cobrança paid/overpaid/underpaid -> fatura PAGA, assinatura ATIVA,
+    -- período avança, escritório ATIVO; canceled -> fatura CANCELADA (se não
+    -- estava paga). Guarda o JSON em ULTIMA_RESPOSTA. Separado da chamada HTTP
+    -- para o teste sem rede (testes/fase2_assinatura.sql). Não faz commit.
+    procedure aplicar_pedido(p_fatura_id in number, p_pedido in clob);
 
     -- Escritório do contexto (ADMINISTRADOR) troca de plano. Vale a partir da
     -- próxima fatura; fatura em aberto é cancelada na Stone e refeita no
@@ -212,6 +218,12 @@ as
 
     -- Job: reprocessa os avisos RECEBIDO ou ERRO com tentativa vencida.
     procedure reprocessar_avisos;
+
+    -- Cria (ou recria) os jobs ECLOUD_ASSINATURA_DIARIA (06:00) e
+    -- ECLOUD_WEBHOOK_REPROCESSA (a cada 5 minutos). Rodar uma vez depois da
+    -- instalação, como os jobs de PKG_RTC_DADOS_ABERTOS (docs/03-deploy.md).
+    procedure criar_jobs;
+    procedure remover_jobs;
 
     -- URL para cadastrar no painel da Stone:
     -- WEBHOOK_BASE_URL || 'ecloud/stone/' || STONE_WEBHOOK_TOKEN.
