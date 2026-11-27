@@ -10,6 +10,23 @@
 whenever sqlerror exit failure rollback
 set serveroutput on
 
+-- Pré-requisito: EXECUTE em DBMS_CRYPTO (hash das senhas e tokens do login
+-- próprio). Só avisa aqui; quem precisa dele de verdade são os bodies.
+prompt == Conferindo pré-requisitos
+declare
+    l_teste varchar2(10);
+begin
+    execute immediate 'select rawtohex(dbms_crypto.randombytes(1)) from dual'
+        into l_teste;
+    dbms_output.put_line('OK: EXECUTE em DBMS_CRYPTO.');
+exception
+    when others then
+        dbms_output.put_line('AVISO: o schema ' || user
+            || ' não tem EXECUTE em DBMS_CRYPTO. Peça ao ADMIN: '
+            || '@00_pre_requisitos.sql ' || user || ' e rode instalar.sql de novo.');
+end;
+/
+
 prompt == 01_tabelas.sql
 @@01_tabelas.sql
 prompt == 02_vpd.sql

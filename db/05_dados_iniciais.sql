@@ -83,10 +83,35 @@ when matched then
     update set d.descricao = o.descricao;
 
 -- Token do webhook da Stone: sorteado uma vez por banco (32 bytes em hex).
-update rtc_config
-   set valor = lower(rawtohex(dbms_crypto.randombytes(32)))
- where chave = 'STONE_WEBHOOK_TOKEN'
-   and valor is null;
+-- DBMS_CRYPTO é chamado por SQL dinâmico para o script não quebrar quando o
+-- schema ainda não recebeu EXECUTE nele (00_pre_requisitos.sql, como ADMIN).
+-- Sem o grant, o token sai de SYS_GUID (128 bits de cada vez, também
+-- imprevisível de fora) e o script avisa: o grant continua obrigatório para o
+-- login próprio (hash das senhas em PKG_ECLOUD_AUTH).
+declare
+    l_token rtc_config.valor%type;
+begin
+    begin
+        execute immediate
+            'select lower(rawtohex(dbms_crypto.randombytes(32))) from dual'
+            into l_token;
+    exception
+        when others then
+            l_token := lower(rawtohex(sys_guid()) || rawtohex(sys_guid()));
+            dbms_output.put_line(
+                'AVISO: sem EXECUTE em DBMS_CRYPTO (' || sqlerrm || ').');
+            dbms_output.put_line(
+                '       Token do webhook gerado com SYS_GUID. Rode como ADMIN: '
+                || '@00_pre_requisitos.sql ' || user
+                || ' e depois instalar.sql de novo (o login precisa do grant).');
+    end;
+
+    update rtc_config
+       set valor = l_token
+     where chave = 'STONE_WEBHOOK_TOKEN'
+       and valor is null;
+end;
+/
 
 -- Planos da mensalidade. Valores de exemplo (os mesmos do Mecânico VIP), a
 -- ajustar na página Planos: só entram na primeira instalação; depois o MERGE
