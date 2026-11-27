@@ -56,6 +56,31 @@ page 9999 (
         }
     )
 
+    region acesso (
+        name: Criar conta e esqueci a senha
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                <div class="ec-auth-links">
+                    <a class="ec-auth-link" href="f?p=&APP_ID.:111:&APP_SESSION.::NO:111">Esqueci a senha</a>
+                    <p class="ec-auth-signup">Ainda não usa o Ecloud?
+                        <a class="ec-auth-link ec-auth-link--strong" href="f?p=&APP_ID.:110:&APP_SESSION.::NO:110">Cadastre seu escritório</a>
+                        e teste grátis.</p>
+                </div>
+                ```
+        }
+        layout {
+            sequence: 30
+            parentRegion: @ecloud
+            slot: regionBody
+        }
+        appearance {
+            template: @/blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
     region vitrine (
         name: Anúncios e depoimentos
         type: dynamicContent
@@ -168,7 +193,7 @@ page 9999 (
             templateOptions: #DEFAULT#
             icon: fa-user
             width: 40
-            valuePlaceholder: Usuário
+            valuePlaceholder: Usuário ou e-mail de cadastro
         }
         validation {
             maxLength: 100

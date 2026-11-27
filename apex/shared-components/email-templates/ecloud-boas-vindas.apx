@@ -1,0 +1,30 @@
+emailTemplate ECLOUD_BOAS_VINDAS (
+    name: Ecloud - Boas-vindas
+    comments {
+        comments: Static ID ECLOUD_BOAS_VINDAS, usado por PKG_ECLOUD_CADASTRO (APEX_MAIL).
+    }
+    emailSubject: Bem-vindo ao Ecloud, #NOME#
+    htmlFormat {
+        body:
+            ```html
+            <p>Olá, #NOME#.</p>
+            <p>O escritório <strong>#ESCRITORIO#</strong> já está cadastrado no Ecloud. O teste grátis vai até <strong>#FIM_TESTE#</strong>.</p>
+            <p>Seu usuário é <strong>#USUARIO#</strong>. Entre pelo link abaixo:</p>
+            <p><a href="#URL#">Entrar no Ecloud</a></p>
+            <p>Perto do fim do teste você recebe a primeira fatura, que pode ser paga por Pix, boleto ou cartão.</p>
+            ```
+        footer:
+            ```html
+            <p style="color:#6b7280;font-size:12px">Ecloud - Escritório Cloud. Este e-mail foi enviado automaticamente; não responda.</p>
+            ```
+    }
+    plainTextFormat {
+        content:
+            ```
+            Olá, #NOME#.
+
+            O escritório #ESCRITORIO# já está cadastrado no Ecloud. O teste grátis vai até #FIM_TESTE#.
+            Seu usuário é #USUARIO#. Entre em: #URL#
+            ```
+    }
+)

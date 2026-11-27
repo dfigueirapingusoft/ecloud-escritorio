@@ -1,0 +1,590 @@
+page 110 (
+    name: Cadastre seu escritório
+    alias: CADASTRO
+    title: Ecloud - Cadastre seu escritório
+    appearance {
+        pageTemplate: @/minimal-no-navigation
+        templateOptions: #DEFAULT#
+        cssClasses: ec-cadastro-stage
+    }
+    navigation {
+        cursorFocus: firstItemOnPage
+        warnOnUnsavedChanges: false
+    }
+    javaScript {
+        fileUrls: #APP_FILES#cep.js
+    }
+    security {
+        authentication: public
+    }
+
+    region topo (
+        name: Topo
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                <div class="ec-auth-brand ec-cadastro-brand">
+                    <h1 class="ec-auth-title"><span class="ec-logo ec-logo--auth" role="img" aria-label="Ecloud - Escritório Cloud"></span></h1>
+                    <p class="ec-auth-subtitle">Cadastre seu escritório e use o Ecloud grátis durante o período de teste, sem cartão.</p>
+                    <p class="ec-auth-subtitle"><a class="ec-auth-link" href="f?p=&APP_ID.:LOGIN:&APP_SESSION.">Já tenho conta: entrar</a></p>
+                </div>
+                ```
+        }
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @/blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region escritorio (
+        name: Escritório
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region responsavel (
+        name: Seu acesso
+        type: staticContent
+        layout {
+            sequence: 30
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region plano (
+        name: Plano depois do teste
+        type: staticContent
+        layout {
+            sequence: 40
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P110_CNPJ (
+        type: textField
+        label {
+            label: CNPJ
+            alignment: right
+        }
+        layout {
+            sequence: 10
+            region: @escritorio
+            slot: regionBody
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+            maxLength: 18
+        }
+        help {
+            inlineHelpText: Aceita o CNPJ numérico e o novo alfanumérico.
+        }
+    )
+
+    pageItem P110_RAZAO_SOCIAL (
+        type: textField
+        label {
+            label: Razão social
+            alignment: right
+        }
+        layout {
+            sequence: 20
+            region: @escritorio
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 8
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+            maxLength: 150
+        }
+    )
+
+    pageItem P110_NOME_FANTASIA (
+        type: textField
+        label {
+            label: Nome fantasia
+            alignment: right
+        }
+        layout {
+            sequence: 30
+            region: @escritorio
+            slot: regionBody
+            columnSpan: 8
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 150
+        }
+    )
+
+    pageItem P110_TELEFONE (
+        type: textField
+        label {
+            label: Telefone
+            alignment: right
+        }
+        layout {
+            sequence: 40
+            region: @escritorio
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 20
+        }
+    )
+
+    pageItem P110_CEP (
+        type: textField
+        label {
+            label: CEP
+            alignment: right
+        }
+        layout {
+            sequence: 50
+            region: @escritorio
+            slot: regionBody
+            columnSpan: 3
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 10
+        }
+        help {
+            inlineHelpText: Digite o CEP para preencher o endereço.
+        }
+    )
+
+    pageItem P110_ENDERECO (
+        type: textField
+        label {
+            label: Logradouro
+            alignment: right
+        }
+        layout {
+            sequence: 60
+            region: @escritorio
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 7
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 150
+        }
+    )
+
+    pageItem P110_NUMERO (
+        type: textField
+        label {
+            label: Número
+            alignment: right
+        }
+        layout {
+            sequence: 70
+            region: @escritorio
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 2
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 20
+        }
+    )
+
+    pageItem P110_COMPLEMENTO (
+        type: textField
+        label {
+            label: Complemento
+            alignment: right
+        }
+        layout {
+            sequence: 80
+            region: @escritorio
+            slot: regionBody
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 60
+        }
+    )
+
+    pageItem P110_BAIRRO (
+        type: textField
+        label {
+            label: Bairro
+            alignment: right
+        }
+        layout {
+            sequence: 90
+            region: @escritorio
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 80
+        }
+    )
+
+    pageItem P110_UF (
+        type: selectList
+        label {
+            label: UF
+            alignment: right
+        }
+        layout {
+            sequence: 100
+            region: @escritorio
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 2
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        lov {
+            type: sharedComponent
+            lov: @ufs
+            displayNullValue: true
+            nullDisplayValue: - UF -
+        }
+    )
+
+    pageItem P110_MUNICIPIO_IBGE (
+        type: popupLov
+        label {
+            label: Município
+            alignment: right
+        }
+        layout {
+            sequence: 110
+            region: @escritorio
+            slot: regionBody
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select nome d, codigo r
+                  from rtc_da_municipio
+                 where sigla_uf = :P110_UF
+                 order by nome
+                ```
+        }
+        cascadingLov {
+            parentItems: P110_UF
+        }
+    )
+
+    pageItem P110_NOME (
+        type: textField
+        label {
+            label: Seu nome
+            alignment: right
+        }
+        layout {
+            sequence: 10
+            region: @responsavel
+            slot: regionBody
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+            maxLength: 120
+        }
+    )
+
+    pageItem P110_EMAIL (
+        type: textField
+        label {
+            label: E-mail (será o seu usuário)
+            alignment: right
+        }
+        layout {
+            sequence: 20
+            region: @responsavel
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+            maxLength: 255
+        }
+        advanced {
+            customAttributes: autocomplete="email"
+        }
+    )
+
+    pageItem P110_SENHA (
+        type: password
+        label {
+            label: Senha
+            alignment: right
+        }
+        layout {
+            sequence: 30
+            region: @responsavel
+            slot: regionBody
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+            maxLength: 128
+        }
+        advanced {
+            customAttributes: autocomplete="new-password"
+        }
+        sessionState {
+            storage: request
+        }
+        help {
+            inlineHelpText: Pelo menos 8 caracteres, com letras e números.
+        }
+    )
+
+    pageItem P110_CONFIRMA (
+        type: password
+        label {
+            label: Repita a senha
+            alignment: right
+        }
+        layout {
+            sequence: 40
+            region: @responsavel
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+            maxLength: 128
+        }
+        advanced {
+            customAttributes: autocomplete="new-password"
+        }
+        sessionState {
+            storage: request
+        }
+    )
+
+    pageItem P110_PLANO (
+        type: radioGroup
+        label {
+            label: Plano
+            alignment: right
+        }
+        layout {
+            sequence: 10
+            region: @plano
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select pkg_ecloud_assinatura.rotulo_plano(plano_id) d, codigo r
+                  from plano
+                 where ativo = 'S'
+                   and publico = 'S'
+                 order by ordem, preco_mensal desc
+                ```
+        }
+        default {
+            type: static
+            staticValue: MENSAL
+        }
+        help {
+            inlineHelpText: A primeira fatura chega perto do fim do teste. Dá para trocar de plano depois em Minha assinatura.
+        }
+    )
+
+    button cadastrar (
+        buttonName: CADASTRAR
+        label: Criar conta e entrar
+        layout {
+            sequence: 10
+            region: @plano
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    validation senhas-iguais (
+        name: Senhas iguais
+        validation {
+            type: functionBodyReturningBoolean
+            plsqlFunctionBody: return :P110_SENHA = :P110_CONFIRMA;
+        }
+        error {
+            errorMessage: As senhas não conferem.
+            associatedItem: @P110_CONFIRMA
+        }
+        execution {
+            sequence: 10
+        }
+    )
+
+    process cadastrar (
+        name: Cadastrar e entrar
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                -- Cria escritório (TESTE), administrador e assinatura numa transação
+                -- (db/06d_pacotes_body_assinatura.sql) e já entra com a senha escolhida:
+                -- APEX_AUTHENTICATION.LOGIN redireciona para o Painel.
+                declare
+                    l_escritorio number;
+                    l_usuario    number;
+                begin
+                    pkg_ecloud_cadastro.cadastrar(
+                        p_cnpj           => :P110_CNPJ,
+                        p_razao_social   => :P110_RAZAO_SOCIAL,
+                        p_nome_fantasia  => :P110_NOME_FANTASIA,
+                        p_uf             => :P110_UF,
+                        p_municipio_ibge => to_number(:P110_MUNICIPIO_IBGE),
+                        p_telefone       => :P110_TELEFONE,
+                        p_cep            => :P110_CEP,
+                        p_logradouro     => :P110_ENDERECO,
+                        p_numero         => :P110_NUMERO,
+                        p_complemento    => :P110_COMPLEMENTO,
+                        p_bairro         => :P110_BAIRRO,
+                        p_nome           => :P110_NOME,
+                        p_email          => :P110_EMAIL,
+                        p_senha          => :P110_SENHA,
+                        p_plano_codigo   => :P110_PLANO,
+                        p_escritorio_id  => l_escritorio,
+                        p_usuario_id     => l_usuario);
+                    apex_authentication.login(
+                        p_username => lower(trim(:P110_EMAIL)),
+                        p_password => :P110_SENHA);
+                end;
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 1101100001
+        }
+        serverSideCondition {
+            whenButtonPressed: @cadastrar
+        }
+    )
+
+)

@@ -10,12 +10,13 @@ editável e gráficos seguem o `example-1`.
 
 | Item | Como foi feito |
 |---|---|
-| Autenticação | Contas do Oracle APEX do workspace. O procedimento pós-login `pos_autenticacao` chama `pkg_ecloud_ctx.definir_contexto(p_registrar_acesso => true)`. |
+| Autenticação | Login próprio (esquema `ecloud-login`, tipo Custom): `pkg_ecloud_auth.autenticar` confere o hash PBKDF2 de `USUARIO.SENHA_HASH` e bloqueia por 15 min após 5 erros. O pós-login `pos_autenticacao` chama `pkg_ecloud_ctx.definir_contexto(p_registrar_acesso => true)`. O esquema `oracle-apex-accounts` ficou só como reserva. |
 | Contexto VPD | *Initialization PL/SQL Code* do app: `pkg_ecloud_ctx.definir_contexto` em toda requisição; *Cleanup*: `limpar_contexto`. |
 | Suporte multi-escritório | O administrador da plataforma escolhe outro escritório na página Escritórios; o item de aplicação `F_ESCRITORIO_ATIVO` (protegido) é aplicado com `trocar_escritorio` no Initialization Code. |
 | Erros | `errorHandlingFunctionName` = `pkg_ecloud_util.tratar_erro_apex`: mensagens de regra (-20000..-20999) aparecem sem "ORA-20xxx:"; chave única e FK viram texto amigável. |
 | Fuso horário | `autoTimeZone: true`: a sessão usa o fuso do navegador (data/hora do fato gerador e "processada em" no horário local). |
-| Autorização do app | `usuario-cadastrado`: só entra quem tem linha ativa em `USUARIO` (o nome do usuário é o mesmo da conta APEX). |
+| Autorização do app | `usuario-cadastrado`: só entra quem tem linha ativa em `USUARIO`. |
+| Assinatura | Processo de aplicação `ACESSO_ASSINATURA` (antes de cada página): senha marcada para troca leva à página 113; escritório `SUSPENSO` só abre Minha assinatura (106) e Trocar senha. O admin da plataforma nunca é bloqueado. Aviso de teste/fatura/suspensão no topo pela Página global (`pkg_ecloud_assinatura.aviso_html`). |
 | Perfis | `administrador` (Administrador ou admin da plataforma), `contador-ou-administrador`, `admin-plataforma`. Assistente usa as páginas de simulação, DANFSe e consultas, sem editar clientes. |
 | HTTP | Nenhuma página chama a API diretamente: processos chamam `pkg_rtc_calc.calcular`, `pkg_rtc_danfse.registrar_upload/regerar`, `pkg_rtc_http.testar_conexao` e `pkg_rtc_dados_abertos.sincronizar_tudo`. A chave fica só na Web Credential `RTC_API_KEY`. |
 
@@ -56,7 +57,15 @@ editável e gráficos seguem o `example-1`.
 | 103 | Revisar depoimento | admin. plataforma | Modal: aprovar e publicar, reprovar com motivo (o escritório vê), remover. |
 | 104 | Meu depoimento | todos | Escrever ou editar o próprio depoimento (nota em estrelas) e acompanhar a situação. No menu do usuário. |
 | 105 | Ofertas e parceiros | todos | Anúncios marcados para ofertas, em cartões. |
-| 9999 | Entrar | público | Cartão de vidro com o logo e, à esquerda, a vitrine: carrossel de anúncios e depoimentos aprovados (docs/06-vitrine-login.md). |
+| 106 | Minha assinatura | todos | Plano, situação, fatura em aberto com **Pagar agora** (link da Stone) e **Já paguei, atualizar** (`atualizar_fatura`), histórico; Administrador troca de plano. No menu do usuário. |
+| 107/108 | Planos e cobrança | admin. plataforma | Planos (preço por mês, meses por fatura, aparece no cadastro, ativo) com o número de assinaturas e a URL do webhook para o painel da Stone; modal de edição (sem excluir: plano em uso tem FK). |
+| 10/11 (assinatura) | Escritórios | admin. plataforma | Colunas situação, teste até, plano e origem; no modal, quadro da assinatura com **Iniciar assinatura**, **Liberar acesso** até uma data e **Cancelar escritório**. |
+| 13 (senha) | Usuário | Administrador | Usuário novo recebe por e-mail o link para criar a senha; botão **Enviar link de senha** para reenviar. |
+| 110 | Cadastre seu escritório | público | CNPJ, razão social, endereço com CEP (`cep.js`), UF e município, responsável (e-mail = usuário), senha e plano; cria tudo (`pkg_ecloud_cadastro.cadastrar`) e já entra. |
+| 111 | Esqueci a senha | público | Envia o link de redefinição (mesma mensagem exista ou não o e-mail). |
+| 112 | Criar nova senha | público | Recebe `P112_TOKEN` do e-mail (redefinir ou primeira senha) e grava a senha. |
+| 113 | Trocar senha | todos | Senha atual e nova (`pkg_ecloud_auth.trocar_senha`). No menu do usuário. |
+| 9999 | Entrar | público | Cartão de vidro com o logo, links **Esqueci a senha** e **Cadastre seu escritório** e, à esquerda, a vitrine: carrossel de anúncios e depoimentos aprovados (docs/06-vitrine-login.md). |
 
 ## 3. Pré-requisitos no workspace
 

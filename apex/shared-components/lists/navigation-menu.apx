@@ -500,6 +500,32 @@ list navigation-menu (
         }
     )
 
+    entry planos (
+        label: Planos e cobrança
+        icon {
+            imageIconCssClasses: fa-credit-card
+        }
+        layout {
+            sequence: 135
+            parentEntry: @administracao
+        }
+        isCurrent {
+            type: pages
+            pages: [
+                107
+                108
+            ]
+        }
+        link {
+            target: {
+                page: 107
+            }
+        }
+        security {
+            authorizationScheme: @admin-plataforma
+        }
+    )
+
     entry configuracao (
         label: Configuração das APIs
         icon {

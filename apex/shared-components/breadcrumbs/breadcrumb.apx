@@ -391,4 +391,43 @@ breadcrumb breadcrumb (
         }
     )
 
+    entry minha-assinatura (
+        name: Minha assinatura
+        pageNumber: 106
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 106
+            }
+        }
+    )
+
+    entry planos (
+        name: Planos e cobrança
+        pageNumber: 107
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 107
+            }
+        }
+    )
+
+    entry trocar-senha (
+        name: Trocar senha
+        pageNumber: 113
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 113
+            }
+        }
+    )
+
 )

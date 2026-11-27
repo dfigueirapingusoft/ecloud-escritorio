@@ -1,0 +1,181 @@
+page 112 (
+    name: Criar nova senha
+    alias: REDEFINIR-SENHA
+    title: Ecloud - Criar nova senha
+    appearance {
+        pageTemplate: @/login
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: firstItemOnPage
+        warnOnUnsavedChanges: false
+    }
+    security {
+        authentication: public
+    }
+
+    region senha (
+        name: Criar nova senha
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                <p class="ec-auth-subtitle">Escolha a nova senha: pelo menos 8 caracteres, com letras e números.</p>
+                ```
+        }
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @/login
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P112_TOKEN (
+        type: hidden
+        layout {
+            sequence: 5
+            region: @senha
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: unrestricted
+        }
+    )
+
+    pageItem P112_SENHA (
+        type: password
+        label {
+            label: Nova senha
+            alignment: right
+        }
+        layout {
+            sequence: 10
+            region: @senha
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/hidden
+            templateOptions: #DEFAULT#
+            icon: fa-key
+            valuePlaceholder: Nova senha
+        }
+        validation {
+            valueRequired: true
+            maxLength: 128
+        }
+        advanced {
+            customAttributes: autocomplete="new-password"
+        }
+        sessionState {
+            storage: request
+        }
+    )
+
+    pageItem P112_CONFIRMA (
+        type: password
+        label {
+            label: Repita a nova senha
+            alignment: right
+        }
+        layout {
+            sequence: 20
+            region: @senha
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/hidden
+            templateOptions: #DEFAULT#
+            icon: fa-key
+            valuePlaceholder: Repita a nova senha
+        }
+        validation {
+            valueRequired: true
+            maxLength: 128
+        }
+        advanced {
+            customAttributes: autocomplete="new-password"
+        }
+        sessionState {
+            storage: request
+        }
+    )
+
+    button salvar (
+        buttonName: SALVAR
+        label: Salvar a senha
+        layout {
+            sequence: 10
+            region: @senha
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    validation senhas-iguais (
+        name: Senhas iguais
+        validation {
+            type: functionBodyReturningBoolean
+            plsqlFunctionBody: return :P112_SENHA = :P112_CONFIRMA;
+        }
+        error {
+            errorMessage: As senhas não conferem.
+            associatedItem: @P112_CONFIRMA
+        }
+        execution {
+            sequence: 10
+        }
+    )
+
+    process salvar (
+        name: Salvar a senha
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                -- Token do e-mail (REDEFINIR ou DEFINIR): só o hash fica no banco; vale uma vez.
+                pkg_ecloud_auth.redefinir_senha(:P112_TOKEN, :P112_SENHA);
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 1121100001
+        }
+        successMessage {
+            successMessage: Senha salva. Entre com o seu usuário e a nova senha.
+        }
+        serverSideCondition {
+            whenButtonPressed: @salvar
+        }
+    )
+
+    branch depois (
+        name: Depois de salvar
+        execution {
+            sequence: 10
+        }
+        behavior {
+            type: pageOrUrl
+            target: {
+                page: 9999
+            }
+        }
+        serverSideCondition {
+            whenButtonPressed: @salvar
+        }
+    )
+
+)

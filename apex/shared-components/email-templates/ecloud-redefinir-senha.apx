@@ -1,0 +1,29 @@
+emailTemplate ECLOUD_REDEFINIR_SENHA (
+    name: Ecloud - Redefinir senha
+    comments {
+        comments: Static ID ECLOUD_REDEFINIR_SENHA, usado por PKG_ECLOUD_CADASTRO (APEX_MAIL).
+    }
+    emailSubject: Ecloud: redefinir a senha
+    htmlFormat {
+        body:
+            ```html
+            <p>Olá, #NOME#.</p>
+            <p>Recebemos um pedido para redefinir a senha do usuário <strong>#USUARIO#</strong>.</p>
+            <p><a href="#URL#">Criar uma nova senha</a></p>
+            <p>O link vale por #VALIDADE# minutos e só pode ser usado uma vez. Se você não pediu, ignore este e-mail: sua senha continua a mesma.</p>
+            ```
+        footer:
+            ```html
+            <p style="color:#6b7280;font-size:12px">Ecloud - Escritório Cloud. Este e-mail foi enviado automaticamente; não responda.</p>
+            ```
+    }
+    plainTextFormat {
+        content:
+            ```
+            Olá, #NOME#.
+
+            Para criar uma nova senha do usuário #USUARIO#, abra: #URL#
+            O link vale por #VALIDADE# minutos. Se você não pediu, ignore este e-mail.
+            ```
+    }
+)

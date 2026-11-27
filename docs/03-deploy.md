@@ -58,6 +58,10 @@ exec pkg_ecloud_assinatura.criar_jobs
 
 ## 5. Pelo proxy: importar o app (equivalente ao script da skill apexlang-deploy)
 
+O app usa o login próprio (`docs/07-autocadastro-assinatura.md`). Na primeira vez,
+antes do import, defina a sua senha e mande o link aos outros usuários (seção
+"Virar para o login próprio" do docs/07).
+
 ```sql
 begin
   apex_application_install.set_auto_install_sup_obj(p_auto_install_sup_obj => true);

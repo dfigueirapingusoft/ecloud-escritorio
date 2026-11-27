@@ -53,6 +53,57 @@ page 11 (
         }
     )
 
+    region assinatura (
+        name: Assinatura
+        type: dynamicContent
+        source {
+            plsqlFunctionBody:
+                ```plsql
+                -- Situação do escritório e da assinatura (docs/07-autocadastro-assinatura.md).
+                declare
+                    l_html varchar2(4000);
+                begin
+                    for e in (select e.situacao, e.teste_ate, e.origem_cadastro,
+                                     a.situacao situacao_assinatura, a.periodo_fim, a.plano_id, a.ultimo_erro,
+                                     (select count(*) from assinatura_fatura f
+                                       where f.escritorio_id = e.escritorio_id
+                                         and f.situacao in ('PENDENTE', 'VENCIDA')) abertas
+                                from escritorio e
+                                left join assinatura a on a.escritorio_id = e.escritorio_id and a.situacao <> 'CANCELADA'
+                               where e.escritorio_id = :P11_ESCRITORIO_ID)
+                    loop
+                        l_html := '<dl class="ecl-assinatura-info">'
+                            || '<div><dt>Situação</dt><dd>' || apex_escape.html(initcap(e.situacao)) || '</dd></div>'
+                            || '<div><dt>Origem</dt><dd>' || case e.origem_cadastro when 'AUTOCADASTRO' then 'Autocadastro' else 'Plataforma' end || '</dd></div>'
+                            || case when e.situacao = 'TESTE' then '<div><dt>Teste até</dt><dd>' || to_char(e.teste_ate, 'DD/MM/YYYY') || '</dd></div>' end
+                            || case when e.plano_id is not null then
+                                   '<div><dt>Plano</dt><dd>' || apex_escape.html(pkg_ecloud_assinatura.rotulo_plano(e.plano_id)) || '</dd></div>'
+                                   || '<div><dt>Assinatura</dt><dd>' || apex_escape.html(initcap(e.situacao_assinatura))
+                                   || ' até ' || to_char(e.periodo_fim - 1, 'DD/MM/YYYY') || '</dd></div>'
+                                   || '<div><dt>Faturas em aberto</dt><dd>' || e.abertas || '</dd></div>'
+                               else '<div><dt>Assinatura</dt><dd>Sem cobrança (escritório não é cobrado)</dd></div>' end
+                            || '</dl>'
+                            || case when e.ultimo_erro is not null then
+                                   '<p class="u-danger-text">Último erro da cobrança: ' || apex_escape.html(e.ultimo_erro) || '</p>' end;
+                    end loop;
+                    return l_html;
+                end;
+                ```
+        }
+        layout {
+            sequence: 20
+            slot: contentBody
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P11_ESCRITORIO_ID
+        }
+    )
+
     pageItem P11_ESCRITORIO_ID (
         type: hidden
         layout {
@@ -309,6 +360,76 @@ page 11 (
         }
     )
 
+    pageItem P11_PLANO_INICIAR (
+        type: selectList
+        label {
+            label: Plano da assinatura
+            alignment: right
+        }
+        layout {
+            sequence: 10
+            region: @assinatura
+            slot: regionBody
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select pkg_ecloud_assinatura.rotulo_plano(plano_id) d, plano_id r
+                  from plano
+                 where ativo = 'S'
+                 order by ordem
+                ```
+            displayNullValue: true
+            nullDisplayValue: - Escolha o plano -
+        }
+        sessionState {
+            storage: request
+        }
+        serverSideCondition {
+            type: noRowsReturned
+            sqlQuery: select null from assinatura where escritorio_id = :P11_ESCRITORIO_ID and situacao <> 'CANCELADA'
+        }
+        help {
+            inlineHelpText: Começa um período de teste e passa a cobrar este escritório pela Stone.
+        }
+    )
+
+    pageItem P11_LIBERAR_ATE (
+        type: datePicker
+        label {
+            label: Liberar o acesso até
+            alignment: right
+        }
+        layout {
+            sequence: 20
+            region: @assinatura
+            slot: regionBody
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        sessionState {
+            storage: request
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery: select null from assinatura where escritorio_id = :P11_ESCRITORIO_ID and situacao <> 'CANCELADA'
+        }
+        help {
+            inlineHelpText: Cancela a fatura em aberto e deixa o escritório usar o app até esta data; a próxima fatura sai perto dela.
+        }
+    )
+
     button cancel (
         buttonName: CANCEL
         label: Cancelar
@@ -369,6 +490,91 @@ page 11 (
         serverSideCondition {
             type: itemIsNull
             item: P11_ESCRITORIO_ID
+        }
+    )
+
+    button iniciar (
+        buttonName: INICIAR
+        label: Iniciar assinatura
+        layout {
+            sequence: 10
+            region: @assinatura
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: Iniciar a cobrança deste escritório? Ele entra em teste e recebe a fatura perto do fim do teste.
+            style: warning
+        }
+        serverSideCondition {
+            type: noRowsReturned
+            sqlQuery: select null from assinatura where escritorio_id = :P11_ESCRITORIO_ID and situacao <> 'CANCELADA'
+        }
+    )
+
+    button liberar (
+        buttonName: LIBERAR
+        label: Liberar acesso
+        layout {
+            sequence: 20
+            region: @assinatura
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: Liberar o acesso até a data informada? A fatura em aberto é cancelada na Stone.
+            style: warning
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery: select null from assinatura where escritorio_id = :P11_ESCRITORIO_ID and situacao <> 'CANCELADA'
+        }
+    )
+
+    button cancelar-escritorio (
+        buttonName: CANCELAR_ESCRITORIO
+        label: Cancelar escritório
+        layout {
+            sequence: 30
+            region: @assinatura
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: [
+                #DEFAULT#
+                t-Button--danger
+                t-Button--simple
+            ]
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: Cancelar este escritório? O login dele fica barrado e as faturas em aberto são canceladas. Nenhum dado é apagado.
+            style: danger
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery: select null from escritorio where escritorio_id = :P11_ESCRITORIO_ID and situacao <> 'CANCELADO'
         }
     )
 
@@ -459,6 +665,104 @@ page 11 (
         }
         advanced {
             executionMappingIdentifier: 4832436672
+        }
+    )
+
+    process iniciar-assinatura (
+        name: Iniciar assinatura
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                declare
+                    l_id number;
+                begin
+                    if :P11_PLANO_INICIAR is null then
+                        raise_application_error(-20163, 'Escolha o plano da assinatura.');
+                    end if;
+                    l_id := pkg_ecloud_assinatura.iniciar(to_number(:P11_ESCRITORIO_ID), to_number(:P11_PLANO_INICIAR));
+                end;
+                ```
+        }
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 1111200001
+        }
+        successMessage {
+            successMessage: Assinatura iniciada: o escritório está em teste.
+        }
+        serverSideCondition {
+            whenButtonPressed: @iniciar
+        }
+    )
+
+    process liberar-acesso (
+        name: Liberar acesso
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                pkg_ecloud_assinatura.liberar_acesso(
+                    p_escritorio_id => to_number(:P11_ESCRITORIO_ID),
+                    p_ate           => to_date(:P11_LIBERAR_ATE, 'DD/MM/YYYY'));
+                ```
+        }
+        execution {
+            sequence: 30
+        }
+        advanced {
+            executionMappingIdentifier: 1111200002
+        }
+        successMessage {
+            successMessage: Acesso liberado.
+        }
+        serverSideCondition {
+            whenButtonPressed: @liberar
+        }
+    )
+
+    process cancelar-escritorio (
+        name: Cancelar escritório
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                pkg_ecloud_assinatura.cancelar(to_number(:P11_ESCRITORIO_ID), 'Cancelado pela plataforma');
+                ```
+        }
+        execution {
+            sequence: 40
+        }
+        advanced {
+            executionMappingIdentifier: 1111200003
+        }
+        successMessage {
+            successMessage: Escritório cancelado.
+        }
+        serverSideCondition {
+            whenButtonPressed: @cancelar-escritorio
+        }
+    )
+
+    branch assinatura (
+        name: Voltar ao escritório
+        execution {
+            sequence: 10
+        }
+        behavior {
+            type: pageOrUrl
+            target: {
+                page: 11
+                items: {
+                    P11_ESCRITORIO_ID: &P11_ESCRITORIO_ID.
+                }
+            }
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: INICIAR,LIBERAR,CANCELAR_ESCRITORIO
         }
     )
 
