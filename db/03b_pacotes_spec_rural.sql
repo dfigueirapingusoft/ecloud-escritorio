@@ -43,7 +43,8 @@ as
     -- Versão 'S'/'N' de documento_valido, para uso em SQL e em validações APEX.
     function documento_valido_sn(p_tipo_pessoa in varchar2, p_documento in varchar2) return varchar2 deterministic;
 
-    -- DV do CAFIR/CIB (CAD_ITR do LCDPR, 8 dígitos com DV).
+    -- Formato do CAD_ITR do LCDPR (CAFIR/CIB): 8 dígitos, já com o DV. O
+    -- manual do LCDPR não publica o algoritmo do DV, então ele não é conferido.
     function cad_itr_valido(p_cad_itr in varchar2) return boolean deterministic;
 
     -- Documento formatado para exibição (000.000.000-00 ou 00.000.000/0000-00).
@@ -59,8 +60,10 @@ as
     function proximo_cod_imovel(p_cliente_id in number) return number;
     function proximo_cod_conta(p_cliente_id in number) return number;
 
-    -- Pendências cadastrais do produtor para o LCDPR, uma por linha
-    -- (ex.: "Imóvel 002: participação de 50% exige contrapartes que somem 50%").
+    -- Pendências cadastrais do produtor para o LCDPR, uma por elemento, no
+    -- formato 'RRRR: mensagem', onde RRRR é o registro do LCDPR (0000, 0030,
+    -- 0040, 0045, 0050). Ex.: '0045: Imóvel 002 (Fazenda X): contrapartes somam
+    -- 30%, mas a participação do produtor é 50%.'
     -- Vazio = cadastro completo. Usado por PKG_LCDPR.validar e pela página.
     function pendencias_cadastro(p_cliente_id in number) return t_lista;
 end pkg_rural_cadastro;

@@ -423,9 +423,12 @@ begin
     ddl('alter table conta_bancaria add constraint conta_bancaria_layout_fk foreign key (layout_csv_id, escritorio_id) references extrato_layout_csv (layout_id, escritorio_id)');
     ddl('create index conta_bancaria_layout_ix on conta_bancaria (layout_csv_id, escritorio_id)');
 
-    -- Arquivo de extrato importado. HASH_SHA256 (STANDARD_HASH) impede
-    -- importar o mesmo arquivo duas vezes na mesma conta. Limite de 10 MiB.
-    -- STATUS: PENDENTE, PROCESSADA, REJEITADA (arquivo ilegível; MENSAGEM).
+    -- Arquivo de extrato importado. HASH_SHA256 impede importar o mesmo arquivo
+    -- duas vezes na mesma conta (STANDARD_HASH encadeado em blocos, porque
+    -- STANDARD_HASH não aceita BLOB; ver PKG_EXTRATO). Limite de 10 MiB.
+    -- STATUS: PENDENTE (gravando), PROCESSADA. Arquivo ilegível não é gravado:
+    -- PKG_EXTRATO devolve o erro e o mesmo arquivo pode ser reenviado depois de
+    -- corrigir o layout.
     -- SALDO_FINAL/DATA_SALDO_FINAL: saldo informado pelo banco (OFX LEDGERBAL),
     -- comparado com o saldo do livro na conciliação.
     ddl(q'[
@@ -459,11 +462,13 @@ begin
             constraint extrato_importacao_fmt_ck check (formato in ('OFX','CSV')),
             constraint extrato_importacao_csv_ck check (formato <> 'CSV' or layout_id is not null),
             constraint extrato_importacao_bytes_ck check (arquivo_bytes between 1 and 10485760),
-            constraint extrato_importacao_st_ck check (status in ('PENDENTE','PROCESSADA','REJEITADA')),
+            constraint extrato_importacao_st_v2_ck check (status in ('PENDENTE','PROCESSADA')),
             constraint extrato_importacao_conta_fk foreign key (conta_id, escritorio_id) references conta_bancaria (conta_id, escritorio_id),
             constraint extrato_importacao_layout_fk foreign key (layout_id, escritorio_id) references extrato_layout_csv (layout_id, escritorio_id),
             constraint extrato_importacao_esc_fk foreign key (escritorio_id) references escritorio (escritorio_id)
         )]');
+    remover_constraint('extrato_importacao', 'extrato_importacao_st_ck');   -- versão com REJEITADA
+    ddl(q'[alter table extrato_importacao add constraint extrato_importacao_st_v2_ck check (status in ('PENDENTE','PROCESSADA'))]');
     ddl('create index extrato_importacao_conta_ix on extrato_importacao (conta_id, escritorio_id, criado_em)');
     ddl('create index extrato_importacao_layout_ix on extrato_importacao (layout_id, escritorio_id)');
 

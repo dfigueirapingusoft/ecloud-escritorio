@@ -44,7 +44,7 @@ português do Brasil.
 ```
 db/        00_pre_requisitos.sql e 00b_acesso_proxy.sql (DBA), 01_tabelas.sql (+ 01b_tabelas_rural.sql),
            02_vpd.sql, 03_pacotes_spec.sql (+ 03b_pacotes_spec_rural.sql), 04_views.sql, 05_dados_iniciais.sql,
-           06_pacotes_body.sql, 07_primeiro_admin.sql, instalar.sql, testes/
+           06_pacotes_body.sql (+ 06b_pacotes_body_rural.sql), 07_primeiro_admin.sql, instalar.sql, testes/
 apex/      fonte APEXlang 26.2 (fase 3): application.apx, shared-components/, pages/
 docs/      01-arquitetura.md, 02-app-apex.md, 03-deploy.md, 04-escopo-agro.md (roadmap Agro),
            05-modulo-a-rural.md, contratos/ (OpenAPI, exemplos, lcdpr-leiaute-1.3.md)
@@ -56,6 +56,7 @@ tools/     validar_contratos.py, verificar_sql_apex.py
 ```bash
 cd db && sql ECLOUD@base @instalar.sql && sql ECLOUD@base @testes/fase1_vpd.sql
 sql ECLOUD@base @testes/fase2_offline.sql      # sem HTTP, usa respostas reais embutidas
+sql ECLOUD@base @testes/fase2_rural.sql        # módulo A (livro caixa, OFX/CSV, conciliação, LCDPR)
 sql ECLOUD@base @testes/fase2_integracao.sql   # HTTP real; precisa de APEX + credencial + RTC_CONFIG
 python3 tools/validar_contratos.py
 $SKILLS/apex/apexlang-compile/scripts/validate-apex-app.sh apex   # SQLCL_BIN definido

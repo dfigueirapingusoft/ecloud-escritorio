@@ -6,10 +6,25 @@ publicado pela Receita Federal em
 Lido em 27/11/2026. Este arquivo é a fonte da verdade do `PKG_LCDPR`, como os
 OpenAPI são para as calculadoras: não use campo ou código que não esteja aqui.
 
-**A confirmar antes da fase 2:** se o leiaute 1.3 ainda é o vigente para o ano-base
-2026; o valor do limite de receita bruta que obriga a entrega (o manual só diz
-"limite estabelecido"); o formato de `PAIS_CTA` (C3) no 0050; se `QTD_LIN` do 9999
-conta a própria linha 9999.
+**Ainda a confirmar com a Receita:** se o leiaute 1.3 continua vigente para o ano-base
+2026 e o valor do limite de receita bruta que obriga a entrega (o manual só diz "limite
+estabelecido"; abaixo dele a entrega é opcional).
+
+**Decisões tomadas onde o manual é omisso** (conferidas com os exemplos do próprio manual):
+
+| Ponto | Manual | Ecloud |
+|---|---|---|
+| `PAIS_CTA` do 0050 (C3) | Exemplo `0050\|001\|BR\|999\|Banco LCDPR\|1234\|0000000123456789` | `BR` |
+| `DT_INI`/`DT_FIN` com IND_SIT_INI_PER 1/2 ou SIT_ESPECIAL ≠ 0 | Só diz "período correspondente ao ano-calendário" | 01/01 e 31/12 do ano; data especial vai em `DT_SIT_ESP` |
+| CPF em `ID_PARTIC` / `ID_CONTRAPARTE` | "11 / 14"; exemplos com 11 dígitos | CPF com 11, CNPJ com 14, sem completar |
+| `QTD_LIN` do 9999 conta a própria linha? | Não diz | Conta (convenção dos arquivos SPED) |
+| Ordem dos Q100 | Só "ordem sequencial" | Data e, no mesmo dia, ordem de lançamento |
+| Saldo do primeiro Q100 | "O saldo inicial é zero no início de cada ano" (o exemplo do manual tem um erro aritmético) | Começa em zero; SLD_FIN é o saldo depois do lançamento |
+
+Exemplos do manual usados nos testes: `0000|LCDPR|0013|11111111191|JOSÉ DA SILVA|0|0||01012019|31122019`,
+`0040|001|BR|BRL|12345678|12345678901234|12345678901234|Fazenda Tudo Certo|Rodovia BR 999, Km 3000|||Distrito do Meio|DF|5300108|71000000|2|05000`,
+`0045|002|3|12345678912|JOÃO DE SOUSA|00520`,
+`Q100|02012019|001|001|2|3|Venda de 100 sacas de milho|12345678912|1|1000000|0|1100000|P`.
 
 ## Formato do arquivo
 

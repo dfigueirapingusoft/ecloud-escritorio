@@ -1,8 +1,12 @@
 # Módulo A – Produtor rural PF: livro caixa e conciliação (fase 1)
 
 Primeiro módulo do roadmap do escritório do Agro ([04-escopo-agro.md](04-escopo-agro.md)),
-aprovado pelo Daniel em 27/11/2026. Esta é a **fase 1**: arquitetura, DDL, VPD, specs
-e teste de isolamento. Bodies e testes de regra entram na fase 2, depois da aprovação.
+aprovado pelo Daniel em 27/11/2026.
+
+* **Fase 1** (aprovada em 27/11/2026): arquitetura, DDL, VPD, specs e teste de isolamento.
+* **Fase 2** (aguardando aprovação): bodies em `db/06b_pacotes_body_rural.sql` e testes
+  offline em `db/testes/fase2_rural.sql` (seção 8).
+* Fase 3: páginas APEXlang 26.2 (seção 6).
 
 ## 1. O que o módulo entrega
 
@@ -56,7 +60,11 @@ com IA (C), contabilidade em partidas dobradas (D).
 | 8 | Conciliação em tabela própria (N:N) com valor parcial. | Um PIX pode quitar várias notas; um boleto pode sair em duas parcelas. |
 | 9 | Automático só para par inequívoco (mesmo valor e sentido, data ± 3 dias, um candidato de cada lado); o resto vira sugestão. | Evita conciliar errado sem o contador ver. |
 | 10 | Deduplicação por `CHAVE_DEDUP` única na conta (FITID do OFX ou hash para CSV) e por hash do arquivo. | Extratos com períodos sobrepostos são comuns. |
-| 11 | Hash do arquivo com `STANDARD_HASH` em SQL. | Não exige `GRANT EXECUTE ON DBMS_CRYPTO`. |
+| 11 | Hash do arquivo com `STANDARD_HASH` encadeado em blocos de 1.966 bytes (`STANDARD_HASH` não aceita BLOB). | Não exige `GRANT EXECUTE ON DBMS_CRYPTO`. |
+| 15 | Extrato ilegível não é gravado (erro -20102 na tela). | O mesmo arquivo pode ser reenviado depois de corrigir o layout, sem esbarrar na trava de arquivo repetido. |
+| 16 | Chave de deduplicação = FITID + data + valor; repetição idêntica no mesmo arquivo ganha `#2`, `#3`. | Há bancos que repetem FITID em dias diferentes, e dois PIX iguais no mesmo dia são movimentos distintos. |
+| 17 | Conta do OFX conferida com o cadastro pelos dígitos finais, com ou sem DV. | Evita importar extrato na conta errada sem travar bancos que mandam o número sem DV. |
+| 18 | Regras do cliente antes das gerais do escritório; dentro de cada grupo, menor `PRIORIDADE`. | O caso específico do produtor vence o padrão do escritório. |
 | 12 | Leiaute do LCDPR em `docs/contratos/lcdpr-leiaute-1.3.md`, lido do manual oficial. | Mesma regra dos OpenAPI: nada de campo inventado. |
 | 13 | Novos scripts `01b_tabelas_rural.sql` e `03b_pacotes_spec_rural.sql`, chamados de dentro de `01_tabelas.sql` e `03_pacotes_spec.sql`. | Mantém `instalar.sql` igual e separa o módulo. VPD continua em `02_vpd.sql` e teste em `fase1_vpd.sql` (regra 6). |
 | 14 | Nenhum pacote do módulo chama HTTP. | O módulo depende só de arquivos que o usuário envia. |
@@ -124,16 +132,42 @@ cenários: instalação nova, atualização de uma base com clientes já cadastr
 então `PKG_ECLOUD_UTIL` (que usa `APEX_ERROR`) fica inválido nela, como já acontecia antes;
 num banco com APEX nada fica inválido.
 
-## 8. O que a fase 2 vai testar (offline, sem HTTP)
+## 8. Fase 2: bodies e testes offline
 
-OFX 1.x (SGML) e 2.x (XML) de bancos reais anonimizados, CSV com layouts diferentes,
-deduplicação com períodos sobrepostos, automático x sugestão, N:N com valor parcial,
-regras, transferência, saldo e resumo mensal, e um arquivo LCDPR completo conferido
-campo a campo contra o leiaute.
+```bash
+cd db
+sql ECLOUD@base @instalar.sql                # 06_pacotes_body.sql chama 06b_pacotes_body_rural.sql
+sql ECLOUD@base @testes/fase2_rural.sql      # esperado: 96 linhas OK e "fase2_rural: SUCESSO" (rollback no fim)
+```
+
+O teste cobre, sem HTTP e sem deixar dados:
+
+* **Cadastro:** CPF, CNPJ, CAD_ITR, categorias padrão (21, sem duplicar), próximos códigos e
+  pendências do LCDPR (endereço, e-mail, imóvel, contrapartes que não fecham 100%).
+* **Livro caixa:** natureza herdada da categoria, conta de outro produtor, data antes do saldo
+  inicial, participante inválido, valor zero, transferência para o caixa (duas pernas,
+  `NAO_APLICA`), exclusão da transferência, saldos e resumo mensal.
+* **Extratos:** OFX 1.x (SGML, CHARSET 1252, valor com vírgula, data com fuso, linha de saldo
+  com valor zero), OFX 2.x (XML UTF-8, entidades), CSV com débito/crédito, milhar e aspas,
+  arquivo que não é OFX, data inválida no CSV, arquivo repetido (-20103), OFX de outra conta,
+  extrato na conta caixa e período sobreposto (1 novo, 1 já importado).
+* **Conciliação:** automática só no par inequívoco, regra que lança a tarifa com participante,
+  sugestões quando há dois candidatos, N:N com valor parcial, valor acima do saldo, sentidos
+  diferentes, alterar lançamento conciliado, excluir extrato conciliado, desfazer e
+  reconciliar, ignorar, lançar item com categoria do sentido errado, saldo livro x banco.
+* **LCDPR:** formatação de valores e datas, validação, arquivo com 25 linhas conferido linha a
+  linha (0000, 0010, 0030, 0040, 0045, 0050, Q100, Q200, 9999), totais iguais ao resumo mensal,
+  pendência de participante (`COM_PENDENCIAS`), conta caixa como `000` e PJ recusado.
+
+Ambiente usado: Oracle AI Database 23ai Free (`gvenzl/oracle-free:23-slim`), sem APEX. Para
+compilar `PKG_ECLOUD_UTIL` (que usa `APEX_ERROR`) e `PKG_EXTRATO.importar_upload` (que lê
+`APEX_APPLICATION_TEMP_FILES`), o teste local usou um stub mínimo desses dois objetos, fora do
+repositório. Num banco com APEX 26.2 nada disso é necessário. `fase1_vpd` continua com 85 OK.
 
 ## 9. Pontos em aberto
 
 * Confirmar se o leiaute 1.3 do LCDPR ainda vale para o ano-base 2026 e o limite de
   receita que obriga a entrega (ver `docs/contratos/lcdpr-leiaute-1.3.md`).
-* Extratos de exemplo dos bancos dos produtores do Eraldo (OFX de preferência) para os
-  testes da fase 2.
+* Os OFX dos testes seguem o padrão e as variações conhecidas dos bancos. Extratos reais
+  (anonimizados) dos bancos dos produtores do Eraldo ainda ajudam a pegar casos específicos.
+* O DV do CAD_ITR (CAFIR/CIB) não é conferido: o manual do LCDPR não publica o algoritmo.
