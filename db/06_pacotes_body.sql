@@ -2155,3 +2155,6 @@ end pkg_rtc_danfse;
 
 -- Vitrine da tela de login: anúncios e depoimentos
 @@06c_pacotes_body_vitrine.sql
+
+-- Autocadastro do escritório e assinatura pela Stone
+@@06d_pacotes_body_assinatura.sql
