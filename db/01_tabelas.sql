@@ -11,7 +11,9 @@
 --   3. Módulo A – Produtor rural (docs/05-modulo-a-rural.md): cliente pessoa
 --      física, imóveis rurais, centros de custo/safras, contas bancárias,
 --      livro caixa, extratos, conciliação bancária e arquivos do LCDPR.
---   4. Triggers de auditoria (ATUALIZADO_EM / ATUALIZADO_POR).
+--   4. Vitrine da tela de login (01c_tabelas_vitrine.sql): anúncios,
+--      estatísticas dos anúncios e depoimentos com aprovação.
+--   5. Triggers de auditoria (ATUALIZADO_EM / ATUALIZADO_POR).
 --
 -- Idempotente: pode ser executado várias vezes. Objetos que já existem são
 -- mantidos; colunas novas são adicionadas com ALTER TABLE ... ADD.
@@ -376,10 +378,10 @@ begin
             apex_page_id           number,
             apex_session_id        number,
             constraint rtc_chamada_log_pk primary key (chamada_id),
-            constraint rtc_chamada_log_serv_ck check (servico in ('REGIME','SIMPLES','DANFSE')),
-            constraint rtc_chamada_log_met_ck check (metodo in ('GET','POST')),
+            constraint rtc_chamada_log_serv_ck check (servico in ('REGIME','SIMPLES','DANFSE','MIDIA')),
+            constraint rtc_chamada_log_met_ck check (metodo in ('GET','POST','PUT','DELETE')),
             constraint rtc_chamada_log_suc_ck check (sucesso in ('S','N')),
-            constraint rtc_chamada_log_ref_ck check (referencia_tipo in ('SIMULACAO','DANFSE','CACHE','ERRO_CATALOGO','TESTE_CONEXAO')),
+            constraint rtc_chamada_log_ref_ck check (referencia_tipo in ('SIMULACAO','DANFSE','CACHE','ERRO_CATALOGO','TESTE_CONEXAO','ANUNCIO')),
             constraint rtc_chamada_log_esc_fk foreign key (escritorio_id) references escritorio (escritorio_id)
         )]');
     ddl('create index rtc_chamada_log_esc_ix on rtc_chamada_log (escritorio_id, inicio_em)');
@@ -650,8 +652,11 @@ end;
 
 @@01b_tabelas_rural.sql
 
+-- Vitrine da tela de login: anúncios e depoimentos
+@@01c_tabelas_vitrine.sql
+
 --------------------------------------------------------------------------------
--- 4. TRIGGERS DE AUDITORIA
+-- 5. TRIGGERS DE AUDITORIA
 --    Preenchem ATUALIZADO_EM/ATUALIZADO_POR e normalizam campos-chave.
 --------------------------------------------------------------------------------
 create or replace trigger rtc_config_biu

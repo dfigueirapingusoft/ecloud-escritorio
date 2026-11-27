@@ -26,6 +26,8 @@ OPENAPI = {
     "REGIME": json.loads((CONTRATOS / "openapi-regime-regular.json").read_text(encoding="utf-8")),
     "SIMPLES": json.loads((CONTRATOS / "openapi-simples-nacional.json").read_text(encoding="utf-8")),
     "DANFSE": json.loads((CONTRATOS / "openapi-danfse.json").read_text(encoding="utf-8")),
+    # Worker de mídia do próprio Ecloud (cloudflare/midia): imagens dos anúncios no R2
+    "MIDIA": json.loads((CONTRATOS / "openapi-midia.json").read_text(encoding="utf-8")),
 }
 
 falhas = []
@@ -64,6 +66,14 @@ METODO = {
     "c_path_ncm_detalhe": ("REGIME", "get"),
     "c_path_nbs_lista": ("REGIME", "get"),
     "c_path_nbs_detalhe": ("REGIME", "get"),
+    "c_path_midia_saude": ("MIDIA", "get"),
+    # a chave do objeto vai depois da barra: confere o caminho com o parâmetro
+    "c_path_midia_objetos": ("MIDIA", "put", "/objetos/{chave}"),
+}
+
+# Métodos que todo caminho com parâmetro precisa ter (além do principal).
+METODOS_EXTRAS = {
+    "c_path_midia_objetos": ["get", "delete"],
 }
 
 declarados = dict(re.findall(r"(c_path_\w+)\s+constant\s+varchar2\(\d+\)\s*:=\s*'([^']+)'", SPEC_SQL, re.I))
@@ -71,14 +81,22 @@ for const, caminho in sorted(declarados.items()):
     if const not in METODO:
         falha(f"{const} = {caminho}: constante sem mapeamento de serviço/método no validador")
         continue
-    servico, metodo = METODO[const]
+    servico, metodo = METODO[const][:2]
+    if len(METODO[const]) > 2:
+        modelo = METODO[const][2]
+        if not modelo.startswith(caminho + "/"):
+            falha(f"{const} = {caminho}: não é o prefixo de {modelo}")
+            continue
+        caminho = modelo
     paths = OPENAPI[servico]["paths"]
     if caminho not in paths:
         falha(f"{const} = {caminho}: caminho não existe em {servico}")
-    elif metodo not in paths[caminho]:
-        falha(f"{const} = {caminho}: método {metodo.upper()} não existe em {servico}")
-    else:
-        ok(f"{servico:7} {metodo.upper():4} {caminho}")
+        continue
+    for m in [metodo] + METODOS_EXTRAS.get(const, []):
+        if m not in paths[caminho]:
+            falha(f"{const} = {caminho}: método {m.upper()} não existe em {servico}")
+        else:
+            ok(f"{servico:7} {m.upper():6} {caminho}")
 for const in METODO:
     if const not in declarados:
         falha(f"{const}: esperado no validador mas não declarado em 03_pacotes_spec.sql")
