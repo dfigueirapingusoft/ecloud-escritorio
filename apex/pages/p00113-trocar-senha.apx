@@ -1,0 +1,195 @@
+page 113 (
+    name: Trocar senha
+    alias: TROCAR-SENHA
+    title: Ecloud - Trocar senha
+    appearance {
+        pageTemplate: @/login
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: firstItemOnPage
+        warnOnUnsavedChanges: false
+    }
+
+    region senha (
+        name: Trocar senha
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                <p class="ec-auth-subtitle">Informe a senha atual e a nova: pelo menos 8 caracteres, com letras e números.</p>
+                ```
+        }
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @/login
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P113_ATUAL (
+        type: password
+        label {
+            label: Senha atual
+            alignment: right
+        }
+        layout {
+            sequence: 5
+            region: @senha
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/hidden
+            templateOptions: #DEFAULT#
+            icon: fa-key
+            valuePlaceholder: Senha atual
+        }
+        validation {
+            valueRequired: true
+            maxLength: 128
+        }
+        advanced {
+            customAttributes: autocomplete="current-password"
+        }
+        sessionState {
+            storage: request
+        }
+    )
+
+    pageItem P113_SENHA (
+        type: password
+        label {
+            label: Nova senha
+            alignment: right
+        }
+        layout {
+            sequence: 10
+            region: @senha
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/hidden
+            templateOptions: #DEFAULT#
+            icon: fa-key
+            valuePlaceholder: Nova senha
+        }
+        validation {
+            valueRequired: true
+            maxLength: 128
+        }
+        advanced {
+            customAttributes: autocomplete="new-password"
+        }
+        sessionState {
+            storage: request
+        }
+    )
+
+    pageItem P113_CONFIRMA (
+        type: password
+        label {
+            label: Repita a nova senha
+            alignment: right
+        }
+        layout {
+            sequence: 20
+            region: @senha
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/hidden
+            templateOptions: #DEFAULT#
+            icon: fa-key
+            valuePlaceholder: Repita a nova senha
+        }
+        validation {
+            valueRequired: true
+            maxLength: 128
+        }
+        advanced {
+            customAttributes: autocomplete="new-password"
+        }
+        sessionState {
+            storage: request
+        }
+    )
+
+    button salvar (
+        buttonName: SALVAR
+        label: Salvar a senha
+        layout {
+            sequence: 10
+            region: @senha
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    validation senhas-iguais (
+        name: Senhas iguais
+        validation {
+            type: functionBodyReturningBoolean
+            plsqlFunctionBody: return :P113_SENHA = :P113_CONFIRMA;
+        }
+        error {
+            errorMessage: As senhas não conferem.
+            associatedItem: @P113_CONFIRMA
+        }
+        execution {
+            sequence: 10
+        }
+    )
+
+    process salvar (
+        name: Salvar a senha
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                pkg_ecloud_auth.trocar_senha(:P113_ATUAL, :P113_SENHA);
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 1131100001
+        }
+        successMessage {
+            successMessage: Senha trocada.
+        }
+        serverSideCondition {
+            whenButtonPressed: @salvar
+        }
+    )
+
+    branch depois (
+        name: Depois de salvar
+        execution {
+            sequence: 10
+        }
+        behavior {
+            type: pageOrUrl
+            target: {
+                page: 1
+            }
+        }
+        serverSideCondition {
+            whenButtonPressed: @salvar
+        }
+    )
+
+)

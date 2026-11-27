@@ -1,0 +1,436 @@
+page 108 (
+    name: Plano
+    alias: PLANO
+    title: Plano
+    pageGroup: @administracao
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @/modal-dialog
+        templateOptions: #DEFAULT#
+    }
+    dialog {
+        chained: false
+        resizable: false
+    }
+    security {
+        authorizationScheme: @admin-plataforma
+    }
+
+    region buttons (
+        name: Botões
+        type: staticContent
+        layout {
+            sequence: 30
+            slot: dialogFooter
+        }
+        appearance {
+            template: @/buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region plano (
+        name: Plano
+        type: form
+        source {
+            location: localDatabase
+            tableName: PLANO
+        }
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @/blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        edit {
+            enabled: true
+            allowedOperations: [
+                add
+                update
+            ]
+        }
+    )
+
+    pageItem P108_PLANO_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @plano
+            slot: regionBody
+        }
+        source {
+            formRegion: @plano
+            column: PLANO_ID
+            dataType: number
+            primaryKey: true
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+    pageItem P108_CODIGO (
+        type: textField
+        label {
+            label: Código
+            alignment: right
+        }
+        layout {
+            sequence: 20
+            region: @plano
+            slot: regionBody
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+            maxLength: 30
+        }
+        source {
+            formRegion: @plano
+            column: CODIGO
+            dataType: varchar2
+        }
+        help {
+            inlineHelpText: Letras maiúsculas, números e _ (ex.: SEMESTRAL).
+        }
+    )
+    pageItem P108_NOME (
+        type: textField
+        label {
+            label: Nome
+            alignment: right
+        }
+        layout {
+            sequence: 30
+            region: @plano
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 8
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+            maxLength: 60
+        }
+        source {
+            formRegion: @plano
+            column: NOME
+            dataType: varchar2
+        }
+    )
+    pageItem P108_DESCRICAO (
+        type: textarea
+        label {
+            label: Descrição (aparece no cadastro)
+            alignment: right
+        }
+        layout {
+            sequence: 40
+            region: @plano
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 400
+        }
+        source {
+            formRegion: @plano
+            column: DESCRICAO
+            dataType: varchar2
+        }
+    )
+    pageItem P108_PRECO_MENSAL (
+        type: numberField
+        label {
+            label: Preço por mês (R$)
+            alignment: right
+        }
+        layout {
+            sequence: 50
+            region: @plano
+            slot: regionBody
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        source {
+            formRegion: @plano
+            column: PRECO_MENSAL
+            dataType: number
+        }
+        help {
+            inlineHelpText: A fatura cobra o preço por mês vezes os meses. Faturas já geradas mantêm o valor antigo.
+        }
+    )
+    pageItem P108_MESES_COBRANCA (
+        type: selectList
+        label {
+            label: Meses por fatura
+            alignment: right
+        }
+        layout {
+            sequence: 60
+            region: @plano
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        source {
+            formRegion: @plano
+            column: MESES_COBRANCA
+            dataType: number
+        }
+        lov {
+            type: staticValues
+            staticValues: STATIC:1 (mensal);1,3 (trimestral);3,6 (semestral);6,12 (anual);12
+        }
+    )
+    pageItem P108_ORDEM (
+        type: numberField
+        label {
+            label: Ordem
+            alignment: right
+        }
+        layout {
+            sequence: 70
+            region: @plano
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        source {
+            formRegion: @plano
+            column: ORDEM
+            dataType: number
+        }
+    )
+    pageItem P108_PUBLICO (
+        type: switch
+        label {
+            label: Aparece no cadastro
+            alignment: right
+        }
+        layout {
+            sequence: 80
+            region: @plano
+            slot: regionBody
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        source {
+            formRegion: @plano
+            column: PUBLICO
+            dataType: varchar2
+        }
+        settings {
+            useDefaults: false
+            onValue: S
+            offValue: N
+        }
+        default {
+            type: static
+            staticValue: S
+        }
+    )
+    pageItem P108_ATIVO (
+        type: switch
+        label {
+            label: Ativo
+            alignment: right
+        }
+        layout {
+            sequence: 90
+            region: @plano
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        source {
+            formRegion: @plano
+            column: ATIVO
+            dataType: varchar2
+        }
+        settings {
+            useDefaults: false
+            onValue: S
+            offValue: N
+        }
+        default {
+            type: static
+            staticValue: S
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Cancelar
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Salvar alterações
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: update
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P108_PLANO_ID
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Criar
+        layout {
+            sequence: 40
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: insert
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P108_PLANO_ID
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancelar diálogo
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    process initialize-form (
+        name: Inicializar formulário
+        type: formInitialization
+        formRegion: @plano
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 1081100001
+        }
+    )
+
+    process process-form (
+        name: Gravar formulário
+        type: formAutoRowProcessing
+        formRegion: @plano
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 1081100002
+        }
+    )
+
+    process close-dialog (
+        name: Fechar diálogo
+        type: closeDialog
+        settings {
+            showSuccessMessages: false
+        }
+        execution {
+            sequence: 50
+        }
+        advanced {
+            executionMappingIdentifier: 1081100003
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE
+        }
+    )
+
+)

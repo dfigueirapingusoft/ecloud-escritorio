@@ -1,0 +1,29 @@
+emailTemplate ECLOUD_DEFINIR_SENHA (
+    name: Ecloud - Definir senha
+    comments {
+        comments: Static ID ECLOUD_DEFINIR_SENHA, usado por PKG_ECLOUD_CADASTRO (APEX_MAIL).
+    }
+    emailSubject: Ecloud: crie a sua senha de acesso
+    htmlFormat {
+        body:
+            ```html
+            <p>Olá, #NOME#.</p>
+            <p>O Ecloud agora tem login próprio. Crie a senha do usuário <strong>#USUARIO#</strong> pelo link abaixo:</p>
+            <p><a href="#URL#">Criar minha senha</a></p>
+            <p>O link vale por #VALIDADE# dias e só pode ser usado uma vez. Depois disso, peça um novo em "Esqueci a senha", na tela de entrada.</p>
+            ```
+        footer:
+            ```html
+            <p style="color:#6b7280;font-size:12px">Ecloud - Escritório Cloud. Este e-mail foi enviado automaticamente; não responda.</p>
+            ```
+    }
+    plainTextFormat {
+        content:
+            ```
+            Olá, #NOME#.
+
+            Crie a senha do usuário #USUARIO# no Ecloud: #URL#
+            O link vale por #VALIDADE# dias.
+            ```
+    }
+)

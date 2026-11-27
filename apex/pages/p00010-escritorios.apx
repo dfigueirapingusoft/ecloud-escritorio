@@ -50,7 +50,11 @@ page 10 (
                        municipio_ibge,
                        email,
                        telefone,
-                       ativo
+                       ativo,
+                       situacao,
+                       teste_ate,
+                       (select p.nome from plano p where p.plano_id = escritorio.plano_id) as plano,
+                       origem_cadastro
                   from escritorio
                 ```
         }
@@ -199,6 +203,61 @@ page 10 (
             }
         )
 
+        column SITUACAO (
+            type: plainText
+            heading {
+                heading: Situação
+            }
+            layout {
+                sequence: 10
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        column TESTE_ATE (
+            type: plainText
+            heading {
+                heading: Teste até
+            }
+            layout {
+                sequence: 11
+            }
+            source {
+                dataType: date
+            }
+            appearance {
+                formatMask: DD/MM/YYYY
+            }
+        )
+
+        column PLANO (
+            type: plainText
+            heading {
+                heading: Plano
+            }
+            layout {
+                sequence: 12
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        column ORIGEM_CADASTRO (
+            type: plainText
+            heading {
+                heading: Origem
+            }
+            layout {
+                sequence: 13
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
         savedReport 672874709 (
             visibility: primaryDefault
             view {
@@ -235,6 +294,18 @@ page 10 (
 
             displayColumn ATIVO (
                 sequence: 8
+            )
+
+            displayColumn SITUACAO (
+                sequence: 9
+            )
+
+            displayColumn TESTE_ATE (
+                sequence: 10
+            )
+
+            displayColumn PLANO (
+                sequence: 11
             )
 
             sort (

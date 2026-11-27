@@ -305,6 +305,34 @@ page 13 (
         }
     )
 
+    button enviar-senha (
+        buttonName: ENVIAR_SENHA
+        label: Enviar link de senha
+        layout {
+            sequence: 25
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+            icon: fa-envelope-o
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: Enviar ao usuário um link para ele criar uma nova senha?
+            style: warning
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P13_USUARIO_ID
+        }
+    )
+
     button save (
         buttonName: SAVE
         label: Salvar alterações
@@ -449,6 +477,41 @@ page 13 (
         }
     )
 
+    process enviar-senha (
+        name: Enviar link de senha
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                -- Login próprio: usuário novo (CREATE) recebe o link para criar a senha;
+                -- ENVIAR_SENHA reenvia para um usuário existente. Falha de e-mail no
+                -- CREATE não desfaz a gravação: o administrador reenvia depois.
+                begin
+                    pkg_ecloud_cadastro.enviar_definicao_senha(to_number(:P13_USUARIO_ID));
+                exception
+                    when others then
+                        if :REQUEST = 'ENVIAR_SENHA' then
+                            raise;
+                        end if;
+                        apex_debug.error('Link de senha não enviado ao usuário %s: %s', :P13_USUARIO_ID, sqlerrm);
+                end;
+                ```
+        }
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 1311300001
+        }
+        successMessage {
+            successMessage: Link de senha enviado por e-mail.
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,ENVIAR_SENHA
+        }
+    )
+
     process close-dialog (
         name: Fechar diálogo
         type: closeDialog
@@ -463,7 +526,7 @@ page 13 (
         }
         serverSideCondition {
             type: requestIsContainedInValue
-            value: CREATE,SAVE,DELETE
+            value: CREATE,SAVE,DELETE,ENVIAR_SENHA
         }
     )
 

@@ -39,6 +39,44 @@ list navigation-bar (
         }
     )
 
+    entry minha-assinatura (
+        label: Minha assinatura
+        icon {
+            imageIconCssClasses: fa-credit-card
+        }
+        layout {
+            sequence: 16
+            parentEntry: @app-user
+        }
+        link {
+            target: {
+                page: 106
+            }
+        }
+        serverSideCondition {
+            type: userIsAuthenticated
+        }
+    )
+
+    entry trocar-senha (
+        label: Trocar senha
+        icon {
+            imageIconCssClasses: fa-key
+        }
+        layout {
+            sequence: 17
+            parentEntry: @app-user
+        }
+        link {
+            target: {
+                page: 113
+            }
+        }
+        serverSideCondition {
+            type: userIsAuthenticated
+        }
+    )
+
     entry list_item (
         label: ---
         layout {

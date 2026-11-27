@@ -1,0 +1,240 @@
+page 106 (
+    name: Minha assinatura
+    alias: MINHA-ASSINATURA
+    title: Minha assinatura
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+    javaScript {
+        executeWhenPageLoads:
+            ```javascript
+            // "Já paguei, atualizar": relê a fatura na Stone (o HTML vem de
+            // pkg_ecloud_assinatura.minha_assinatura_html, com data-id da fatura).
+            $(document).on("click", ".ecl-fatura-atualizar", function () {
+                apex.page.submit({
+                    request: "ATUALIZAR",
+                    set: { "P106_FATURA_ID": $(this).data("id") },
+                    showWait: true
+                });
+            });
+            ```
+    }
+
+    region breadcrumb (
+        name: Breadcrumb
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region assinatura (
+        name: Assinatura
+        type: dynamicContent
+        source {
+            plsqlFunctionBody:
+                ```plsql
+                -- Plano, situação, fatura em aberto (Pagar agora / Já paguei) e histórico.
+                return pkg_ecloud_assinatura.minha_assinatura_html;
+                ```
+        }
+        layout {
+            sequence: 20
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region trocar (
+        name: Trocar de plano
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                <p class="u-text-secondary">O novo plano vale a partir da próxima fatura. Uma fatura em aberto é cancelada e refeita no plano novo.</p>
+                ```
+        }
+        layout {
+            sequence: 30
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        security {
+            authorizationScheme: @administrador
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery: select null from assinatura where escritorio_id = pkg_ecloud_ctx.escritorio_id and situacao <> 'CANCELADA'
+        }
+    )
+
+    pageItem P106_FATURA_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @assinatura
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: unrestricted
+        }
+        sessionState {
+            storage: request
+        }
+    )
+
+    pageItem P106_PLANO (
+        type: radioGroup
+        label {
+            label: Plano
+            alignment: right
+        }
+        layout {
+            sequence: 10
+            region: @trocar
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select pkg_ecloud_assinatura.rotulo_plano(plano_id) d, codigo r
+                  from plano
+                 where ativo = 'S'
+                   and publico = 'S'
+                 order by ordem, preco_mensal desc
+                ```
+        }
+        source {
+            type: sqlQuerySingleValue
+            sqlQuery:
+                ```sql
+                select p.codigo
+                  from assinatura a
+                  join plano p on p.plano_id = a.plano_id
+                 where a.escritorio_id = pkg_ecloud_ctx.escritorio_id
+                   and a.situacao <> 'CANCELADA'
+                ```
+        }
+        sessionState {
+            storage: request
+        }
+    )
+
+    button trocar (
+        buttonName: TROCAR
+        label: Trocar de plano
+        layout {
+            sequence: 10
+            region: @trocar
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: Trocar o plano da assinatura?
+            style: warning
+        }
+    )
+
+    process atualizar (
+        name: Já paguei, atualizar
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                -- Relê o pedido na Stone (GET /orders/{id}); paga -> escritório volta a ATIVO.
+                -- A fatura é procurada no contexto do escritório (VPD), então não dá
+                -- para atualizar a de outro.
+                pkg_ecloud_assinatura.atualizar_fatura(to_number(:P106_FATURA_ID));
+                -- o contexto da requisição foi gravado antes do pagamento: relê a situação
+                pkg_ecloud_ctx.definir_contexto;
+                if pkg_ecloud_assinatura.esta_suspenso then
+                    apex_application.g_print_success_message := 'Ainda não recebemos o pagamento. Pix cai na hora; boleto pode levar até 3 dias úteis.';
+                else
+                    apex_application.g_print_success_message := 'Fatura atualizada.';
+                end if;
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 1061100001
+        }
+        serverSideCondition {
+            type: request=Value
+            value: ATUALIZAR
+        }
+    )
+
+    process trocar (
+        name: Trocar de plano
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                pkg_ecloud_assinatura.trocar_plano(:P106_PLANO);
+                ```
+        }
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 1061100002
+        }
+        successMessage {
+            successMessage: Plano trocado. Ele vale a partir da próxima fatura.
+        }
+        serverSideCondition {
+            whenButtonPressed: @trocar
+        }
+    )
+
+    branch voltar (
+        name: Voltar para a página
+        execution {
+            sequence: 10
+        }
+        behavior {
+            type: pageOrUrl
+            target: {
+                page: 106
+            }
+        }
+    )
+
+)

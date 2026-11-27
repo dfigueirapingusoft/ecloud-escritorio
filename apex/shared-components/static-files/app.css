@@ -945,3 +945,151 @@ input.ec-cep-loading {
 @media (prefers-reduced-motion: reduce) {
     input.ec-cep-loading { animation: none; }
 }
+
+/* ---------------------------------------------------------------------------
+ * Autocadastro, senhas e assinatura (fase 3 do docs/07). As classes ecl-* vêm
+ * de PKG_ECLOUD_ASSINATURA (db/06d_pacotes_body_assinatura.sql).
+ * ------------------------------------------------------------------------ */
+.ec-auth-links {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 4px 0 8px;
+    text-align: center;
+    font-size: 14px;
+}
+.ec-auth-link {
+    color: var(--ec-brand-strong);
+    font-weight: 600;
+    text-decoration: none;
+}
+.ec-auth-link:hover,
+.ec-auth-link:focus {
+    text-decoration: underline;
+}
+.ec-auth-signup {
+    margin: 0;
+    color: var(--ec-muted);
+}
+.ec-cadastro-stage .t-Body-content {
+    max-width: 920px;
+    margin: 0 auto;
+}
+.ec-cadastro-brand {
+    text-align: center;
+    margin: 24px 0 8px;
+}
+
+/* Aviso no topo das páginas */
+.ecl-aviso-assinatura {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0 0 16px;
+    padding: 12px 16px;
+    border-radius: var(--ec-radius-sm);
+    border: 1px solid var(--ec-line);
+    background: #ffffff;
+    box-shadow: var(--ec-shadow);
+}
+.ecl-aviso-assinatura--info { border-left: 4px solid var(--ec-brand); }
+.ecl-aviso-assinatura--aviso { border-left: 4px solid #f5b800; }
+.ecl-aviso-assinatura--perigo { border-left: 4px solid #d93025; background: #fff6f5; }
+.ecl-aviso-icone { color: var(--ec-muted); }
+.ecl-aviso-assinatura--perigo .ecl-aviso-icone { color: #d93025; }
+.ecl-aviso-texto { flex: 1; }
+.ecl-aviso-link {
+    color: var(--ec-brand-strong);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* Minha assinatura */
+.ecl-assinatura-topo,
+.ecl-fatura-topo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+.ecl-assinatura-plano {
+    font-size: 18px;
+    font-weight: 700;
+}
+.ecl-assinatura-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+}
+.ecl-assinatura-info dt {
+    color: var(--ec-muted);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+.ecl-assinatura-info dd {
+    margin: 2px 0 0;
+    font-weight: 600;
+}
+.ecl-selo {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    background: var(--ec-brand-soft);
+    color: var(--ec-brand-deep);
+}
+.ecl-selo--ok { background: #e6f6ec; color: #17692f; }
+.ecl-selo--aviso { background: #fff4d6; color: #7a5a00; }
+.ecl-selo--perigo { background: #fde8e6; color: #a1221a; }
+.ecl-selo--neutro { background: var(--ec-sand); color: var(--ec-muted); }
+.ecl-fatura {
+    margin: 12px 0;
+    padding: 16px;
+    border: 1px solid var(--ec-line);
+    border-radius: var(--ec-radius-sm);
+    background: #ffffff;
+}
+.ecl-fatura--vencida { border-color: #f1b5b0; background: #fff6f5; }
+.ecl-fatura-titulo { font-weight: 700; }
+.ecl-fatura-meta {
+    margin: 6px 0 12px;
+    color: var(--ec-muted);
+}
+.ecl-fatura-acoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.ecl-assinatura-rotulo {
+    margin: 20px 0 8px;
+    font-size: 14px;
+    color: var(--ec-muted);
+}
+.ecl-historico {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.ecl-historico-item {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--ec-line);
+}
+.ecl-historico-valor { font-weight: 600; }
+.ecl-url-aviso {
+    padding: 12px;
+    border-radius: var(--ec-radius-sm);
+    background: var(--ec-sand);
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+@media (max-width: 640px) {
+    .ecl-aviso-assinatura { flex-wrap: wrap; }
+}

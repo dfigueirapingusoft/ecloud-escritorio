@@ -7,13 +7,38 @@ authentication oracle-apex-accounts (
     source {
         plsqlCode:
             ```plsql
-            -- Depois do login: grava o contexto VPD e o último acesso do usuário.
-            -- Quem não está em USUARIO (ou está inativo) fica sem escritório no
-            -- contexto e é barrado pelo esquema de autorização "usuario-cadastrado".
+            -- Esquema antigo, mantido só como reserva: o app usa o login próprio
+            -- (ecloud-login) desde a decisão de 27/11/2026.
             procedure pos_autenticacao is
             begin
                 pkg_ecloud_ctx.definir_contexto(p_registrar_acesso => true);
             end pos_autenticacao;
             ```
+    }
+)
+
+authentication ecloud-login (
+    name: Login próprio do Ecloud
+    type: custom
+    loginProcessing {
+        postAuthenticationProcedureName: pos_autenticacao
+    }
+    source {
+        plsqlCode:
+            ```plsql
+            -- Depois do login: grava o contexto VPD e o último acesso do usuário.
+            -- Escritório CANCELADO nem chega aqui (PKG_ECLOUD_AUTH.AUTENTICAR recusa);
+            -- SUSPENSO entra e o processo de aplicação leva para Minha assinatura.
+            procedure pos_autenticacao is
+            begin
+                pkg_ecloud_ctx.definir_contexto(p_registrar_acesso => true);
+            end pos_autenticacao;
+            ```
+    }
+    settings {
+        authFunctionName: pkg_ecloud_auth.autenticar
+    }
+    comments {
+        comments: Senha com hash PBKDF2 em USUARIO.SENHA_HASH, bloqueio após 5 erros (db/06d_pacotes_body_assinatura.sql).
     }
 )

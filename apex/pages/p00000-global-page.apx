@@ -1,4 +1,40 @@
 page 0 (
     name: Página global
-)
 
+    region aviso-assinatura (
+        name: Aviso da assinatura
+        type: dynamicContent
+        source {
+            plsqlFunctionBody:
+                ```plsql
+                -- Teste acabando, fatura em aberto ou vencida, escritório suspenso
+                -- (pkg_ecloud_assinatura.aviso_html; nulo quando não há aviso).
+                begin
+                    return pkg_ecloud_assinatura.aviso_html;
+                exception
+                    when others then
+                        apex_debug.error('Aviso da assinatura: %s', sqlerrm);
+                        return null;
+                end;
+                ```
+        }
+        layout {
+            sequence: 5
+            slot: body
+        }
+        appearance {
+            template: @/blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: currentPageNotInList
+            pages: [
+                106
+                110
+                111
+                112
+                9999
+            ]
+        }
+    )
+)

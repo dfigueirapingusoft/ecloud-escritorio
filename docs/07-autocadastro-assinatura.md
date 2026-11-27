@@ -21,8 +21,8 @@ Decisões de 27/11/2026 (Daniel):
 | Fase | Entrega | Situação |
 | --- | --- | --- |
 | 1 | Tabelas (`01d`), VPD (`02`), specs (`03d`), serviço STONE no `PKG_RTC_HTTP`, dados iniciais, contrato `openapi-stone.json`, teste VPD | feita (PR #8) |
-| 2 | Bodies (`06d`), webhook no ORDS (`08_ords_aviso_stone.sql`), jobs, testes `fase2_assinatura.sql` (sem HTTP) e `fase2_assinatura_integracao.sql` (sandbox) | este PR |
-| 3 | App: autenticação custom, páginas Cadastre seu escritório, Esqueci/Redefinir/Trocar senha, Minha assinatura, Planos, Escritórios com situação e Liberar acesso, aviso e bloqueio | a fazer |
+| 2 | Bodies (`06d`), webhook no ORDS (`08_ords_aviso_stone.sql`), jobs, testes `fase2_assinatura.sql` (sem HTTP) e `fase2_assinatura_integracao.sql` (sandbox) | feita (PR #10) |
+| 3 | App: autenticação custom, páginas Cadastre seu escritório (110), Esqueci (111)/Criar nova (112)/Trocar senha (113), Minha assinatura (106), Planos (107/108), Escritórios com situação, Iniciar assinatura, Liberar acesso e Cancelar, link de senha em Usuários, aviso e bloqueio, templates de e-mail | este PR |
 
 ## Ciclo da assinatura
 
@@ -99,6 +99,31 @@ sql ECLOUD@base                                    # depois, uma vez:
 
 `select pkg_ecloud_assinatura.url_aviso from dual` mostra a URL do webhook quando
 `WEBHOOK_BASE_URL` está preenchido (na página Planos, fase 3, ela aparece sozinha).
+
+## Virar para o login próprio (fase 3, uma vez)
+
+O import do app troca a autenticação: quem não tiver senha em `USUARIO.SENHA_HASH`
+deixa de entrar. Antes do import, defina a sua senha de administrador e mande o
+link para os outros usuários:
+
+```sql
+-- conectado como WKSP_ECLOUD
+exec pkg_ecloud_ctx.definir_contexto_sistema
+declare
+    l_id number;
+begin
+    select usuario_id into l_id from usuario where username = upper('SEU_USUARIO');
+    pkg_ecloud_auth.definir_senha(p_usuario_id => l_id, p_senha => 'escolha-uma-senha-forte-1');
+    commit;
+end;
+/
+-- e-mail "crie a sua senha" para todos os usuários ativos sem senha
+select pkg_ecloud_cadastro.migrar_contas_apex from dual;
+```
+
+Depois importe o app (`docs/03-deploy.md`, passo 5). Se algo der errado, volte o
+`authentication.scheme` de `application.apx` para `@oracle-apex-accounts` e
+importe de novo: as contas APEX continuam lá.
 
 ## Pontos em aberto
 

@@ -53,7 +53,7 @@ apex/      fonte APEXlang 26.2 (fase 3): application.apx, shared-components/ (st
            paleta Ecloud, anuncios.js, depoimentos.js, cep.js, app-processes.apx), pages/
 docs/      01-arquitetura.md, 02-app-apex.md, 03-deploy.md, 04-escopo-agro.md (roadmap Agro),
            05-modulo-a-rural.md, 06-vitrine-login.md (layout do Mecânico VIP, anúncios e depoimentos),
-           07-autocadastro-assinatura.md (login próprio, planos e cobrança Stone),
+           07-autocadastro-assinatura.md (login próprio, planos e cobrança Stone; páginas 106-113 do app),
            contratos/ (OpenAPI, exemplos, lcdpr-leiaute-1.3.md, openapi-midia.json do Worker de mídia,
            openapi-stone.json = recorte da Pagar.me v5)
 cloudflare/midia/  Worker de mídia (imagens dos anúncios no R2), com README de publicação
@@ -81,12 +81,15 @@ python3 tools/verificar_sql_apex.py /tmp/v.sql && sql ECLOUD@base @/tmp/v.sql
   todo processo leva `advanced.executionMappingIdentifier` único **no app inteiro** (o import
   recusa repetido entre páginas; vale também para `savedReportMappingIdentifier`); coluna de IR
   só aceita dataType varchar2/number/date/clob (converta timestamp com `cast(... as date)`);
-  switch com valores próprios exige `useDefaults: false`.
+  switch com valores próprios exige `useDefaults: false`. `serverSideCondition` com lista de páginas usa
+  array (`pages: [ 106 ... ]`); SQL de condição é `type: rowsReturned` + `sqlQuery`; origem de item por SQL é
+  `source.type: sqlQuerySingleValue`; LOV estática inline é `staticValues: STATIC:A;1,B;2`.
 * ID do app fixo em `apex/deployments/default.json` (`"app": {"id": 102, ...}`, ID do workspace ECLOUD); sem ele cada import cria app novo.
   No APEX local de teste use `apex import -input apex -id 100`.
 * Item de data em SQL de gráfico chega como texto: use `to_date(:ITEM, 'DD/MM/YYYY')`. Padrão de item
   data/hora: devolva texto na máscara (`to_char(current_timestamp, 'DD/MM/YYYY HH24:MI')`).
-* Processo de aplicação (`app-processes.apx`) não aceita `advanced.staticId`;
+* Processo de aplicação (`app-processes.apx`), authentication e emailTemplate não aceitam `advanced.staticId`:
+  o identificador é o Static ID (templates de e-mail: `emailTemplate ECLOUD_BOAS_VINDAS (`);
   Ajax Callback é `execution.point: ajaxCallback`. Item `hidden` e
   `starRating` não aceitam `layout.alignment`.
 * UF aparece só pela sigla ("SP") em todo o app: LOV compartilhada `ufs` (27 UFs fixas, sem depender do cache).
