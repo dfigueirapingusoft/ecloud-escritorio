@@ -328,6 +328,9 @@ CAMPOS = [
 ] + [
     # Stone <- Aviso (receber_aviso / pedido_do_aviso)
     ("STONE", "Aviso", c) for c in ["id", "type", "data.id", "data.order.id"]
+] + [
+    # Stone <- ErroStone (mensagem_erro)
+    ("STONE", "ErroStone", c) for c in ["message", "errors"]
 ]
 
 for servico, raiz, caminho in CAMPOS:

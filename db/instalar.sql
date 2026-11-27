@@ -39,6 +39,8 @@ prompt == 05_dados_iniciais.sql
 @@05_dados_iniciais.sql
 prompt == 06_pacotes_body.sql
 @@06_pacotes_body.sql
+prompt == 08_ords_aviso_stone.sql
+@@08_ords_aviso_stone.sql
 
 prompt == Objetos inválidos (esperado: nenhum)
 select object_type, object_name, status

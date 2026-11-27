@@ -166,6 +166,15 @@
           "payment_url": { "type": "string", "description": "Link de pagamento (Pix, boleto ou cartão)." }
         }
       },
+      "ErroStone": {
+        "type": "object",
+        "description": "Corpo das respostas 4xx/5xx. O Ecloud junta message e errors na mensagem de erro (PKG_STONE_API.mensagem_erro) e guarda o corpo inteiro em RTC_CHAMADA_LOG.",
+        "x-fonte": "mecanico-vip db/21_mv_billing_api.sql (provider_error: Pagar.me {\"message\":..,\"errors\":{\"campo\":[\"mensagem\"]}}), em produção",
+        "properties": {
+          "message": { "type": "string" },
+          "errors": { "type": "object", "additionalProperties": { "type": "array", "items": { "type": "string" } }, "description": "Campo inválido -> lista de mensagens." }
+        }
+      },
       "Aviso": {
         "type": "object",
         "description": "Corpo do webhook. O Ecloud usa só id (descarta repetidos), type e o id do pedido; a situação é sempre relida em GET /orders/{order_id}.",

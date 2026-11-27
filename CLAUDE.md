@@ -46,8 +46,9 @@ db/        00_pre_requisitos.sql e 00b_acesso_proxy.sql (DBA), 01_tabelas.sql (+
            01c_tabelas_vitrine.sql, 01d_tabelas_assinatura.sql), 02_vpd.sql, 03_pacotes_spec.sql
            (+ 03b_pacotes_spec_rural.sql, 03c_pacotes_spec_vitrine.sql, 03d_pacotes_spec_assinatura.sql),
            04_views.sql, 05_dados_iniciais.sql,
-           06_pacotes_body.sql (+ 06b_pacotes_body_rural.sql, 06c_pacotes_body_vitrine.sql),
-           07_primeiro_admin.sql, instalar.sql, testes/
+           06_pacotes_body.sql (+ 06b_pacotes_body_rural.sql, 06c_pacotes_body_vitrine.sql,
+           06d_pacotes_body_assinatura.sql), 07_primeiro_admin.sql, 08_ords_aviso_stone.sql (webhook Stone),
+           instalar.sql, testes/
 apex/      fonte APEXlang 26.2 (fase 3): application.apx, shared-components/ (static-files/app.css com a
            paleta Ecloud, anuncios.js, depoimentos.js, cep.js, app-processes.apx), pages/
 docs/      01-arquitetura.md, 02-app-apex.md, 03-deploy.md, 04-escopo-agro.md (roadmap Agro),
@@ -67,6 +68,8 @@ sql ECLOUD@base @testes/fase2_offline.sql      # sem HTTP, usa respostas reais e
 sql ECLOUD@base @testes/fase2_rural.sql        # módulo A (livro caixa, OFX/CSV, conciliação, LCDPR)
 sql ECLOUD@base @testes/fase2_vitrine.sql      # anúncios e depoimentos do login (sem HTTP)
 sql ECLOUD@base @testes/fase2_vitrine_integracao.sql  # Worker de mídia real (MIDIA_BASE_URL + credencial)
+sql ECLOUD@base @testes/fase2_assinatura.sql   # autocadastro, login próprio e ciclo da assinatura (sem HTTP)
+sql ECLOUD@base @testes/fase2_assinatura_integracao.sql  # sandbox da Stone (STONE_API_KEY com sk_test_)
 node cloudflare/midia/worker.test.mjs          # Worker de mídia com R2 simulado
 sql ECLOUD@base @testes/fase2_integracao.sql   # HTTP real; precisa de APEX + credencial + RTC_CONFIG
 python3 tools/validar_contratos.py
@@ -92,6 +95,8 @@ python3 tools/verificar_sql_apex.py /tmp/v.sql && sql ECLOUD@base @/tmp/v.sql
 * Função privada de pacote não pode ser usada dentro de SQL (PLS-00231): torne-a
   pública (ex.: `PKG_ECLOUD_UTIL`) ou calcule antes em variável.
 * `APEX_CREDENTIAL` é de direitos do invocador: rode como o schema da aplicação, não como SYS.
+* `DBMS_CRYPTO` exige o grant de `00_pre_requisitos.sql` (como ADMIN); sem ele os bodies do login não
+  compilam. Use-o por SQL dinâmico em scripts de dados para não abortar a instalação.
 
 ## Fatos do contrato que já causaram dúvida
 

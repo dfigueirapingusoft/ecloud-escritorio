@@ -52,6 +52,8 @@ exec pkg_ecloud_ctx.definir_contexto_sistema
 exec pkg_rtc_dados_abertos.sincronizar_tudo
 -- Jobs: sincronização diária (3h) e expurgo do log
 exec pkg_rtc_dados_abertos.criar_jobs
+-- Assinatura (docs/07): rotina diária às 6h e reprocessamento dos avisos da Stone a cada 5 min
+exec pkg_ecloud_assinatura.criar_jobs
 ```
 
 ## 5. Pelo proxy: importar o app (equivalente ao script da skill apexlang-deploy)
