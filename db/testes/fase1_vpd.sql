@@ -43,12 +43,13 @@ declare
     l_aviso   number;
     l_tok_a   number;
     l_usu_a   number;
-    l_tabelas_assinatura t_nomes;
     type t_nomes is table of varchar2(30);
     l_tabelas_rurais t_nomes := t_nomes(
         'IMOVEL_RURAL','IMOVEL_CONTRAPARTE','CENTRO_CUSTO','CONTA_BANCARIA',
         'CATEGORIA_CAIXA','LIVRO_CAIXA','EXTRATO_LAYOUT_CSV','EXTRATO_IMPORTACAO',
         'EXTRATO_ITEM','CONCILIACAO','REGRA_CONCILIACAO','LCDPR_ARQUIVO');
+    l_tabelas_assinatura t_nomes := t_nomes(
+        'ASSINATURA','ASSINATURA_FATURA','ASSINATURA_WEBHOOK','USUARIO_SENHA_TOKEN');
 
     l_qtd     number;
     l_falhas  number := 0;
@@ -75,7 +76,6 @@ declare
             return sqlcode = p_ora;
     end espera_erro;
 begin
-    l_tabelas_assinatura := t_nomes('ASSINATURA','ASSINATURA_FATURA','ASSINATURA_WEBHOOK','USUARIO_SENHA_TOKEN');
     savepoint inicio_teste;
 
     ----------------------------------------------------------------------------

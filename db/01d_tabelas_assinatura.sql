@@ -52,18 +52,26 @@ declare
             null;
     end ddl;
 
-    -- ESCRITORIO, USUARIO e RTC_CHAMADA_LOG têm VPD e o Oracle recusa DDL que
-    -- valida as linhas (ORA-28133): o contexto de sistema libera o acesso
-    -- durante a migração. Em instalação nova o pacote ainda não existe.
-    procedure contexto_migracao(p_ligar in boolean) is
-        e_nao_existe exception; pragma exception_init(e_nao_existe, -6550);
+    -- ESCRITORIO, USUARIO e RTC_CHAMADA_LOG têm VPD e o Oracle avalia a
+    -- política durante o DDL que valida linhas (ORA-28133). Aqui não dá para
+    -- usar o contexto de sistema como no 01b/01c: PKG_ECLOUD_CTX lê
+    -- ESCRITORIO e USUARIO, então o próprio ALTER invalida o pacote no meio
+    -- do comando (ORA-04061/ORA-28112). As políticas dessas três tabelas
+    -- ficam desligadas só durante a migração; 02_vpd.sql as recria em seguida.
+    -- Em instalação nova as políticas ainda não existem: nada a fazer.
+    procedure politicas(p_ligar in boolean) is
     begin
-        execute immediate case when p_ligar
-                               then 'begin pkg_ecloud_ctx.definir_contexto_sistema; end;'
-                               else 'begin pkg_ecloud_ctx.limpar_contexto; end;' end;
-    exception
-        when e_nao_existe then null;
-    end contexto_migracao;
+        for r in (select object_name, policy_name
+                    from user_policies
+                   where object_name in ('ESCRITORIO', 'USUARIO', 'RTC_CHAMADA_LOG'))
+        loop
+            dbms_rls.enable_policy(
+                object_schema => sys_context('USERENV', 'CURRENT_SCHEMA'),
+                object_name   => r.object_name,
+                policy_name   => r.policy_name,
+                enable        => p_ligar);
+        end loop;
+    end politicas;
 
     -- Troca o CHECK de uma coluna (remove e cria de novo com a lista nova).
     procedure trocar_check(p_tabela in varchar2, p_constraint in varchar2, p_condicao in varchar2) is
@@ -78,7 +86,7 @@ declare
                        || ' check (' || p_condicao || ')';
     end trocar_check;
 begin
-    contexto_migracao(true);
+    politicas(false);
 
     ----------------------------------------------------------------------------
     -- 1. ESCRITORIO
@@ -89,18 +97,22 @@ begin
     --    TESTE_ATE        último dia do teste grátis.
     --    PLANO_ID         plano escolhido (a ASSINATURA guarda o vigente).
     --    ORIGEM_CADASTRO  PLATAFORMA (criado pelo admin) ou AUTOCADASTRO.
-    --    CEP..BAIRRO      endereço enviado à Stone na fatura (opcional).
+    --    CEP..BAIRRO      endereço enviado à Stone na fatura (opcional). CEP
+--                     aceita máscara na entrada e é gravado com 8 dígitos.
     ----------------------------------------------------------------------------
     ddl(q'[alter table escritorio add (
             situacao         varchar2(10 char)  default on null 'ATIVO' not null,
             teste_ate        date,
             plano_id         number,
             origem_cadastro  varchar2(12 char)  default on null 'PLATAFORMA' not null,
-            cep              varchar2(8 char),
+            cep              varchar2(10 char),
             logradouro       varchar2(150 char),
             numero           varchar2(20 char),
             complemento      varchar2(100 char),
             bairro           varchar2(100 char))]');
+    -- CEP aceita a máscara (99999-999) na entrada; o trigger ESCRITORIO_BIU
+    -- tira a máscara e o CHECK garante 8 dígitos no valor gravado.
+    ddl('alter table escritorio modify (cep varchar2(10 char))');
     ddl(q'[alter table escritorio add constraint escritorio_situacao_ck
             check (situacao in ('TESTE','ATIVO','SUSPENSO','CANCELADO'))]');
     ddl(q'[alter table escritorio add constraint escritorio_origem_ck
@@ -332,11 +344,11 @@ begin
     trocar_check('rtc_chamada_log', 'rtc_chamada_log_ref_ck',
                  q'[referencia_tipo in ('SIMULACAO','DANFSE','CACHE','ERRO_CATALOGO','TESTE_CONEXAO','ANUNCIO','ASSINATURA_FATURA')]');
 
-    contexto_migracao(false);
+    politicas(true);
     dbms_output.put_line('01d_tabelas_assinatura.sql: planos, assinaturas, faturas e login próprio verificados.');
 exception
     when others then
-        contexto_migracao(false);
+        politicas(true);
         raise;
 end;
 /
