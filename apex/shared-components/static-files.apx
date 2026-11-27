@@ -34,6 +34,11 @@ file "app.css" (
     charSet: utf-8
 )
 
+file "cep.js" (
+    mimeType: text/javascript
+    charSet: utf-8
+)
+
 file "depoimentos.js" (
     mimeType: text/javascript
     charSet: utf-8
