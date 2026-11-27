@@ -42,12 +42,14 @@ português do Brasil.
 ## Estrutura
 
 ```
-db/        00_pre_requisitos.sql e 00b_acesso_proxy.sql (DBA), 01_tabelas.sql (+ 01b_tabelas_rural.sql),
-           02_vpd.sql, 03_pacotes_spec.sql (+ 03b_pacotes_spec_rural.sql), 04_views.sql, 05_dados_iniciais.sql,
+db/        00_pre_requisitos.sql e 00b_acesso_proxy.sql (DBA), 01_tabelas.sql (+ 01b_tabelas_rural.sql,
+           01c_tabelas_vitrine.sql), 02_vpd.sql, 03_pacotes_spec.sql (+ 03b_pacotes_spec_rural.sql,
+           03c_pacotes_spec_vitrine.sql), 04_views.sql, 05_dados_iniciais.sql,
            06_pacotes_body.sql (+ 06b_pacotes_body_rural.sql), 07_primeiro_admin.sql, instalar.sql, testes/
 apex/      fonte APEXlang 26.2 (fase 3): application.apx, shared-components/, pages/
 docs/      01-arquitetura.md, 02-app-apex.md, 03-deploy.md, 04-escopo-agro.md (roadmap Agro),
-           05-modulo-a-rural.md, contratos/ (OpenAPI, exemplos, lcdpr-leiaute-1.3.md)
+           05-modulo-a-rural.md, 06-vitrine-login.md (layout do Mecânico VIP, anúncios e depoimentos),
+           contratos/ (OpenAPI, exemplos, lcdpr-leiaute-1.3.md, openapi-midia.json do Worker de mídia)
 tools/     validar_contratos.py, verificar_sql_apex.py
 ```
 
@@ -87,5 +89,8 @@ python3 tools/verificar_sql_apex.py /tmp/v.sql && sql ECLOUD@base @/tmp/v.sql
 * DANFSe não tem endpoint de versão; use `/health/ready`.
 * LCDPR: fonte da verdade é `docs/contratos/lcdpr-leiaute-1.3.md`; valores sem vírgula com 2 casas
   implícitas, datas `ddmmaaaa`, `COD_CONTA` 000 = dinheiro e `COD_IMOVEL` 000 = custo comum.
+* Vitrine do login: imagens dos anúncios no R2 via Worker de mídia (`openapi-midia.json`, Web
+  Credential `MIDIA_UPLOAD_TOKEN`, HTTP Header `X-Upload-Token`); o banco não guarda chave do R2.
+  `DEPOIMENTO` tem duas políticas (leitura pública do APROVADO, gravação só do escritório).
 * Módulo A (produtor rural): DDL em tabela com VPD que valida linhas dá ORA-28133; ligue
   `pkg_ecloud_ctx.definir_contexto_sistema` durante a migração (ver `01b_tabelas_rural.sql`).

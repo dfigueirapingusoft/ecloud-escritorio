@@ -194,6 +194,7 @@ as
                                when 'REGIME'  then c_regime_base_url
                                when 'SIMPLES' then c_simples_base_url
                                when 'DANFSE'  then c_danfse_base_url
+                               when 'MIDIA'   then c_midia_base_url
                                else 'SERVICO_INVALIDO_' || p_servico
                            end), '/');
     end url_base;
@@ -201,6 +202,14 @@ as
     function credencial_static_id return varchar2 is
     begin
         return valor(c_credencial_static_id);
+    end credencial_static_id;
+
+    function credencial_static_id(p_servico in varchar2) return varchar2 is
+    begin
+        if upper(p_servico) = 'MIDIA' then
+            return valor(c_midia_credencial);
+        end if;
+        return credencial_static_id;
     end credencial_static_id;
 
     procedure definir(p_chave in varchar2, p_valor in varchar2) is
@@ -471,7 +480,7 @@ as
                 p_http_method          => p_metodo,
                 p_body                 => p_corpo,
                 p_transfer_timeout     => timeout_seg,
-                p_credential_static_id => pkg_rtc_config.credencial_static_id);
+                p_credential_static_id => pkg_rtc_config.credencial_static_id(p_servico));
             preencher_resposta(l_resp, l_inicio);
             pkg_rtc_log.finalizar(l_resp.chamada_id, l_resp.http_status, l_resp.content_type,
                                   l_resp.corpo, null, headers_log);
@@ -544,7 +553,7 @@ as
                 p_http_method          => 'POST',
                 p_body_blob            => p_xml,
                 p_transfer_timeout     => timeout_seg,
-                p_credential_static_id => pkg_rtc_config.credencial_static_id);
+                p_credential_static_id => pkg_rtc_config.credencial_static_id(p_servico));
             preencher_resposta(l_resp, l_inicio);
 
             -- erro (JSON {sucesso, mensagem}) vem como texto em CORPO
@@ -565,6 +574,85 @@ as
         return l_resp;
     end post_xml_blob;
 
+    -- PUT/DELETE de um recurso binário (Worker de mídia). O corpo binário não
+    -- vai para o log: só o Content-Type e o tamanho.
+    function executar_binario(
+        p_servico          in varchar2,
+        p_metodo           in varchar2,
+        p_caminho          in varchar2,
+        p_corpo            in blob,
+        p_content_type     in varchar2,
+        p_operacao         in varchar2,
+        p_referencia_tipo  in varchar2,
+        p_referencia_id    in number) return t_resposta
+    is
+        l_url    varchar2(4000) := montar_url(p_servico, p_caminho, null);
+        l_resp   t_resposta;
+        l_inicio timestamp with time zone;
+    begin
+        l_resp.chamada_id := pkg_rtc_log.iniciar(
+            p_servico         => p_servico,
+            p_operacao        => p_operacao,
+            p_metodo          => p_metodo,
+            p_url             => l_url,
+            p_content_type    => p_content_type,
+            p_request_bytes   => case when p_corpo is not null then dbms_lob.getlength(p_corpo) end,
+            p_referencia_tipo => p_referencia_tipo,
+            p_referencia_id   => p_referencia_id);
+        begin
+            garantir_workspace;
+            definir_headers(p_content_type, 'application/json');
+            l_inicio := systimestamp;
+            if p_corpo is not null then
+                l_resp.corpo := apex_web_service.make_rest_request(
+                    p_url                  => l_url,
+                    p_http_method          => p_metodo,
+                    p_body_blob            => p_corpo,
+                    p_transfer_timeout     => timeout_seg,
+                    p_credential_static_id => pkg_rtc_config.credencial_static_id(p_servico));
+            else
+                l_resp.corpo := apex_web_service.make_rest_request(
+                    p_url                  => l_url,
+                    p_http_method          => p_metodo,
+                    p_transfer_timeout     => timeout_seg,
+                    p_credential_static_id => pkg_rtc_config.credencial_static_id(p_servico));
+            end if;
+            preencher_resposta(l_resp, l_inicio);
+            pkg_rtc_log.finalizar(l_resp.chamada_id, l_resp.http_status, l_resp.content_type,
+                                  l_resp.corpo, null, headers_log);
+        exception
+            when others then
+                l_resp.erro     := substr(sqlerrm || ' ' || dbms_utility.format_error_backtrace, 1, 4000);
+                l_resp.tempo_ms := case when l_inicio is not null then milissegundos(l_inicio) end;
+                pkg_rtc_log.registrar_falha(l_resp.chamada_id, l_resp.erro);
+        end;
+        return l_resp;
+    end executar_binario;
+
+    function put_blob(
+        p_servico          in varchar2,
+        p_caminho          in varchar2,
+        p_corpo            in blob,
+        p_content_type     in varchar2,
+        p_operacao         in varchar2,
+        p_referencia_tipo  in varchar2 default null,
+        p_referencia_id    in number   default null) return t_resposta is
+    begin
+        return executar_binario(p_servico, 'PUT', p_caminho, p_corpo, p_content_type,
+                                p_operacao, p_referencia_tipo, p_referencia_id);
+    end put_blob;
+
+    function delete_recurso(
+        p_servico          in varchar2,
+        p_caminho          in varchar2,
+        p_operacao         in varchar2,
+        p_referencia_tipo  in varchar2 default null,
+        p_referencia_id    in number   default null) return t_resposta is
+    begin
+        return executar_binario(p_servico, 'DELETE', p_caminho, null, null,
+                                p_operacao, p_referencia_tipo, p_referencia_id);
+    end delete_recurso;
+
     function testar_conexao(p_servico in varchar2) return t_teste_conexao is
         l_teste   t_teste_conexao;
         l_resp    t_resposta;
@@ -575,6 +663,7 @@ as
                          when c_servico_regime  then c_path_regime_versao
                          when c_servico_simples then c_path_simples_versao
                          when c_servico_danfse  then c_path_danfse_ready
+                         when c_servico_midia   then c_path_midia_saude
                      end;
         if l_caminho is null then
             raise_application_error(-20020, 'Serviço desconhecido: ' || p_servico);
@@ -596,7 +685,13 @@ as
             l_teste.ok       := false;
             l_teste.mensagem := 'Sem conexão: ' || l_resp.erro;
         elsif l_resp.http_status = 200 and l_resp.corpo is json then
-            if l_teste.servico = c_servico_danfse then
+            if l_teste.servico = c_servico_midia then
+                -- SaudeMidia (openapi-midia.json)
+                l_teste.versao_app := substr(json_value(l_resp.corpo, '$.versao'), 1, 60);
+                l_teste.ok         := json_value(l_resp.corpo, '$.status') = 'ok';
+                l_teste.mensagem   := 'Worker de mídia: ' || json_value(l_resp.corpo, '$.status')
+                                      || ', versão ' || l_teste.versao_app;
+            elsif l_teste.servico = c_servico_danfse then
                 -- HealthStatus: o gerador de DANFSe não expõe versão
                 l_teste.status_danfse := json_value(l_resp.corpo, '$.status');
                 l_teste.ok            := l_teste.status_danfse = 'ok';
@@ -621,7 +716,7 @@ as
             l_teste.mensagem := 'HTTP ' || l_resp.http_status
                                 || case when l_resp.http_status in (401, 403)
                                         then ': chave da API recusada (confira a Web Credential '
-                                             || pkg_rtc_config.credencial_static_id || ')' end;
+                                             || pkg_rtc_config.credencial_static_id(l_teste.servico) || ')' end;
         end if;
         return l_teste;
     end testar_conexao;

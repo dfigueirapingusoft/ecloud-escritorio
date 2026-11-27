@@ -2,7 +2,8 @@
 -- 05_dados_iniciais.sql
 -- Carga inicial idempotente (MERGE): configuração e controle de cache.
 -- Não contém segredos: a X-API-Key fica somente na Web Credential do APEX
--- (Static ID RTC_API_KEY, tipo HTTP Header).
+-- (Static ID RTC_API_KEY, tipo HTTP Header) e o token do Worker de mídia na
+-- Web Credential MIDIA_UPLOAD_TOKEN (HTTP Header X-Upload-Token).
 --------------------------------------------------------------------------------
 set define off
 
@@ -30,6 +31,10 @@ using (
            'Tamanho máximo de request/response gravado no log (o excedente é truncado)' from dual union all
     select 'APEX_WORKSPACE', null, 'TEXTO',
            'Workspace APEX dono da Web Credential RTC_API_KEY (usado por jobs e scripts fora do APEX)' from dual union all
+    select 'MIDIA_BASE_URL', null, 'URL',
+           'URL do Worker de mídia (imagens dos anúncios no Cloudflare R2), sem barra final. Vazio = anúncios sem imagem' from dual union all
+    select 'MIDIA_CREDENCIAL_STATIC_ID', 'MIDIA_UPLOAD_TOKEN', 'TEXTO',
+           'Static ID da Web Credential do APEX com o header X-Upload-Token do Worker de mídia' from dual union all
     select 'CACHE_DATA_REFERENCIA', null, 'TEXTO',
            'Data (AAAA-MM-DD) das consultas de dados abertos. Vazio = maior entre hoje e 2027-01-01' from dual
 ) o

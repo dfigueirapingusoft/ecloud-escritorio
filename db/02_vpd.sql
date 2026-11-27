@@ -249,6 +249,16 @@ as
     -- RTC_CHAMADA_LOG: escritório vê o seu; linhas sem escritório (jobs,
     -- teste de conexão) só para o admin da plataforma e o sistema.
     function fn_log(p_schema in varchar2, p_objeto in varchar2) return varchar2;
+
+    -- DEPOIMENTO, leitura (SELECT): o APROVADO é público, porque a tela de
+    -- login roda sem escritório no contexto; o escritório vê também os seus
+    -- (pendentes e reprovados); admin da plataforma e sistema veem todos.
+    function fn_depoimento_leitura(p_schema in varchar2, p_objeto in varchar2) return varchar2;
+
+    -- DEPOIMENTO, gravação (INSERT/UPDATE/DELETE): só o escritório dono; o
+    -- admin da plataforma grava em qualquer um (aprovar/reprovar/remover).
+    -- Sem contexto: nada (falha fechada).
+    function fn_depoimento_escrita(p_schema in varchar2, p_objeto in varchar2) return varchar2;
 end pkg_rtc_vpd;
 /
 
@@ -309,6 +319,29 @@ as
         end if;
         return c_pred_nada;
     end fn_log;
+
+    function fn_depoimento_leitura(p_schema in varchar2, p_objeto in varchar2) return varchar2 is
+        c_aprovado constant varchar2(30) := q'[status = 'APROVADO']';
+    begin
+        if pkg_ecloud_ctx.is_admin_plataforma
+           or (pkg_ecloud_ctx.is_sistema and not tem_escritorio) then
+            return null;
+        elsif tem_escritorio then
+            return c_aprovado || ' or ' || c_pred_escritorio;
+        end if;
+        return c_aprovado;
+    end fn_depoimento_leitura;
+
+    function fn_depoimento_escrita(p_schema in varchar2, p_objeto in varchar2) return varchar2 is
+    begin
+        if pkg_ecloud_ctx.is_admin_plataforma
+           or (pkg_ecloud_ctx.is_sistema and not tem_escritorio) then
+            return null;
+        elsif tem_escritorio then
+            return c_pred_escritorio;
+        end if;
+        return c_pred_nada;
+    end fn_depoimento_escrita;
 end pkg_rtc_vpd;
 /
 
@@ -369,5 +402,43 @@ begin
             policy_type     => dbms_rls.context_sensitive);
     end loop;
     dbms_output.put_line('02_vpd.sql: ' || l_pols.count || ' políticas VPD aplicadas.');
+end;
+/
+
+--------------------------------------------------------------------------------
+-- DEPOIMENTO (01c_tabelas_vitrine.sql): duas políticas, porque a leitura e a
+-- gravação têm regras diferentes (o aprovado é público só para leitura).
+-- ANUNCIO e ANUNCIO_ESTATISTICA são globais (sem ESCRITORIO_ID, como
+-- RTC_CONFIG): não têm VPD; quem grava ANUNCIO é controlado pelo trigger
+-- ANUNCIO_BIU (só ADMIN_PLATAFORMA).
+--------------------------------------------------------------------------------
+declare
+    c_schema constant varchar2(128) := sys_context('USERENV', 'CURRENT_SCHEMA');
+
+    procedure recriar(p_politica in varchar2, p_funcao in varchar2, p_comandos in varchar2) is
+        l_existe number;
+    begin
+        select count(*) into l_existe
+          from user_policies
+         where object_name = 'DEPOIMENTO'
+           and policy_name = p_politica;
+        if l_existe > 0 then
+            dbms_rls.drop_policy(c_schema, 'DEPOIMENTO', p_politica);
+        end if;
+        dbms_rls.add_policy(
+            object_schema   => c_schema,
+            object_name     => 'DEPOIMENTO',
+            policy_name     => p_politica,
+            function_schema => c_schema,
+            policy_function => p_funcao,
+            statement_types => p_comandos,
+            update_check    => true,
+            enable          => true,
+            policy_type     => dbms_rls.context_sensitive);
+    end recriar;
+begin
+    recriar('VPD_DEPOIMENTO_LEITURA', 'PKG_RTC_VPD.FN_DEPOIMENTO_LEITURA', 'SELECT');
+    recriar('VPD_DEPOIMENTO',         'PKG_RTC_VPD.FN_DEPOIMENTO_ESCRITA', 'INSERT,UPDATE,DELETE');
+    dbms_output.put_line('02_vpd.sql: 2 políticas VPD aplicadas em DEPOIMENTO.');
 end;
 /

@@ -30,6 +30,10 @@ declare
     l_imp_a   number;
     l_ite_a   number;
     l_reg_a   number;
+    -- vitrine do login (anúncios e depoimentos)
+    l_dep_a   number;
+    l_dep_b   number;
+    l_anu     number;
     type t_nomes is table of varchar2(30);
     l_tabelas_rurais t_nomes := t_nomes(
         'IMOVEL_RURAL','IMOVEL_CONTRAPARTE','CENTRO_CUSTO','CONTA_BANCARIA',
@@ -318,6 +322,87 @@ begin
     for i in 1 .. l_tabelas_rurais.count loop
         confere('sem contexto: 0 linhas em ' || l_tabelas_rurais(i), contar(l_tabelas_rurais(i)) = 0);
     end loop;
+
+    ----------------------------------------------------------------------------
+    -- Vitrine do login: DEPOIMENTO (VPD de leitura e gravação) e ANUNCIO
+    ----------------------------------------------------------------------------
+    pkg_ecloud_ctx.definir_contexto('teste_contador_a');
+    insert into depoimento (autor_nome, escritorio_nome, cidade, texto, nota)
+    values ('  Contador A ', 'Escritório A', 'Porto Alegre/RS',
+            'O Ecloud   simplificou as simulações da Reforma para os nossos clientes.', 5)
+    returning depoimento_id into l_dep_a;
+    select count(*) into l_qtd from depoimento
+     where depoimento_id = l_dep_a and escritorio_id = l_esc_a and autor_username = 'TESTE_CONTADOR_A'
+       and status = 'PENDENTE' and autor_nome = 'Contador A' and texto not like '%  %';
+    confere('depoimento herda escritório e autor, nasce PENDENTE e normaliza o texto', l_qtd = 1);
+    confere('segundo depoimento do mesmo usuário é rejeitado (ORA-00001)',
+        espera_erro(q'[insert into depoimento (autor_nome, escritorio_nome, texto) values ('X', 'X', 'Outro depoimento do mesmo usuário aqui.')]', -1));
+    confere('depoimento com menos de 20 caracteres é rejeitado (ORA-02290)',
+        espera_erro(q'[insert into depoimento (autor_username, autor_nome, escritorio_nome, texto) values ('OUTRO', 'X', 'X', 'Curto demais')]', -2290));
+    update depoimento set status = 'APROVADO' where depoimento_id = l_dep_a;
+    select count(*) into l_qtd from depoimento where depoimento_id = l_dep_a and status = 'PENDENTE';
+    confere('usuário comum não aprova o próprio depoimento (status mantido)', l_qtd = 1);
+
+    pkg_ecloud_ctx.definir_contexto('TESTE_ADMIN_B');
+    insert into depoimento (autor_nome, escritorio_nome, texto, nota)
+    values ('Admin B', 'Escritório B', 'Gerar o DANFSe pelo Ecloud poupa horas toda semana.', 4)
+    returning depoimento_id into l_dep_b;
+    select count(*) into l_qtd from depoimento where depoimento_id = l_dep_a;
+    confere('B não vê depoimento PENDENTE de A', l_qtd = 0);
+    update depoimento set texto = 'Tentativa de alterar o depoimento de outro escritório.' where depoimento_id = l_dep_a;
+    confere('B não altera depoimento de A (0 linhas)', sql%rowcount = 0);
+
+    -- O admin da plataforma está no escritório A: aprovar o de B prova que
+    -- ele grava em outro escritório.
+    pkg_ecloud_ctx.definir_contexto('TESTE_PLATAFORMA');
+    select count(*) into l_qtd from depoimento where depoimento_id in (l_dep_a, l_dep_b);
+    confere('admin plataforma vê os depoimentos de todos os escritórios', l_qtd = 2);
+    update depoimento set status = 'APROVADO', revisado_em = systimestamp, revisado_por = 'TESTE_PLATAFORMA'
+     where depoimento_id = l_dep_b;
+    confere('admin plataforma aprova depoimento de outro escritório', sql%rowcount = 1);
+    confere('reprovar sem motivo é rejeitado (ORA-02290)',
+        espera_erro('update depoimento set status = ''REPROVADO'' where depoimento_id = ' || l_dep_a, -2290));
+
+    pkg_ecloud_ctx.definir_contexto('teste_contador_a');
+    select count(*) into l_qtd from depoimento where depoimento_id = l_dep_b;
+    confere('A vê o depoimento APROVADO de B', l_qtd = 1);
+    delete from depoimento where depoimento_id = l_dep_b;
+    confere('A não apaga depoimento aprovado de B (0 linhas)', sql%rowcount = 0);
+    update depoimento set nota = 1 where depoimento_id = l_dep_b;
+    confere('A não altera depoimento aprovado de B (0 linhas)', sql%rowcount = 0);
+
+    pkg_ecloud_ctx.limpar_contexto;
+    select count(*) into l_qtd from depoimento where depoimento_id in (l_dep_a, l_dep_b);
+    confere('sem contexto (tela de login): vê só o APROVADO', l_qtd = 1);
+    confere('sem contexto: não grava depoimento (ORA-28115, falha fechada)',
+        espera_erro('insert into depoimento (escritorio_id, autor_username, autor_nome, escritorio_nome, texto) values ('
+                    || l_esc_a || q'[, 'ANONIMO', 'X', 'X', 'Depoimento gravado sem nenhum contexto.')]', -28115));
+
+    pkg_ecloud_ctx.definir_contexto('TESTE_ADMIN_B');
+    update depoimento set texto = texto || ' Recomendo!' where depoimento_id = l_dep_b;
+    select count(*) into l_qtd from depoimento
+     where depoimento_id = l_dep_b and status = 'PENDENTE' and revisado_em is null;
+    confere('mudar o texto de um aprovado volta para PENDENTE', l_qtd = 1);
+
+    -- ANUNCIO: global; só o admin da plataforma grava
+    confere('administrador de escritório não cria anúncio (ORA-20121)',
+        espera_erro(q'[insert into anuncio (patrocinador, titulo) values ('X', 'X')]', -20121));
+    select count(*) into l_qtd from anuncio where patrocinador = 'Ecloud';
+    confere('anúncios da casa visíveis para o escritório (tabela global)', l_qtd >= 2);
+    pkg_ecloud_ctx.definir_contexto('TESTE_PLATAFORMA');
+    insert into anuncio (patrocinador, titulo, cor_destaque, botao_url)
+    values ('Parceiro Teste', 'Certificado digital', '#1a2b3c', 'https://parceiro.exemplo')
+    returning anuncio_id into l_anu;
+    select count(*) into l_qtd from anuncio where anuncio_id = l_anu and cor_destaque = '#1A2B3C';
+    confere('admin plataforma cria anúncio (cor normalizada)', l_qtd = 1);
+    confere('anúncio com link sem http(s) é rejeitado (ORA-02290)',
+        espera_erro('update anuncio set botao_url = ''ftp://x'' where anuncio_id = ' || l_anu, -2290));
+    confere('anúncio com fim antes do início é rejeitado (ORA-02290)',
+        espera_erro('update anuncio set inicio_em = date ''2027-02-01'', fim_em = date ''2027-01-01'' where anuncio_id = ' || l_anu, -2290));
+    pkg_ecloud_ctx.limpar_contexto;
+    confere('página pública (sem usuário no APEX) não grava anúncio (ORA-20121)',
+        espera_erro('begin pkg_ecloud_ctx.definir_contexto(''NOBODY''); update anuncio set titulo = ''X'' where anuncio_id = '
+                    || l_anu || '; end;', -20121));
 
     ----------------------------------------------------------------------------
     -- Limpeza

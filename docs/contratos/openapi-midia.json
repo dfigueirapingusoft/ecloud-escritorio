@@ -1,0 +1,101 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Ecloud - Worker de mídia",
+    "version": "1.0.0",
+    "description": "Worker da Cloudflare (cloudflare/midia) que guarda no R2 as imagens dos anúncios da tela de login. O banco envia e apaga com o header X-Upload-Token (Web Credential MIDIA_UPLOAD_TOKEN do APEX, chamada por PKG_RTC_HTTP); o navegador lê a imagem por GET público, com cache. O Worker grava no bucket pelo binding do R2: nenhuma chave do R2 sai da Cloudflare. A chave do objeto pode ter barras (anuncios/12/abc.png) e só é aceita dentro das pastas liberadas em PASTAS_PERMITIDAS."
+  },
+  "servers": [
+    { "url": "https://midia.exemplo.com.br", "description": "Domínio do Worker (RTC_CONFIG MIDIA_BASE_URL)" }
+  ],
+  "components": {
+    "securitySchemes": {
+      "uploadToken": { "type": "apiKey", "in": "header", "name": "X-Upload-Token" }
+    },
+    "parameters": {
+      "chave": {
+        "name": "chave",
+        "in": "path",
+        "required": true,
+        "description": "Chave do objeto no bucket, com barras (ex.: anuncios/12/9f2c.png). Letras minúsculas, números, '-', '_', '.' e '/'; sem '..'.",
+        "schema": { "type": "string", "pattern": "^[a-z0-9][a-z0-9/_.-]{0,498}$" }
+      }
+    },
+    "schemas": {
+      "ObjetoGravado": {
+        "type": "object",
+        "required": ["chave", "bytes", "contentType"],
+        "properties": {
+          "chave": { "type": "string" },
+          "bytes": { "type": "integer" },
+          "contentType": { "type": "string" }
+        }
+      },
+      "ErroMidia": {
+        "type": "object",
+        "required": ["erro", "mensagem"],
+        "properties": {
+          "erro": { "type": "string", "enum": ["NAO_AUTORIZADO", "CHAVE_INVALIDA", "TIPO_NAO_ACEITO", "MUITO_GRANDE", "NAO_ENCONTRADO", "METODO_NAO_PERMITIDO"] },
+          "mensagem": { "type": "string" }
+        }
+      },
+      "SaudeMidia": {
+        "type": "object",
+        "required": ["status", "versao"],
+        "properties": {
+          "status": { "type": "string", "enum": ["ok"] },
+          "versao": { "type": "string" }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Saúde do Worker (usado pelo testar conexão)",
+        "responses": {
+          "200": { "description": "Worker no ar", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SaudeMidia" } } } }
+        }
+      }
+    },
+    "/objetos/{chave}": {
+      "parameters": [ { "$ref": "#/components/parameters/chave" } ],
+      "get": {
+        "summary": "Entrega a imagem (público, Cache-Control de 1 ano: a URL muda com ?v=<versão>)",
+        "responses": {
+          "200": { "description": "Imagem", "content": { "image/*": { "schema": { "type": "string", "format": "binary" } } } },
+          "404": { "description": "Objeto não existe", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErroMidia" } } } }
+        }
+      },
+      "put": {
+        "summary": "Grava (ou substitui) a imagem",
+        "security": [ { "uploadToken": [] } ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "image/png": { "schema": { "type": "string", "format": "binary" } },
+            "image/jpeg": { "schema": { "type": "string", "format": "binary" } },
+            "image/webp": { "schema": { "type": "string", "format": "binary" } },
+            "image/gif": { "schema": { "type": "string", "format": "binary" } }
+          }
+        },
+        "responses": {
+          "201": { "description": "Gravado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ObjetoGravado" } } } },
+          "400": { "description": "Chave inválida ou fora das pastas liberadas", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErroMidia" } } } },
+          "401": { "description": "Token ausente ou errado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErroMidia" } } } },
+          "413": { "description": "Maior que TAMANHO_MAXIMO (padrão 2 MiB)", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErroMidia" } } } },
+          "415": { "description": "Content-Type não aceito", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErroMidia" } } } }
+        }
+      },
+      "delete": {
+        "summary": "Apaga a imagem (apagar o que não existe também devolve 204)",
+        "security": [ { "uploadToken": [] } ],
+        "responses": {
+          "204": { "description": "Apagado" },
+          "400": { "description": "Chave inválida", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErroMidia" } } } },
+          "401": { "description": "Token ausente ou errado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErroMidia" } } } }
+        }
+      }
+    }
+  }
+}

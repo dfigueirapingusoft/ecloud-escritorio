@@ -17,7 +17,8 @@
 --
 -- Ordem: PKG_ECLOUD_UTIL, PKG_RTC_CONFIG, PKG_RTC_LOG, PKG_RTC_HTTP,
 --        PKG_RTC_DADOS_ABERTOS, PKG_RTC_CALC, PKG_RTC_DANFSE e, no fim,
---        03b_pacotes_spec_rural.sql (módulo A – produtor rural).
+--        03b_pacotes_spec_rural.sql (módulo A – produtor rural) e
+--        03c_pacotes_spec_vitrine.sql (anúncios e depoimentos do login).
 -- Idempotente (CREATE OR REPLACE).
 --------------------------------------------------------------------------------
 set define off
@@ -87,16 +88,23 @@ as
     c_log_max_body_bytes      constant varchar2(60) := 'LOG_MAX_BODY_BYTES';
     c_cache_data_referencia   constant varchar2(60) := 'CACHE_DATA_REFERENCIA';
     c_apex_workspace          constant varchar2(60) := 'APEX_WORKSPACE';
+    -- Worker de mídia (imagens dos anúncios no Cloudflare R2)
+    c_midia_base_url          constant varchar2(60) := 'MIDIA_BASE_URL';
+    c_midia_credencial        constant varchar2(60) := 'MIDIA_CREDENCIAL_STATIC_ID';
 
     -- Valor da chave; ORA-20010 se a chave não existir e p_obrigatorio = true.
     function valor(p_chave in varchar2, p_obrigatorio in boolean default true) return varchar2;
     function valor_numero(p_chave in varchar2, p_obrigatorio in boolean default true) return number;
 
-    -- URL base do serviço ('REGIME' | 'SIMPLES' | 'DANFSE'), sem barra final.
+    -- URL base do serviço ('REGIME' | 'SIMPLES' | 'DANFSE' | 'MIDIA'), sem barra final.
     function url_base(p_servico in varchar2) return varchar2;
 
     -- Static ID da Web Credential do APEX (padrão RTC_API_KEY).
     function credencial_static_id return varchar2;
+
+    -- Static ID da Web Credential de um serviço: MIDIA -> MIDIA_UPLOAD_TOKEN
+    -- (RTC_CONFIG MIDIA_CREDENCIAL_STATIC_ID); os demais -> RTC_API_KEY.
+    function credencial_static_id(p_servico in varchar2) return varchar2;
 
     -- Grava (MERGE) uma chave. Exige ADMIN_PLATAFORMA ou contexto de sistema
     -- (ORA-20011). Valida o valor pelo tipo da chave (ORA-20012): URL começa
@@ -148,8 +156,9 @@ end pkg_rtc_log;
 
 --------------------------------------------------------------------------------
 -- PKG_RTC_HTTP: única porta de saída HTTP. Usa APEX_WEB_SERVICE com
--- p_credential_static_id => PKG_RTC_CONFIG.credencial_static_id
--- ('RTC_API_KEY', tipo HTTP Header com X-API-Key). Registra tudo em PKG_RTC_LOG.
+-- p_credential_static_id => PKG_RTC_CONFIG.credencial_static_id(serviço)
+-- ('RTC_API_KEY', tipo HTTP Header com X-API-Key; no serviço MIDIA,
+-- 'MIDIA_UPLOAD_TOKEN' com X-Upload-Token). Registra tudo em PKG_RTC_LOG.
 -- Fora de uma sessão APEX (jobs, SQLcl) define o workspace com
 -- APEX_UTIL.SET_WORKSPACE(RTC_CONFIG.APEX_WORKSPACE), exigido pela Web Credential.
 -- Nunca levanta exceção por falha de rede: devolve http_status nulo e erro.
@@ -161,6 +170,7 @@ as
     c_servico_regime   constant varchar2(10) := 'REGIME';
     c_servico_simples  constant varchar2(10) := 'SIMPLES';
     c_servico_danfse   constant varchar2(10) := 'DANFSE';
+    c_servico_midia    constant varchar2(10) := 'MIDIA';
 
     -- Caminhos validados contra os OpenAPI (relativos à URL base do serviço)
     -- openapi-regime-regular.json
@@ -175,6 +185,9 @@ as
     -- openapi-danfse.json
     c_path_danfse_gerar       constant varchar2(100) := '/api/danfse';
     c_path_danfse_ready       constant varchar2(100) := '/health/ready';
+    -- openapi-midia.json (Worker de mídia do Ecloud; a chave vai depois da barra)
+    c_path_midia_objetos      constant varchar2(100) := '/objetos';
+    c_path_midia_saude        constant varchar2(100) := '/health';
 
     -- Headers de resposta das calculadoras Java
     c_hdr_versao_app          constant varchar2(40) := 'X-CALC-APP-VERSION';
@@ -243,9 +256,29 @@ as
         p_referencia_tipo  in varchar2 default null,
         p_referencia_id    in number   default null) return t_resposta;
 
+    -- PUT binário (MIDIA: grava <C_PATH_MIDIA_OBJETOS>/<chave> no R2). O corpo
+    -- binário não vai para o log: só tamanho e Content-Type.
+    function put_blob(
+        p_servico          in varchar2,
+        p_caminho          in varchar2,
+        p_corpo            in blob,
+        p_content_type     in varchar2,
+        p_operacao         in varchar2,
+        p_referencia_tipo  in varchar2 default null,
+        p_referencia_id    in number   default null) return t_resposta;
+
+    -- DELETE (MIDIA: apaga <C_PATH_MIDIA_OBJETOS>/<chave>).
+    function delete_recurso(
+        p_servico          in varchar2,
+        p_caminho          in varchar2,
+        p_operacao         in varchar2,
+        p_referencia_tipo  in varchar2 default null,
+        p_referencia_id    in number   default null) return t_resposta;
+
     -- Testa um serviço: REGIME -> GET C_PATH_REGIME_VERSAO (VersaoOutput),
     -- SIMPLES -> GET C_PATH_SIMPLES_VERSAO (VersaoDomain),
-    -- DANFSE -> GET C_PATH_DANFSE_READY (HealthStatus; o gerador não expõe versão).
+    -- DANFSE -> GET C_PATH_DANFSE_READY (HealthStatus; o gerador não expõe versão),
+    -- MIDIA -> GET C_PATH_MIDIA_SAUDE (SaudeMidia).
     function testar_conexao(p_servico in varchar2) return t_teste_conexao;
 end pkg_rtc_http;
 /
@@ -471,3 +504,6 @@ end pkg_rtc_danfse;
 
 -- Módulo A – Produtor rural
 @@03b_pacotes_spec_rural.sql
+
+-- Vitrine da tela de login: anúncios e depoimentos
+@@03c_pacotes_spec_vitrine.sql
