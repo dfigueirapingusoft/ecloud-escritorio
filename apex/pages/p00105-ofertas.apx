@@ -1,0 +1,56 @@
+page 105 (
+    name: Ofertas e parceiros
+    alias: OFERTAS
+    title: Ofertas e parceiros
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+    javaScript {
+        fileUrls: #APP_FILES#anuncios.js
+    }
+
+    region breadcrumb (
+        name: Breadcrumb
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region ofertas (
+        name: Ofertas e parceiros
+        type: dynamicContent
+        source {
+            plsqlFunctionBody:
+                ```plsql
+                -- Anúncios marcados para "Ofertas e parceiros", em cartões (anuncios.js conta
+                -- exibição quando metade do cartão aparece e o clique no botão).
+                return pkg_ecloud_anuncio.ofertas_html;
+                ```
+        }
+        layout {
+            sequence: 20
+            slot: body
+        }
+        appearance {
+            template: @/blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+)

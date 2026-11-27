@@ -1,0 +1,445 @@
+page 103 (
+    name: Revisar depoimento
+    alias: REVISAR-DEPOIMENTO
+    title: Revisar depoimento
+    pageGroup: @administracao
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @/modal-dialog
+        templateOptions: #DEFAULT#
+    }
+    dialog {
+        chained: false
+        resizable: false
+    }
+    security {
+        authorizationScheme: @admin-plataforma
+    }
+
+    region buttons (
+        name: Botões
+        type: staticContent
+        layout {
+            sequence: 30
+            slot: dialogFooter
+        }
+        appearance {
+            template: @/buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region depoimento (
+        name: Depoimento
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @/blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P103_DEPOIMENTO_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @depoimento
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+    pageItem P103_STATUS (
+        type: displayOnly
+        label {
+            label: Situação
+            alignment: right
+        }
+        layout {
+            sequence: 20
+            region: @depoimento
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        lov {
+            type: sharedComponent
+            lov: @status-depoimento
+        }
+    )
+    pageItem P103_AUTOR (
+        type: displayOnly
+        label {
+            label: Autor
+            alignment: right
+        }
+        layout {
+            sequence: 30
+            region: @depoimento
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+    )
+    pageItem P103_ESCRITORIO (
+        type: displayOnly
+        label {
+            label: Escritório
+            alignment: right
+        }
+        layout {
+            sequence: 40
+            region: @depoimento
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+    )
+    pageItem P103_NOTA (
+        type: starRating
+        label {
+            label: Nota
+            alignment: right
+        }
+        layout {
+            sequence: 50
+            region: @depoimento
+            slot: regionBody
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        readOnly {
+            type: always
+        }
+    )
+    pageItem P103_TEXTO (
+        type: displayOnly
+        label {
+            label: Depoimento
+            alignment: right
+        }
+        layout {
+            sequence: 60
+            region: @depoimento
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+    )
+    pageItem P103_ENVIADO (
+        type: displayOnly
+        label {
+            label: Enviado em
+            alignment: right
+        }
+        layout {
+            sequence: 70
+            region: @depoimento
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+    )
+    pageItem P103_REVISAO (
+        type: displayOnly
+        label {
+            label: Última revisão
+            alignment: right
+        }
+        layout {
+            sequence: 80
+            region: @depoimento
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+    )
+    pageItem P103_MOTIVO (
+        type: textarea
+        label {
+            label: Motivo da reprovação (o escritório vê este texto)
+            alignment: right
+        }
+        layout {
+            sequence: 90
+            region: @depoimento
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 400
+        }
+        help {
+            inlineHelpText: Obrigatório só para reprovar.
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Cancelar
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button remover (
+        buttonName: REMOVER
+        label: Remover
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: delete
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: [
+                #DEFAULT#
+                t-Button--danger
+                t-Button--simple
+            ]
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: Remover este depoimento de vez? O escritório poderá escrever outro.
+            style: danger
+        }
+    )
+
+    button reprovar (
+        buttonName: REPROVAR
+        label: Reprovar
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: item!=value
+            item: P103_STATUS
+            value: REPROVADO
+        }
+    )
+
+    button aprovar (
+        buttonName: APROVAR
+        label: Aprovar e publicar
+        layout {
+            sequence: 40
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: item!=value
+            item: P103_STATUS
+            value: APROVADO
+        }
+    )
+
+    validation motivo-obrigatorio (
+        name: Motivo para reprovar
+        validation {
+            type: itemIsNotNull
+            item: P103_MOTIVO
+        }
+        error {
+            errorMessage: Diga ao escritório por que o depoimento não foi aprovado.
+            associatedItem: @P103_MOTIVO
+        }
+        execution {
+            sequence: 10
+        }
+        serverSideCondition {
+            whenButtonPressed: @reprovar
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancelar diálogo
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    process carregar (
+        name: Carregar depoimento
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                -- A plataforma lê qualquer depoimento (VPD de leitura devolve todos para ela).
+                for d in (select status, autor_nome, autor_cargo, escritorio_nome, cidade, nota, texto,
+                                 motivo_reprovacao, coalesce(atualizado_em, criado_em) as enviado_em,
+                                 revisado_em, revisado_por
+                            from depoimento
+                           where depoimento_id = :P103_DEPOIMENTO_ID)
+                loop
+                    :P103_STATUS     := d.status;
+                    :P103_AUTOR      := d.autor_nome || case when d.autor_cargo is not null then ' (' || d.autor_cargo || ')' end;
+                    :P103_ESCRITORIO := d.escritorio_nome || case when d.cidade is not null then ' - ' || d.cidade end;
+                    :P103_NOTA       := d.nota;
+                    :P103_TEXTO      := d.texto;
+                    :P103_ENVIADO    := to_char(d.enviado_em, 'DD/MM/YYYY HH24:MI');
+                    :P103_REVISAO    := case when d.revisado_em is not null then
+                                            to_char(d.revisado_em, 'DD/MM/YYYY HH24:MI') || ' por ' || d.revisado_por end;
+                    :P103_MOTIVO     := d.motivo_reprovacao;
+                end loop;
+                ```
+        }
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 8366090811
+        }
+    )
+
+    process aprovar (
+        name: Aprovar
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                pkg_ecloud_depoimento.aprovar(:P103_DEPOIMENTO_ID);
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 3197152605
+        }
+        serverSideCondition {
+            whenButtonPressed: @aprovar
+        }
+    )
+
+    process reprovar (
+        name: Reprovar
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                pkg_ecloud_depoimento.reprovar(:P103_DEPOIMENTO_ID, :P103_MOTIVO);
+                ```
+        }
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 8083980281
+        }
+        serverSideCondition {
+            whenButtonPressed: @reprovar
+        }
+    )
+
+    process remover (
+        name: Remover
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                pkg_ecloud_depoimento.remover(:P103_DEPOIMENTO_ID);
+                ```
+        }
+        execution {
+            sequence: 30
+        }
+        advanced {
+            executionMappingIdentifier: 4642867605
+        }
+        serverSideCondition {
+            whenButtonPressed: @remover
+        }
+    )
+
+    process close-dialog (
+        name: Fechar diálogo
+        type: closeDialog
+        settings {
+            showSuccessMessages: false
+        }
+        execution {
+            sequence: 50
+        }
+        advanced {
+            executionMappingIdentifier: 5529520185
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: APROVAR,REPROVAR,REMOVER
+        }
+    )
+
+)

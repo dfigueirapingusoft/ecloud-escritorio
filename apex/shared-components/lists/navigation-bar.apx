@@ -20,6 +20,25 @@ list navigation-bar (
         }
     )
 
+    entry meu-depoimento (
+        label: Meu depoimento
+        icon {
+            imageIconCssClasses: fa-comment-o
+        }
+        layout {
+            sequence: 15
+            parentEntry: @app-user
+        }
+        link {
+            target: {
+                page: 104
+            }
+        }
+        serverSideCondition {
+            type: userIsAuthenticated
+        }
+    )
+
     entry list_item (
         label: ---
         layout {

@@ -339,4 +339,56 @@ breadcrumb breadcrumb (
         }
     )
 
+    entry anuncios (
+        name: Anúncios do login
+        pageNumber: 100
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 100
+            }
+        }
+    )
+
+    entry depoimentos (
+        name: Depoimentos
+        pageNumber: 102
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 102
+            }
+        }
+    )
+
+    entry meu-depoimento (
+        name: Meu depoimento
+        pageNumber: 104
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 104
+            }
+        }
+    )
+
+    entry ofertas (
+        name: Ofertas e parceiros
+        pageNumber: 105
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 105
+            }
+        }
+    )
+
 )

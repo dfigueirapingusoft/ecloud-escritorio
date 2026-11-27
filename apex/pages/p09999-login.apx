@@ -5,10 +5,17 @@ page 9999 (
     appearance {
         pageTemplate: @/login
         templateOptions: #DEFAULT#
+        cssClasses: ec-login-stage
     }
     navigation {
         cursorFocus: firstItemOnPage
         warnOnUnsavedChanges: false
+    }
+    javaScript {
+        fileUrls: [
+            #APP_FILES#anuncios.js
+            #APP_FILES#depoimentos.js
+        ]
     }
     security {
         authentication: public
@@ -23,10 +30,72 @@ page 9999 (
         }
         appearance {
             template: @/login
-            templateOptions: #DEFAULT#
+            templateOptions: [
+                #DEFAULT#
+                t-Login-region--headerHidden js-removeLandmark
+            ]
         }
-        image {
-            fileUrl: #APP_FILES#icons/app-icon-512.png
+    )
+
+    region marca (
+        name: Marca
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                <div class="ec-auth-brand">
+                    <h1 class="ec-auth-title"><span class="ec-logo ec-logo--auth" role="img" aria-label="Ecloud - Escritório Cloud"></span></h1>
+                    <p class="ec-auth-subtitle">Entre para continuar.</p>
+                </div>
+                ```
+        }
+        layout {
+            sequence: 5
+            parentRegion: @ecloud
+            slot: regionBody
+        }
+    )
+
+    region vitrine (
+        name: Anúncios e depoimentos
+        type: dynamicContent
+        source {
+            plsqlFunctionBody:
+                ```plsql
+                -- Lado esquerdo da tela: anúncios no ar em cima e depoimentos
+                -- aprovados embaixo (db/06c_pacotes_body_vitrine.sql). Sem nenhum
+                -- dos dois sobra só o cartão de login. Qualquer erro é registrado
+                -- no debug e engolido: o login sempre abre.
+                declare
+                    l_anuncios    clob;
+                    l_depoimentos clob;
+                begin
+                    begin
+                        l_anuncios := pkg_ecloud_anuncio.login_html;
+                    exception
+                        when others then
+                            apex_debug.error('Anúncios do login: %s', sqlerrm);
+                    end;
+                    begin
+                        l_depoimentos := pkg_ecloud_depoimento.login_html;
+                    exception
+                        when others then
+                            apex_debug.error('Depoimentos do login: %s', sqlerrm);
+                    end;
+                    if l_anuncios is null and l_depoimentos is null then
+                        return null;
+                    end if;
+                    return '<div class="ec-showcase">' || l_anuncios || l_depoimentos || '</div>';
+                end;
+                ```
+        }
+        layout {
+            sequence: 20
+            slot: contentBody
+        }
+        appearance {
+            template: @/blank-with-attributes
+            templateOptions: #DEFAULT#
         }
     )
 

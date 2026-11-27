@@ -1,0 +1,323 @@
+page 102 (
+    name: Depoimentos
+    alias: DEPOIMENTOS
+    title: Depoimentos
+    pageGroup: @administracao
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+    security {
+        authorizationScheme: @admin-plataforma
+    }
+
+    region breadcrumb (
+        name: Breadcrumb
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region depoimentos (
+        name: Depoimentos
+        type: interactiveReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                -- A plataforma vê os depoimentos de todos os escritórios (VPD).
+                select depoimento_id,
+                       status,
+                       autor_nome,
+                       autor_cargo,
+                       escritorio_nome,
+                       cidade,
+                       nota,
+                       texto,
+                       cast(coalesce(atualizado_em, criado_em) as date) as enviado_em,
+                       cast(revisado_em as date) as revisado_em,
+                       revisado_por,
+                       case status when 'PENDENTE' then 1 when 'REPROVADO' then 2 else 3 end as ordem_status
+                  from depoimento
+                ```
+        }
+        layout {
+            sequence: 20
+            slot: body
+        }
+        link {
+            linkColumn: customTarget
+            target: {
+                page: 103
+                items: {
+                    P103_DEPOIMENTO_ID: \#DEPOIMENTO_ID#\
+                }
+                action: resetPagination
+            }
+            linkIcon: <span aria-label="Revisar"><span class="fa fa-search" aria-hidden="true" title="Revisar"></span></span>
+        }
+        pagination {
+            type: rowRangesXToY
+        }
+        messages {
+            whenNoDataFound: Nenhum depoimento recebido.
+        }
+        actionsMenu {
+            subscription: false
+        }
+
+        column DEPOIMENTO_ID (
+            type: hidden
+            heading {
+                heading: ID
+            }
+            layout {
+                sequence: 1
+            }
+            source {
+                dataType: number
+            }
+        )
+
+        column STATUS (
+            type: plainTextBasedOnLov
+            heading {
+                heading: Situação
+            }
+            lov {
+                lov: @status-depoimento
+            }
+            layout {
+                sequence: 2
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        column AUTOR_NOME (
+            type: plainText
+            heading {
+                heading: Autor
+            }
+            layout {
+                sequence: 3
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        column AUTOR_CARGO (
+            type: plainText
+            heading {
+                heading: Cargo
+            }
+            layout {
+                sequence: 4
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        column ESCRITORIO_NOME (
+            type: plainText
+            heading {
+                heading: Escritório
+            }
+            layout {
+                sequence: 5
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        column CIDADE (
+            type: plainText
+            heading {
+                heading: Cidade
+            }
+            layout {
+                sequence: 6
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        column NOTA (
+            type: plainText
+            heading {
+                heading: Nota
+            }
+            layout {
+                sequence: 7
+            }
+            source {
+                dataType: number
+            }
+        )
+
+        column TEXTO (
+            type: plainText
+            heading {
+                heading: Depoimento
+            }
+            layout {
+                sequence: 8
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        column ENVIADO_EM (
+            type: plainText
+            heading {
+                heading: Enviado em
+            }
+            layout {
+                sequence: 9
+            }
+            source {
+                dataType: date
+            }
+            appearance {
+                formatMask: DD/MM/YYYY HH24:MI
+            }
+        )
+
+        column REVISADO_EM (
+            type: plainText
+            heading {
+                heading: Revisado em
+            }
+            layout {
+                sequence: 10
+            }
+            source {
+                dataType: date
+            }
+            appearance {
+                formatMask: DD/MM/YYYY HH24:MI
+            }
+        )
+
+        column REVISADO_POR (
+            type: plainText
+            heading {
+                heading: Revisado por
+            }
+            layout {
+                sequence: 11
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+        column ORDEM_STATUS (
+            type: hidden
+            heading {
+                heading: Ordem
+            }
+            layout {
+                sequence: 12
+            }
+            source {
+                dataType: number
+            }
+        )
+
+        savedReport 9765263107 (
+            visibility: primaryDefault
+            view {
+                rowsPerPage: 50
+            }
+
+            displayColumn STATUS (
+                sequence: 1
+            )
+
+            displayColumn AUTOR_NOME (
+                sequence: 2
+            )
+
+            displayColumn ESCRITORIO_NOME (
+                sequence: 3
+            )
+
+            displayColumn CIDADE (
+                sequence: 4
+            )
+
+            displayColumn NOTA (
+                sequence: 5
+            )
+
+            displayColumn TEXTO (
+                sequence: 6
+            )
+
+            displayColumn ENVIADO_EM (
+                sequence: 7
+            )
+
+            displayColumn REVISADO_EM (
+                sequence: 8
+            )
+
+            sort (
+                column: ORDEM_STATUS
+                sort {
+                    sequence: 1
+                }
+            )
+
+        )
+    )
+
+    dynamicAction refresh-after-dialog (
+        name: Atualizar após fechar o diálogo
+        execution {
+            sequence: 10
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @depoimentos
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @depoimentos
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+)

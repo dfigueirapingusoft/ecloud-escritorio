@@ -14,7 +14,7 @@ multi-escritório com VPD). Decisões do Daniel em 27/11/2026:
 |---|---|---|
 | 1 | Tabelas, VPD, specs, contrato do Worker | `db/01c_tabelas_vitrine.sql`, `db/02_vpd.sql`, `db/03c_pacotes_spec_vitrine.sql`, `docs/contratos/openapi-midia.json`, `db/testes/fase1_vpd.sql` |
 | 2 | Bodies, Worker, testes | `db/06c_pacotes_body_vitrine.sql`, `cloudflare/midia/` (publicação no README), `db/testes/fase2_vitrine.sql`, `db/testes/fase2_vitrine_integracao.sql` |
-| 3 | APEXlang: tema, CSS, login e telas | `apex/` |
+| 3 | APEXlang: tema, CSS, login e telas | `apex/shared-components/static-files/` (`app.css`, `anuncios.js`, `depoimentos.js`, logo), `apex/shared-components/app-processes.apx`, `apex/pages/p09999-login.apx`, `p00100` a `p00105` |
 
 ## Modelo de dados
 
@@ -60,6 +60,18 @@ do Mecânico VIP. O link do anunciante abre direto; o clique é contado à parte
 | 102 Depoimentos / 103 Revisar depoimento | `ADMIN_PLATAFORMA` | aprovar, reprovar com motivo, remover |
 | 104 Meu depoimento | usuário do escritório | escrever, acompanhar a situação |
 | 105 Ofertas e parceiros | usuário do escritório | anúncios com `EXIBIR_OFERTAS = 'S'` em cartões |
+
+### Tema e login (fase 3)
+
+* `app.css` (carregado em todas as páginas, com a fonte Plus Jakarta Sans): tokens `--ec-*` com o azul
+  `#3A8BFF`, o ciano `#6FD0FF` e o grafite `#1C2230`; botão principal em `#1F6FE5` para o texto branco
+  ter contraste. Menu lateral grafite, cabeçalho branco, regiões em cartões arredondados.
+* Logo do app: `logo-ecloud.png` (o mesmo do app antigo); `logo-ecloud-marca.svg` é só o símbolo.
+* Login: a página leva a classe `ec-login-stage`; a região `vitrine` (Dynamic Content) junta
+  `PKG_ECLOUD_ANUNCIO.LOGIN_HTML` e `PKG_ECLOUD_DEPOIMENTO.LOGIN_HTML` dentro de `.ec-showcase`, fixa à
+  esquerda em tela larga e abaixo do cartão no celular. Erro nos pacotes não impede o login.
+* Menu: "Ofertas e parceiros" no menu principal, "Anúncios do login" e "Depoimentos" em Administração
+  (só `ADMIN_PLATAFORMA`) e "Meu depoimento" no menu do usuário.
 
 Do Mecânico VIP **não** vêm: cadastro público de oficina, guincho, portal do proprietário,
 "esqueci minha senha" (o Ecloud usa contas do APEX) e o CSS de OS, classificados e landing.
