@@ -123,6 +123,9 @@ Observação: textos internos do APEX ("Row created.", "Actions", "Add Row", "1 
 saem em inglês porque o APEX local não tem o idioma pt-br instalado. No ambiente alvo, instale a
 tradução pt-br do APEX (`builder/pt-br/load_pt-br.sql`) para esses textos saírem em português.
 
+Menu lateral (ordem): Painel, Clientes, Produtor rural (submenu do módulo A), Receita
+(Simulações e DANFSe), Consultas, Ofertas e parceiros, Administração.
+
 ## 6. Módulo A (produtor rural) – fase 3
 
 * Páginas 70 a 90 no grupo **Produtor rural**, com entrada própria no menu e no breadcrumb.
