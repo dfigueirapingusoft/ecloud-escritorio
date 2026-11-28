@@ -7,11 +7,16 @@
 -- docs/contratos/openapi-focus-nfsen.json.
 --
 -- Camadas:
---   PKG_FOCUS_API  adaptador HTTP dos 5 métodos (só monta caminho, manda e
---                  devolve a resposta crua). Toda chamada passa por
---                  PKG_RTC_HTTP.requisicao_json (serviço FOCUS_HOM ou
---                  FOCUS_PROD) com a Web Credential do emitente, e fica em
---                  RTC_CHAMADA_LOG com referência NFSEN_NOTA.
+--   PKG_FOCUS_API  adaptador HTTP (só monta caminho, manda e devolve a
+--                  resposta crua). Toda chamada passa por
+--                  PKG_RTC_HTTP.requisicao_json e fica em RTC_CHAMADA_LOG:
+--                  * API de empresas (serviço FOCUS_PROD, Token Master da
+--                    conta da plataforma na Web Credential FOCUS_MASTER_TOKEN),
+--                    referência NFSEN_EMITENTE; certificado, senha e tokens
+--                    saem mascarados no log;
+--                  * 5 métodos da NFS-e Nacional (serviço FOCUS_HOM ou
+--                    FOCUS_PROD) com o token da empresa (Web Credential
+--                    FOCUS_<EMITENTE_ID>_H/_P), referência NFSEN_NOTA.
 --   PKG_NFSEN      regra de negócio: emitentes, token, rascunho, numeração
 --                  da DPS, emissão, leitura do retorno (JSON_TABLE), XML,
 --                  DANFSe (PKG_RTC_DANFSE), cancelamento, e-mail, webhook e
@@ -28,13 +33,17 @@
 --   -20194 a Focus não respondeu (rede, TLS, 5xx)
 --   -20195 lista de e-mails inválida (vazia, mais de 10 ou endereço inválido)
 --   -20196 XML da NFS-e não pôde ser baixado
+--   -20197 certificado A1 recusado pela Focus (senha, CNPJ ou validade) ou
+--          emitente ainda não cadastrado na Focus
 --------------------------------------------------------------------------------
 set define off
 
 --------------------------------------------------------------------------------
--- PKG_FOCUS_API: adaptador da API v2 da Focus NFe, NFS-e Nacional.
+-- PKG_FOCUS_API: adaptador da API v2 da Focus NFe (empresas e NFS-e Nacional).
 -- Autenticação HTTP Basic (usuário = token, senha vazia) injetada pela Web
--- Credential do emitente; o banco nunca vê o token depois de gravado.
+-- Credential: FOCUS_MASTER_TOKEN (Token Master da plataforma) na API de
+-- empresas e FOCUS_<EMITENTE_ID>_H/_P (token da empresa) na emissão. O banco
+-- nunca guarda token, certificado ou senha.
 -- As funções não interpretam o corpo: quem lê é PKG_NFSEN. Não levantam
 -- exceção por HTTP 4xx/5xx; só pelo que impede a chamada (-20190).
 --------------------------------------------------------------------------------
@@ -61,12 +70,47 @@ as
     -- FOCUS_<EMITENTE_ID>_H (homologação) ou FOCUS_<EMITENTE_ID>_P (produção).
     function credencial_static_id(p_emitente_id in number, p_ambiente in varchar2) return varchar2;
 
+    -- Campos mascarados no log da API de empresas.
+    c_mascarar_empresa    constant varchar2(200) :=
+        'arquivo_certificado_base64,senha_certificado,senha_responsavel,token_producao,token_homologacao';
+
     -- Cria (se faltar) e grava a Web Credential do emitente com APEX_CREDENTIAL:
     -- tipo HTTP Header, nome Authorization, valor 'Basic ' || base64(token || ':'),
     -- URL permitida = URL base do ambiente. O token não é gravado em tabela nem
-    -- no log. Marca NFSEN_EMITENTE.TOKEN_HOM/TOKEN_PROD = 'S'. Exige
-    -- ADMINISTRADOR do escritório (ou admin da plataforma).
+    -- no log. Marca NFSEN_EMITENTE.TOKEN_HOM/TOKEN_PROD = 'S'. Normalmente
+    -- chamada por PKG_NFSEN com os tokens que a Focus devolve no cadastro da
+    -- empresa (EmpresaResponse.token_homologacao/token_producao); fica pública
+    -- para o admin da plataforma colar um token do painel se a API vier vazia.
     procedure definir_token(p_emitente_id in number, p_ambiente in varchar2, p_token in varchar2);
+
+    ----------------------------------------------------------------------------
+    -- API de empresas (Token Master; só servidor de produção)
+    ----------------------------------------------------------------------------
+    -- POST /empresas[?dry_run=1] com EmpresaCreate em p_corpo. 200
+    -- EmpresaResponse; 400/422 ErroEmpresa (erros[].campo); 401 texto.
+    function criar_empresa(
+        p_corpo        in clob,
+        p_emitente_id  in number,
+        p_dry_run      in boolean default false) return pkg_rtc_http.t_resposta;
+
+    -- PUT /empresas/{id}[?dry_run=1] (troca de certificado, liga produção).
+    function atualizar_empresa(
+        p_empresa_id   in number,
+        p_corpo        in clob,
+        p_emitente_id  in number,
+        p_dry_run      in boolean default false) return pkg_rtc_http.t_resposta;
+
+    -- GET /empresas/{id}. 404 nao_encontrado; 422 permissao_negada (outra revenda).
+    function consultar_empresa(
+        p_empresa_id   in number,
+        p_emitente_id  in number) return pkg_rtc_http.t_resposta;
+
+    -- GET /empresas?cnpj= (ou cpf=): acha a empresa já cadastrada na conta
+    -- antes de criar outra (o contrato não documenta erro de CNPJ repetido).
+    function listar_empresas(
+        p_cnpj         in varchar2 default null,
+        p_cpf          in varchar2 default null,
+        p_emitente_id  in number) return pkg_rtc_http.t_resposta;
 
     -- POST /nfsen?ref=<p_referencia> com o NFSeNacionalRequest em p_corpo.
     -- 202 ProcessandoAutorizacao; 400/422 ErrorResponse; 401 texto.
@@ -118,8 +162,13 @@ end pkg_focus_api;
 --
 -- Fluxo:
 --   1. Emitente: o escritório (honorários) ou um cliente. CRIAR_EMITENTE
---      copia CNPJ/razão social/município do cadastro; o administrador
---      completa os dados fiscais e informa o token (PKG_FOCUS_API.definir_token).
+--      copia CNPJ/razão social/município/contato do cadastro; o administrador
+--      do escritório completa os dados fiscais e envia o certificado A1.
+--      CADASTRAR_NA_FOCUS cria (ou reaproveita, pelo CNPJ) a empresa na conta
+--      da plataforma com o Token Master, liga a NFS-e Nacional
+--      (habilita_nfsen_homologacao; habilita_nfsen_producao só em PRODUCAO;
+--      habilita_nfse = false) e guarda os tokens devolvidos nas Web
+--      Credentials do emitente. Certificado e senha não ficam no banco.
 --   2. Rascunho: CRIAR_RASCUNHO copia o tomador do cliente (ou dos dados
 --      informados) e os padrões do emitente. A página edita NFSEN_NOTA.
 --   3. EMITIR valida, reserva série/número da DPS (SELECT ... FOR UPDATE no
@@ -148,6 +197,7 @@ as
     c_err_sem_resp   constant number := -20194;
     c_err_emails     constant number := -20195;
     c_err_xml        constant number := -20196;
+    c_err_certificado constant number := -20197;
 
     c_max_emails     constant pls_integer := 10;    -- EmailRequest.emails maxItems
 
@@ -166,14 +216,50 @@ as
     ----------------------------------------------------------------------------
     -- Cria o emitente a partir do escritório do contexto (p_cliente_id nulo)
     -- ou de um cliente (CNPJ ou CPF, razão social). O município de 7 dígitos
-    -- vem do cadastro. Devolve EMITENTE_ID. Ambiente inicial HOMOLOGACAO.
+    -- vem do cadastro. Devolve EMITENTE_ID. Ambiente inicial HOMOLOGACAO,
+    -- FOCUS_SITUACAO PENDENTE (ainda não cadastrado na Focus).
     function criar_emitente(
-        p_cliente_id      in number   default null,
-        p_opcao_simples   in varchar2,
-        p_regime_especial in varchar2 default '0') return number;
+        p_cliente_id        in number   default null,
+        p_opcao_simples     in varchar2,
+        p_regime_tributario in varchar2,
+        p_regime_especial   in varchar2 default '0') return number;
 
-    -- Troca o ambiente (HOMOLOGACAO <-> PRODUCAO). Exige o token do ambiente
-    -- de destino definido (-20190) e nenhuma nota PROCESSANDO.
+    -- EmpresaCreate do emitente (JSON_OBJECT, ABSENT ON NULL): nome, cnpj/cpf,
+    -- inscricao_municipal, regime_tributario, contato, endereço (do escritório
+    -- ou do cliente; município pelo cache RTC_DA_MUNICIPIO), flags de NFS-e
+    -- Nacional e, se informados, arquivo_certificado_base64/senha_certificado.
+    -- Público para o teste offline.
+    function montar_empresa(
+        p_emitente_id        in number,
+        p_certificado        in blob     default null,
+        p_senha_certificado  in varchar2 default null) return clob;
+
+    -- Cadastra o emitente na Focus (POST /empresas) ou, se já houver empresa
+    -- com o mesmo documento na conta (GET /empresas?cnpj=), atualiza (PUT).
+    -- Lê o certificado de APEX_APPLICATION_TEMP_FILES (p_temp_file_name) e o
+    -- apaga em seguida. Grava FOCUS_EMPRESA_ID, FOCUS_SITUACAO, validade do
+    -- certificado e os tokens (PKG_FOCUS_API.definir_token). p_dry_run só
+    -- valida na Focus (dry_run=1), sem persistir. 422 do certificado -> -20197
+    -- com a mensagem da Focus. Exige ADMINISTRADOR. Faz commit.
+    procedure cadastrar_na_focus(
+        p_emitente_id        in number,
+        p_temp_file_name     in varchar2 default null,
+        p_senha_certificado  in varchar2 default null,
+        p_dry_run            in boolean  default false);
+
+    -- Troca só o certificado (PUT /empresas/{id}). Mesmas regras.
+    procedure atualizar_certificado(
+        p_emitente_id        in number,
+        p_temp_file_name     in varchar2,
+        p_senha_certificado  in varchar2);
+
+    -- Relê a empresa (GET /empresas/{id}): validade do certificado, flags e
+    -- tokens. Faz commit.
+    procedure sincronizar_empresa(p_emitente_id in number);
+
+    -- Troca o ambiente (HOMOLOGACAO <-> PRODUCAO). Em PRODUCAO liga
+    -- habilita_nfsen_producao na Focus (PUT) e exige o token de produção;
+    -- recusa (-20192) com nota PROCESSANDO.
     procedure definir_ambiente(p_emitente_id in number, p_ambiente in varchar2);
 
     ----------------------------------------------------------------------------
@@ -201,7 +287,8 @@ as
     -- a página mostrar "o que vai ser enviado" e para o teste offline.
     function montar_requisicao(p_nota_id in number) return clob;
 
-    -- Envia (ver fluxo). Só RASCUNHO ou REJEITADA (corrigida) (-20192).
+    -- Envia (ver fluxo). Só RASCUNHO ou REJEITADA (corrigida) (-20192);
+    -- emitente precisa estar CADASTRADA na Focus com token no ambiente (-20190).
     -- Faz commit (a numeração reservada não volta).
     procedure emitir(p_nota_id in number);
 
@@ -232,10 +319,12 @@ as
     ----------------------------------------------------------------------------
     -- Webhook e job
     ----------------------------------------------------------------------------
-    -- Chamado pelo handler ORDS POST .../ecloud/focus/:token. Confere o token
-    -- (RTC_CONFIG FOCUS_WEBHOOK_TOKEN), guarda o corpo em NFSEN_AVISO, acha a
-    -- nota pelo campo ref e chama atualizar (releitura; o corpo não é usado
-    -- como resultado). Devolve o status HTTP: 404 token errado, 400 corpo que
+    -- Chamado pelo handler ORDS POST .../ecloud/focus/:token. Uma URL só para
+    -- a conta inteira: o gatilho nfsen é cadastrado à mão no painel da Focus
+    -- para cada empresa, sempre com essa URL. Confere o token (RTC_CONFIG
+    -- FOCUS_WEBHOOK_TOKEN), guarda o corpo em NFSEN_AVISO, acha a nota pelo
+    -- campo ref (e por ela o escritório e o emitente) e chama atualizar
+    -- (releitura; o corpo não é usado como resultado). Devolve o status HTTP: 404 token errado, 400 corpo que
     -- não é JSON, 200 guardado (inclusive ref desconhecida), 500 erro interno.
     -- Roda em contexto de sistema.
     function receber_aviso(p_token in varchar2, p_corpo in clob) return number;

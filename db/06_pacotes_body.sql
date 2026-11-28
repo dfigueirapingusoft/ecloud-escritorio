@@ -217,6 +217,8 @@ as
             return valor(c_stone_credencial);
         elsif upper(p_servico) = 'ZAPI' then
             return valor(c_zapi_credencial);
+        elsif upper(p_servico) in ('FOCUS_HOM', 'FOCUS_PROD') then
+            return valor(c_focus_credencial);
         end if;
         return credencial_static_id;
     end credencial_static_id;
@@ -473,6 +475,26 @@ as
         p_resp.tempo_ms        := milissegundos(p_inicio);
     end preencher_resposta;
 
+    -- Troca por "***" o valor (texto, número ou booleano) dos campos JSON
+    -- listados em p_campos (separados por vírgula), para não gravar segredo no
+    -- log (certificado, senha, tokens da Focus). Sem campos, devolve o texto.
+    function mascarar_json(p_json in clob, p_campos in varchar2) return clob is
+        l_json clob := p_json;
+    begin
+        if p_json is null or p_campos is null then
+            return p_json;
+        end if;
+        for r in (select trim(column_value) campo
+                    from table(apex_string.split(p_campos, ','))
+                   where trim(column_value) is not null)
+        loop
+            l_json := regexp_replace(l_json,
+                '("' || r.campo || '"\s*:\s*)("([^"\\]|\\.)*"|[^,}[:space:]]+)',
+                '\1"***"', 1, 0);
+        end loop;
+        return l_json;
+    end mascarar_json;
+
     function executar_json(
         p_servico          in varchar2,
         p_metodo           in varchar2,
@@ -484,7 +506,8 @@ as
         p_referencia_id    in number,
         p_sem_escritorio   in boolean,
         p_idempotencia     in varchar2 default null,
-        p_credencial       in varchar2 default null) return t_resposta
+        p_credencial       in varchar2 default null,
+        p_mascarar         in varchar2 default null) return t_resposta
     is
         l_url    varchar2(4000) := montar_url(p_servico, p_caminho, p_query);
         l_resp   t_resposta;
@@ -496,7 +519,7 @@ as
             p_metodo          => p_metodo,
             p_url             => l_url,
             p_content_type    => case when p_corpo is not null then 'application/json' end,
-            p_request_body    => p_corpo,
+            p_request_body    => mascarar_json(p_corpo, p_mascarar),
             p_referencia_tipo => p_referencia_tipo,
             p_referencia_id   => p_referencia_id,
             p_sem_escritorio  => p_sem_escritorio);
@@ -518,7 +541,7 @@ as
                 p_credential_static_id => coalesce(p_credencial, pkg_rtc_config.credencial_static_id(p_servico)));
             preencher_resposta(l_resp, l_inicio);
             pkg_rtc_log.finalizar(l_resp.chamada_id, l_resp.http_status, l_resp.content_type,
-                                  l_resp.corpo, null, headers_log);
+                                  mascarar_json(l_resp.corpo, p_mascarar), null, headers_log);
         exception
             when others then
                 l_resp.erro     := substr(sqlerrm || ' ' || dbms_utility.format_error_backtrace, 1, 4000);
@@ -564,14 +587,15 @@ as
         p_referencia_id        in number   default null,
         p_sem_escritorio       in boolean  default false,
         p_credencial_static_id in varchar2 default null,
-        p_query                in varchar2 default null) return t_resposta is
+        p_query                in varchar2 default null,
+        p_mascarar             in varchar2 default null) return t_resposta is
     begin
         if upper(p_metodo) not in ('GET', 'POST', 'PUT', 'DELETE') then
             raise_application_error(-20000, 'Método HTTP não suportado: ' || p_metodo);
         end if;
         return executar_json(p_servico, upper(p_metodo), p_caminho, p_query, p_corpo, p_operacao,
                              p_referencia_tipo, p_referencia_id, p_sem_escritorio, p_idempotencia,
-                             p_credencial_static_id);
+                             p_credencial_static_id, p_mascarar);
     end requisicao_json;
 
     function post_xml_blob(

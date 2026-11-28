@@ -135,8 +135,12 @@ python3 tools/verificar_sql_apex.py /tmp/v.sql && sql ECLOUD@base @/tmp/v.sql
 * Vitrine do login: imagens dos anúncios no R2 via Worker de mídia (`openapi-midia.json`, Web
   Credential `MIDIA_UPLOAD_TOKEN`, HTTP Header `X-Upload-Token`); o banco não guarda chave do R2.
   `DEPOIMENTO` tem duas políticas (leitura pública do APROVADO, gravação só do escritório).
-* Focus NFe (NFS-e Nacional): Basic com o token da empresa como usuário e senha vazia; token por
-  emitente e ambiente na Web Credential `FOCUS_<EMITENTE_ID>_H/_P` (nunca em tabela); emissão
-  assíncrona (202) e resultado por consulta/webhook; o webhook só dispara a releitura (GET).
+* Focus NFe (NFS-e Nacional): conta da plataforma (revenda), decisão do Daniel em 28/11/2026. Token
+  Master na Web Credential `FOCUS_MASTER_TOKEN` (só API de empresas, servidor de produção); o escritório
+  cadastra cada emitente (escritório ou cliente) como empresa e o token da empresa vai para a Web
+  Credential `FOCUS_<EMITENTE_ID>_H/_P` (nunca em tabela). Basic com token como usuário e senha vazia.
+  Certificado A1 e senha só passam para a Focus; certificado, senha e tokens mascarados no log.
+  Emissão assíncrona (202); o webhook (cadastrado à mão no painel, uma URL para a conta) só dispara a
+  releitura (GET), roteada pelo `ref` da nota.
 * Módulo A (produtor rural): DDL em tabela com VPD que valida linhas dá ORA-28133; ligue
   `pkg_ecloud_ctx.definir_contexto_sistema` durante a migração (ver `01b_tabelas_rural.sql`).

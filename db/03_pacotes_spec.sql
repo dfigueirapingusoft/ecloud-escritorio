@@ -110,8 +110,11 @@ as
     c_zapi_instancia          constant varchar2(60) := 'ZAPI_INSTANCIA';
     c_zapi_token_instancia    constant varchar2(60) := 'ZAPI_TOKEN_INSTANCIA';
     c_zapi_credencial         constant varchar2(60) := 'ZAPI_CREDENCIAL_STATIC_ID';
-    -- NFS-e Nacional pela Focus NFe (01f_tabelas_nfsen.sql). Sem chave de
-    -- credencial: o token é de cada emitente (PKG_FOCUS_API.credencial_static_id).
+    -- NFS-e Nacional pela Focus NFe (01f_tabelas_nfsen.sql). A conta da Focus
+    -- é da plataforma: FOCUS_CREDENCIAL_STATIC_ID (padrão FOCUS_MASTER_TOKEN)
+    -- é a Web Credential com o Token Master, usada na API de empresas; a
+    -- emissão usa o token de cada empresa (PKG_FOCUS_API.credencial_static_id).
+    c_focus_credencial        constant varchar2(60) := 'FOCUS_CREDENCIAL_STATIC_ID';
     c_focus_hom_base_url      constant varchar2(60) := 'FOCUS_HOM_BASE_URL';
     c_focus_prod_base_url     constant varchar2(60) := 'FOCUS_PROD_BASE_URL';
     c_focus_webhook_token     constant varchar2(60) := 'FOCUS_WEBHOOK_TOKEN';
@@ -133,8 +136,10 @@ as
     -- (RTC_CONFIG MIDIA_CREDENCIAL_STATIC_ID); STONE -> STONE_API_KEY
     -- (RTC_CONFIG STONE_CREDENCIAL_STATIC_ID, HTTP Header Authorization com
     -- "Basic " + base64 de "<chave secreta>:"); ZAPI -> ZAPI_CLIENT_TOKEN
-    -- (RTC_CONFIG ZAPI_CREDENCIAL_STATIC_ID, HTTP Header Client-Token); os
-    -- demais -> RTC_API_KEY.
+    -- (RTC_CONFIG ZAPI_CREDENCIAL_STATIC_ID, HTTP Header Client-Token);
+    -- FOCUS_HOM/FOCUS_PROD -> FOCUS_MASTER_TOKEN (RTC_CONFIG
+    -- FOCUS_CREDENCIAL_STATIC_ID, HTTP Header Authorization = "Basic " +
+    -- base64 de "<Token Master>:"); os demais -> RTC_API_KEY.
     function credencial_static_id(p_servico in varchar2) return varchar2;
 
     -- Grava (MERGE) uma chave. Exige ADMIN_PLATAFORMA ou contexto de sistema
@@ -237,6 +242,8 @@ as
     -- /nfsen?ref=; GET e DELETE /nfsen/{referencia}; POST
     -- /nfsen/{referencia}/email e /nfsen/{referencia}/hook.
     c_path_focus_nfsen        constant varchar2(100) := '/nfsen';
+    -- API de empresas (Token Master): POST e GET /empresas; GET e PUT /empresas/{id}
+    c_path_focus_empresas     constant varchar2(100) := '/empresas';
     c_focus_sufixo_email      constant varchar2(100) := '/email';      -- sufixo depois de /nfsen/{referencia}
     c_focus_sufixo_hook       constant varchar2(100) := '/hook';       -- sufixo depois de /nfsen/{referencia}
 
@@ -326,6 +333,9 @@ as
     -- p_credencial_static_id troca a Web Credential do serviço por outra (Focus:
     -- uma por emitente e ambiente, FOCUS_<EMITENTE_ID>_H/_P).
     -- p_query sem '?', valores já codificados (Focus: 'ref=EC12-345').
+    -- p_mascarar: nomes de campos JSON separados por vírgula cujo valor sai
+    -- como "***" no request e no response gravados em RTC_CHAMADA_LOG (Focus:
+    -- 'arquivo_certificado_base64,senha_certificado,token_producao,token_homologacao').
     function requisicao_json(
         p_servico              in varchar2,
         p_metodo               in varchar2,
@@ -337,7 +347,8 @@ as
         p_referencia_id        in number   default null,
         p_sem_escritorio       in boolean  default false,
         p_credencial_static_id in varchar2 default null,
-        p_query                in varchar2 default null) return t_resposta;
+        p_query                in varchar2 default null,
+        p_mascarar             in varchar2 default null) return t_resposta;
 
     -- DELETE (MIDIA: apaga <C_PATH_MIDIA_OBJETOS>/<chave>).
     function delete_recurso(

@@ -1,9 +1,9 @@
 {
  "openapi": "3.0.3",
  "info": {
-  "title": "Focus NFe – NFS-e Nacional (recorte usado pelo Ecloud)",
+  "title": "Focus NFe – NFS-e Nacional e empresas (recorte usado pelo Ecloud)",
   "version": "v2",
-  "description": "Recorte da API v2 da Focus NFe com os 5 métodos da NFS-e Nacional que o Ecloud usa (PKG_FOCUS_API): emitir DPS, consultar, cancelar, reenviar e-mail e reenviar notificação (hook). Não é o contrato completo do provedor. Schemas e exemplos copiados das versões .md das páginas de referência (lidas em 28/11/2026); enums, tamanhos e os campos marcados com x-fonte vêm das páginas de campos da Focus. Autenticação HTTP Basic: usuário = token da empresa, senha vazia; o header Authorization é injetado pela Web Credential do emitente (nunca no código). Processamento assíncrono: a emissão devolve 202 e o resultado vem pela consulta ou pelo webhook (evento nfsen), que traz os mesmos dados da consulta."
+  "description": "Recorte da API v2 da Focus NFe que o Ecloud usa (PKG_FOCUS_API): os 5 métodos da NFS-e Nacional (emitir DPS, consultar, cancelar, reenviar e-mail e reenviar notificação) com o token de cada empresa, e a API de empresas (criar, listar, consultar, atualizar) com o Token Master da conta da plataforma Ecloud (revenda). A API de empresas só declara o servidor de produção. Não é o contrato completo do provedor. Schemas e exemplos copiados das versões .md das páginas de referência (lidas em 28/11/2026); enums, tamanhos e os campos marcados com x-fonte vêm das páginas de campos da Focus. Autenticação HTTP Basic: usuário = token da empresa, senha vazia; o header Authorization é injetado pela Web Credential do emitente (nunca no código). Processamento assíncrono: a emissão devolve 202 e o resultado vem pela consulta ou pelo webhook (evento nfsen), que traz os mesmos dados da consulta."
  },
  "servers": [
   {
@@ -25,12 +25,20 @@
   "https://doc.focusnfe.com.br/reference/ambiente",
   "https://doc.focusnfe.com.br/docs/webhooks.md",
   "https://campos.focusnfe.com.br/nfse_nacional_homologacao/EmissaoDPSXml.html",
-  "https://campos.focusnfe.com.br/nfse_nacional/EmissaoDPSXml.html"
+  "https://campos.focusnfe.com.br/nfse_nacional/EmissaoDPSXml.html",
+  "https://doc.focusnfe.com.br/reference/criar_empresa.md",
+  "https://doc.focusnfe.com.br/reference/atualizar_empresa.md",
+  "https://doc.focusnfe.com.br/reference/listar_empresas.md",
+  "https://doc.focusnfe.com.br/reference/consultar_empresa_por_id.md",
+  "https://doc.focusnfe.com.br/docs/como-cadastrar-uma-empresa.md"
  ],
  "x-pendencias": [
   "Download do XML: caminho_xml_nota_fiscal é relativo; a documentação não diz a URL base nem se exige autenticação. A confirmar em homologação.",
   "Payload do webhook: a documentação diz que é igual ao da consulta, sem exemplo literal. O Ecloud usa o aviso só para disparar a releitura (GET).",
-  "Cancelar: a descrição cita 'código de cancelamento 4', mas o schema só tem justificativa."
+  "Cancelar: a descrição cita 'código de cancelamento 4', mas o schema só tem justificativa.",
+  "Empresas: token_producao e token_homologacao vêm vazios no exemplo; a documentação não diz quando são preenchidos. A confirmar com o Token Master.",
+  "Empresas: só o servidor de produção é declarado; não consta se a API de empresas funciona em homologação (dry_run=1 simula).",
+  "Empresas: proximo_numero_nfsen_* é o 'próximo número do RPS' calculado pela Focus; a DPS exige numero_dps/serie_dps no corpo. O Ecloud numera a DPS."
  ],
  "security": [
   {
@@ -580,6 +588,218 @@
      }
     }
    },
+   "EmpresaCreate": {
+    "type": "object",
+    "description": "Recorte dos campos que o Ecloud envia (criar_empresa.md / atualizar_empresa.md). O schema da Focus não marca campos obrigatórios; o painel exige CNPJ real, razão social, contato, endereço e certificado A1.",
+    "properties": {
+     "nome": {
+      "type": "string",
+      "description": "Razão social."
+     },
+     "nome_fantasia": {
+      "type": "string",
+      "description": "Nome fantasia."
+     },
+     "cnpj": {
+      "type": "string",
+      "description": "CNPJ, 14 dígitos sem pontuação."
+     },
+     "cpf": {
+      "type": "string",
+      "description": "CPF."
+     },
+     "inscricao_municipal": {
+      "type": "integer",
+      "description": "Inscrição municipal (integer no corpo; string no retorno)."
+     },
+     "regime_tributario": {
+      "type": "integer",
+      "description": "1 Simples Nacional; 2 Simples Nacional, excesso de sublimite de receita bruta; 3 Regime Normal; 4 Simples Nacional, MEI.",
+      "enum": [
+       1,
+       2,
+       3,
+       4
+      ]
+     },
+     "email": {
+      "type": "string",
+      "description": "E-mail de contato.",
+      "format": "email"
+     },
+     "telefone": {
+      "type": "string",
+      "description": "Telefone (ex.: 4130333333)."
+     },
+     "logradouro": {
+      "type": "string",
+      "description": "Logradouro."
+     },
+     "numero": {
+      "type": "string",
+      "description": "Número (aceita SN).",
+      "maxLength": 60
+     },
+     "complemento": {
+      "type": "string",
+      "description": "Complemento."
+     },
+     "bairro": {
+      "type": "string",
+      "description": "Bairro."
+     },
+     "municipio": {
+      "type": "string",
+      "description": "Nome do município."
+     },
+     "uf": {
+      "type": "string",
+      "description": "UF."
+     },
+     "cep": {
+      "type": "integer",
+      "description": "CEP (ex.: 80210000)."
+     },
+     "arquivo_certificado_base64": {
+      "type": "string",
+      "description": "Certificado A1 (PFX/P12) em base64."
+     },
+     "senha_certificado": {
+      "type": "string",
+      "description": "Senha do certificado; obrigatória só com arquivo_certificado_base64."
+     },
+     "certificado_especifico": {
+      "type": "boolean",
+      "description": "false/omitido: o certificado vale para todas as empresas do mesmo CNPJ base."
+     },
+     "habilita_nfse": {
+      "type": "boolean",
+      "description": "NFS-e municipal. Não pode estar ligado junto com habilita_nfsen_producao."
+     },
+     "habilita_nfsen_producao": {
+      "type": "boolean",
+      "description": "NFS-e Nacional em produção."
+     },
+     "habilita_nfsen_homologacao": {
+      "type": "boolean",
+      "description": "NFS-e Nacional em homologação."
+     },
+     "enviar_email_destinatario": {
+      "type": "boolean",
+      "description": "Envia e-mail ao destinatário (produção)."
+     },
+     "enviar_email_homologacao": {
+      "type": "boolean",
+      "description": "Envia e-mail em homologação."
+     },
+     "mostrar_danfse_badge": {
+      "type": "boolean",
+      "description": "true exibe o selo da Focus na DANFSe; false = white label."
+     }
+    }
+   },
+   "EmpresaResponse": {
+    "type": "object",
+    "description": "Recorte do retorno (criar, consultar, listar, atualizar). Os tokens vêm vazios no exemplo da documentação: a confirmar em teste.",
+    "properties": {
+     "id": {
+      "type": "integer",
+      "description": "Id da empresa na Focus."
+     },
+     "nome": {
+      "type": "string",
+      "description": "Razão social."
+     },
+     "cnpj": {
+      "type": "string",
+      "description": "CNPJ."
+     },
+     "cpf": {
+      "type": "string",
+      "description": "CPF."
+     },
+     "inscricao_municipal": {
+      "type": "string",
+      "description": "Inscrição municipal."
+     },
+     "regime_tributario": {
+      "type": "string",
+      "description": "Regime tributário (string no retorno)."
+     },
+     "codigo_municipio": {
+      "type": "string",
+      "description": "Código do município."
+     },
+     "habilita_nfse": {
+      "type": "boolean",
+      "description": "NFS-e municipal."
+     },
+     "habilita_nfsen_producao": {
+      "type": "boolean",
+      "description": "NFS-e Nacional em produção."
+     },
+     "habilita_nfsen_homologacao": {
+      "type": "boolean",
+      "description": "NFS-e Nacional em homologação."
+     },
+     "certificado_valido_de": {
+      "type": "string",
+      "description": "Início da validade do certificado.",
+      "format": "date-time"
+     },
+     "certificado_valido_ate": {
+      "type": "string",
+      "description": "Fim da validade do certificado.",
+      "format": "date-time"
+     },
+     "certificado_cnpj": {
+      "type": "string",
+      "description": "CNPJ do certificado."
+     },
+     "token_producao": {
+      "type": "string",
+      "description": "Token da empresa em produção."
+     },
+     "token_homologacao": {
+      "type": "string",
+      "description": "Token da empresa em homologação."
+     }
+    }
+   },
+   "ErroEmpresa": {
+    "type": "object",
+    "description": "400 e 422 da API de empresas.",
+    "properties": {
+     "codigo": {
+      "type": "string",
+      "description": "erro_validacao, nao_encontrado, permissao_negada."
+     },
+     "mensagem": {
+      "type": "string",
+      "description": "Mensagem."
+     },
+     "erros": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "codigo": {
+         "type": "string",
+         "description": "Código."
+        },
+        "mensagem": {
+         "type": "string",
+         "description": "Mensagem."
+        },
+        "campo": {
+         "type": "string",
+         "description": "Campo com erro (ex.: arquivo_certificado_base64)."
+        }
+       }
+      }
+     }
+    }
+   },
    "Gatilho": {
     "type": "object",
     "properties": {
@@ -935,6 +1155,263 @@
        "application/json": {
         "schema": {
          "$ref": "#/components/schemas/ErrorResponse"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/empresas": {
+   "post": {
+    "operationId": "criarEmpresa",
+    "summary": "Criar empresa (Token Master da conta; servidor só de produção)",
+    "parameters": [
+     {
+      "name": "dry_run",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "enum": [
+        1
+       ]
+      },
+      "description": "Simula a criação sem persistir os dados."
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/EmpresaCreate"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Requisição processada com sucesso",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/EmpresaResponse"
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Requisição inválida",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErroEmpresa"
+        },
+        "example": {
+         "erros": [
+          {
+           "codigo": "parametros_invalidos",
+           "mensagem": "Existe um problema no JSON recebido: 822: unexpected token at 'empresa_id=12079'"
+          }
+         ]
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Não autorizado",
+      "content": {
+       "text/html": {
+        "example": "HTTP Basic: Access denied"
+       }
+      }
+     },
+     "422": {
+      "description": "Erro de validação",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErroEmpresa"
+        },
+        "example": {
+         "codigo": "erro_validacao",
+         "mensagem": "Erro de validação",
+         "erros": [
+          {
+           "codigo": "erro_validacao",
+           "mensagem": "Arquivo certificado base64 Certificado não pertence ao CNPJ informado",
+           "campo": "arquivo_certificado_base64"
+          }
+         ]
+        }
+       }
+      }
+     }
+    }
+   },
+   "get": {
+    "operationId": "listarEmpresas",
+    "summary": "Listar empresas (até 50 por página; total no header X-Total-Count)",
+    "parameters": [
+     {
+      "name": "cnpj",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "string"
+      },
+      "description": "CNPJ, 14 dígitos sem pontuação."
+     },
+     {
+      "name": "cpf",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "string"
+      },
+      "description": "CPF, 11 dígitos."
+     },
+     {
+      "name": "offset",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "minimum": 0
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Lista de empresas",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/EmpresaResponse"
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Não autorizado"
+     }
+    }
+   }
+  },
+  "/empresas/{id}": {
+   "parameters": [
+    {
+     "name": "id",
+     "in": "path",
+     "required": true,
+     "schema": {
+      "type": "string"
+     },
+     "description": "Id da empresa na Focus."
+    }
+   ],
+   "get": {
+    "operationId": "consultarEmpresa",
+    "summary": "Consultar empresa por id",
+    "responses": {
+     "200": {
+      "description": "Requisição processada com sucesso",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/EmpresaResponse"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Empresa não encontrada",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErroEmpresa"
+        },
+        "example": {
+         "codigo": "nao_encontrado",
+         "mensagem": "Empresa não encontrada"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Empresa de outra revenda",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErroEmpresa"
+        },
+        "example": {
+         "codigo": "permissao_negada",
+         "mensagem": "Empresa não encontrada como propriedade da revenda"
+        }
+       }
+      }
+     }
+    }
+   },
+   "put": {
+    "operationId": "atualizarEmpresa",
+    "summary": "Atualizar empresa (ex.: novo certificado ou habilitar produção)",
+    "parameters": [
+     {
+      "name": "dry_run",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "enum": [
+        1
+       ]
+      },
+      "description": "Simula a alteração sem persistir os dados."
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/EmpresaCreate"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Requisição processada com sucesso",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/EmpresaResponse"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Empresa não encontrada",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErroEmpresa"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Erro de validação",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErroEmpresa"
         }
        }
       }

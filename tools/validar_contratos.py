@@ -86,6 +86,8 @@ METODO = {
     "c_path_zapi_instancias": ("ZAPI", "post", "/instances/{instanceId}/token/{token}/send-text"),
     # Focus: POST /nfsen?ref=; a referência vai depois da barra nos demais
     "c_path_focus_nfsen": ("FOCUS", "post"),
+    # API de empresas (Token Master): POST e GET /empresas
+    "c_path_focus_empresas": ("FOCUS", "post"),
 }
 
 # Caminhos filhos (constante + "/{id}") com método próprio.
@@ -93,11 +95,13 @@ CAMINHOS_FILHOS = {
     "c_path_stone_pedidos": [("get", "/orders/{order_id}")],
     "c_path_focus_nfsen": [("get", "/nfsen/{referencia}"), ("delete", "/nfsen/{referencia}"),
                            ("post", "/nfsen/{referencia}/email"), ("post", "/nfsen/{referencia}/hook")],
+    "c_path_focus_empresas": [("get", "/empresas/{id}"), ("put", "/empresas/{id}")],
 }
 
 # Métodos que todo caminho com parâmetro precisa ter (além do principal).
 METODOS_EXTRAS = {
     "c_path_midia_objetos": ["get", "delete"],
+    "c_path_focus_empresas": ["get"],
 }
 
 declarados = dict(re.findall(r"(c_path_\w+)\s+constant\s+varchar2\(\d+\)\s*:=\s*'([^']+)'", SPEC_SQL, re.I))
@@ -171,6 +175,10 @@ PARAMS = [
     ("DANFSE", "/api/danfse", "post", "canhoto"),
     ("STONE", "/orders", "post", "Idempotency-key"),
     ("FOCUS", "/nfsen", "post", "ref"),
+    ("FOCUS", "/empresas", "post", "dry_run"),
+    ("FOCUS", "/empresas", "get", "cnpj"),
+    ("FOCUS", "/empresas", "get", "cpf"),
+    ("FOCUS", "/empresas/{id}", "put", "dry_run"),
 ]
 for servico, caminho, metodo, nome in PARAMS:
     op = OPENAPI[servico]["paths"].get(caminho, {}).get(metodo, {})
@@ -404,6 +412,23 @@ CAMPOS = [
     ("FOCUS", "EmailRequest", c) for c in ["emails"]
 ] + [
     ("FOCUS", "Gatilho", c) for c in ["id", "url", "event"]
+] + [
+    # Focus -> EmpresaCreate (PKG_NFSEN.montar_empresa)
+    ("FOCUS", "EmpresaCreate", c) for c in [
+        "nome", "nome_fantasia", "cnpj", "cpf", "inscricao_municipal", "regime_tributario", "email",
+        "telefone", "logradouro", "numero", "complemento", "bairro", "municipio", "uf", "cep",
+        "arquivo_certificado_base64", "senha_certificado", "habilita_nfse",
+        "habilita_nfsen_producao", "habilita_nfsen_homologacao", "enviar_email_destinatario",
+        "enviar_email_homologacao",
+    ]
+] + [
+    # Focus <- EmpresaResponse / ErroEmpresa (cadastrar_na_focus / sincronizar_empresa)
+    ("FOCUS", "EmpresaResponse", c) for c in [
+        "id", "cnpj", "cpf", "certificado_valido_de", "certificado_valido_ate", "certificado_cnpj",
+        "habilita_nfsen_producao", "habilita_nfsen_homologacao", "token_producao", "token_homologacao",
+    ]
+] + [
+    ("FOCUS", "ErroEmpresa", c) for c in ["codigo", "mensagem", "erros.codigo", "erros.mensagem", "erros.campo"]
 ]
 
 for servico, raiz, caminho in CAMPOS:

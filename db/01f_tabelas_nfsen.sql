@@ -8,11 +8,16 @@
 --   1. NFSEN_EMITENTE  prestador habilitado a emitir: o próprio escritório
 --                      (notas de honorários) ou um cliente do escritório
 --                      (o escritório emite em nome dele). Guarda os dados
---                      fixos da DPS, o ambiente da Focus e a numeração.
---                      O token da Focus NÃO fica aqui: vai para uma Web
---                      Credential do APEX por emitente e ambiente
---                      (FOCUS_<EMITENTE_ID>_H / _P); a tabela só marca se ela
---                      foi definida.
+--                      fixos da DPS, o ambiente da Focus, a numeração e o
+--                      vínculo com a empresa cadastrada na Focus.
+--                      A conta da Focus é da plataforma Ecloud (revenda): o
+--                      emitente é cadastrado como empresa pela API de empresas
+--                      com o Token Master (Web Credential FOCUS_MASTER_TOKEN).
+--                      Os tokens da empresa devolvidos pela Focus NÃO ficam
+--                      aqui: vão para uma Web Credential do APEX por emitente
+--                      e ambiente (FOCUS_<EMITENTE_ID>_H / _P); a tabela só
+--                      marca se ela foi definida. O certificado A1 e a senha
+--                      vão direto para a Focus e não são gravados no banco.
 --   2. NFSEN_NOTA      uma DPS/NFS-e: dados enviados (tomador e serviço em
 --                      cópia, para a nota não mudar se o cadastro mudar),
 --                      situação, retorno da Focus, XML da NFS-e e o DANFSe
@@ -58,8 +63,18 @@ begin
     --                      nulo) ou CLIENTE (o cliente é o prestador).
     --    CNPJ / CPF        documento do prestador (um dos dois), só dígitos;
     --                      vão em cnpj_prestador / cpf_prestador.
-    --    INSCRICAO_MUNICIPAL  pré-requisito da Focus no município (informativo,
-    --                      a DPS nacional não leva esse campo).
+    --    INSCRICAO_MUNICIPAL  pré-requisito da Focus no município (vai no
+    --                      cadastro da empresa; a DPS nacional não leva esse campo).
+    --    REGIME_TRIBUTARIO regime_tributario do cadastro da empresa na Focus:
+    --                      1 Simples; 2 Simples com excesso de sublimite;
+    --                      3 Regime Normal; 4 MEI.
+    --    EMAIL / TELEFONE  contato do cadastro da empresa na Focus.
+    --    FOCUS_EMPRESA_ID  id da empresa na Focus (EmpresaResponse.id).
+    --    FOCUS_SITUACAO    PENDENTE (ainda não cadastrada), CADASTRADA, ERRO
+    --                      (FOCUS_MENSAGEM traz o erro de validação, ex.:
+    --                      certificado de outro CNPJ ou vencido).
+    --    CERTIFICADO_*     validade e CNPJ do certificado informados pela Focus
+    --                      (alerta de vencimento na página).
     --    CODIGO_MUNICIPIO_EMISSORA  IBGE de 7 dígitos (codigo_municipio_emissora).
     --    OPCAO_SIMPLES     codigo_opcao_simples_nacional: 1 não optante,
     --                      2 MEI, 3 ME/EPP.
@@ -88,6 +103,9 @@ begin
             cpf                        varchar2(11 char),
             razao_social               varchar2(150 char)  not null,
             inscricao_municipal        varchar2(15 char),
+            regime_tributario          varchar2(1 char)    not null,
+            email                      varchar2(255 char),
+            telefone                   varchar2(20 char),
             codigo_municipio_emissora  number(7)           not null,
             opcao_simples              varchar2(1 char)    not null,
             regime_apuracao_sn         varchar2(1 char),
@@ -104,12 +122,24 @@ begin
             ibs_cbs_cst                varchar2(3 char),
             ibs_cbs_cclasstrib         varchar2(6 char),
             email_copia                varchar2(80 char),
+            focus_empresa_id           number,
+            focus_situacao             varchar2(10 char)   default on null 'PENDENTE' not null,
+            focus_mensagem             varchar2(4000 char),
+            focus_sincronizado_em      timestamp with local time zone,
+            certificado_valido_de      timestamp with time zone,
+            certificado_valido_ate     timestamp with time zone,
+            certificado_cnpj           varchar2(14 char),
             ativo                      varchar2(1 char)    default on null 'S' not null,
             criado_em                  timestamp with local time zone default on null systimestamp not null,
             criado_por                 varchar2(255 char)  default on null coalesce(sys_context('APEX$SESSION','APP_USER'), user) not null,
             atualizado_em              timestamp with local time zone,
             atualizado_por             varchar2(255 char),
             constraint nfsen_emitente_pk primary key (emitente_id),
+            constraint nfsen_emitente_empresa_uk unique (focus_empresa_id),
+            constraint nfsen_emitente_regtrib_ck check (regime_tributario in ('1','2','3','4')),
+            constraint nfsen_emitente_focus_ck check (
+                   (focus_situacao = 'CADASTRADA' and focus_empresa_id is not null)
+                or (focus_situacao in ('PENDENTE','ERRO'))),
             constraint nfsen_emitente_tipo_ck check (
                    (tipo = 'ESCRITORIO' and cliente_id is null)
                 or (tipo = 'CLIENTE' and cliente_id is not null)),
@@ -142,7 +172,7 @@ begin
     ddl('create index nfsen_emitente_cli_ix on nfsen_emitente (cliente_id, escritorio_id)');
     -- alvo das FKs compostas (nota de um escritório não aponta emitente de outro)
     ddl('alter table nfsen_emitente add constraint nfsen_emitente_id_esc_uk unique (emitente_id, escritorio_id)');
-    ddl(q'[comment on table nfsen_emitente is 'Prestador habilitado a emitir NFS-e Nacional pela Focus NFe. O token fica na Web Credential FOCUS_<EMITENTE_ID>_H/_P, nunca aqui.']');
+    ddl(q'[comment on table nfsen_emitente is 'Prestador habilitado a emitir NFS-e Nacional pela Focus NFe (empresa da conta da plataforma). Tokens nas Web Credentials FOCUS_<EMITENTE_ID>_H/_P; certificado só na Focus.']');
 
     ----------------------------------------------------------------------------
     -- 2. NFSEN_NOTA
@@ -334,6 +364,8 @@ begin
     :new.cnpj  := upper(regexp_replace(:new.cnpj, '[^0-9A-Za-z]', ''));
     :new.cpf   := regexp_replace(:new.cpf, '[^0-9]', '');
     :new.email_copia := lower(trim(:new.email_copia));
+    :new.email       := lower(trim(:new.email));
+    :new.telefone    := regexp_replace(:new.telefone, '[^0-9]', '');
     if updating then
         :new.atualizado_em  := systimestamp;
         :new.atualizado_por := coalesce(sys_context('APEX$SESSION','APP_USER'), user);

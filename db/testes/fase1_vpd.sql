@@ -560,29 +560,37 @@ begin
     -- NFS-e Nacional pela Focus NFe (01f_tabelas_nfsen.sql)
     ----------------------------------------------------------------------------
     pkg_ecloud_ctx.definir_contexto_sistema;
-    insert into nfsen_emitente (escritorio_id, tipo, cnpj, razao_social, codigo_municipio_emissora, opcao_simples)
-    values (l_esc_a, 'escritorio', '11.222.333/0001-81', 'Escritório A Teste', 4314902, '1')
+    insert into nfsen_emitente (escritorio_id, tipo, cnpj, razao_social, regime_tributario, telefone, codigo_municipio_emissora, opcao_simples)
+    values (l_esc_a, 'escritorio', '11.222.333/0001-81', 'Escritório A Teste', '3', '(51) 3333-4444', 4314902, '1')
     returning emitente_id into l_emi_a;
-    insert into nfsen_emitente (escritorio_id, tipo, cliente_id, cnpj, razao_social, codigo_municipio_emissora,
-                                opcao_simples, regime_apuracao_sn)
-    values (l_esc_a, 'CLIENTE', l_cli_a, '11444777000161', 'Cliente do A', 4314902, '3', '1')
+    insert into nfsen_emitente (escritorio_id, tipo, cliente_id, cnpj, razao_social, regime_tributario,
+                                codigo_municipio_emissora, opcao_simples, regime_apuracao_sn)
+    values (l_esc_a, 'CLIENTE', l_cli_a, '11444777000161', 'Cliente do A', '1', 4314902, '3', '1')
     returning emitente_id into l_emc_a;
-    insert into nfsen_emitente (escritorio_id, tipo, cnpj, razao_social, codigo_municipio_emissora, opcao_simples)
-    values (l_esc_b, 'ESCRITORIO', '12ABC34501DE35', 'Escritório B Teste', 3550308, '1')
+    insert into nfsen_emitente (escritorio_id, tipo, cnpj, razao_social, regime_tributario, codigo_municipio_emissora, opcao_simples)
+    values (l_esc_b, 'ESCRITORIO', '12ABC34501DE35', 'Escritório B Teste', '3', 3550308, '1')
     returning emitente_id into l_emi_b;
     select count(*) into l_qtd from nfsen_emitente
      where emitente_id = l_emi_a and tipo = 'ESCRITORIO' and cnpj = '11222333000181'
-       and ambiente = 'HOMOLOGACAO' and token_hom = 'N' and serie_dps = 1 and proximo_numero_dps = 1;
-    confere('emitente: trigger normaliza tipo/CNPJ e padrões (homologação, sem token, série 1)', l_qtd = 1);
+       and ambiente = 'HOMOLOGACAO' and token_hom = 'N' and serie_dps = 1 and proximo_numero_dps = 1
+       and telefone = '5133334444' and focus_situacao = 'PENDENTE';
+    confere('emitente: trigger normaliza tipo/CNPJ/telefone e padrões (homologação, sem token, série 1, PENDENTE)', l_qtd = 1);
+    confere('emitente CADASTRADA sem id da empresa na Focus é rejeitado (ORA-02290)',
+        espera_erro('update nfsen_emitente set focus_situacao = ''CADASTRADA'' where emitente_id = ' || l_emi_a, -2290));
+    confere('regime tributário da Focus fora de 1..4 é rejeitado (ORA-02290)',
+        espera_erro('update nfsen_emitente set regime_tributario = ''5'' where emitente_id = ' || l_emi_a, -2290));
+    update nfsen_emitente set focus_situacao = 'CADASTRADA', focus_empresa_id = -1 where emitente_id = l_emi_a;
+    confere('mesma empresa da Focus em dois emitentes é rejeitada (ORA-00001)',
+        espera_erro('update nfsen_emitente set focus_situacao = ''CADASTRADA'', focus_empresa_id = -1 where emitente_id = ' || l_emi_b, -1));
     confere('segundo emitente ESCRITORIO no mesmo escritório é rejeitado (ORA-00001)',
-        espera_erro(q'[insert into nfsen_emitente (escritorio_id, tipo, cnpj, razao_social, codigo_municipio_emissora, opcao_simples) values (]'
-                    || l_esc_a || q'[, 'ESCRITORIO', '11444777000161', 'x', 4314902, '1')]', -1));
+        espera_erro(q'[insert into nfsen_emitente (escritorio_id, tipo, cnpj, razao_social, regime_tributario, codigo_municipio_emissora, opcao_simples) values (]'
+                    || l_esc_a || q'[, 'ESCRITORIO', '11444777000161', 'x', '3', 4314902, '1')]', -1));
     confere('emitente CLIENTE sem cliente é rejeitado (ORA-02290)',
-        espera_erro(q'[insert into nfsen_emitente (escritorio_id, tipo, cpf, razao_social, codigo_municipio_emissora, opcao_simples) values (]'
-                    || l_esc_a || q'[, 'CLIENTE', '12345678909', 'x', 4314902, '1')]', -2290));
+        espera_erro(q'[insert into nfsen_emitente (escritorio_id, tipo, cpf, razao_social, regime_tributario, codigo_municipio_emissora, opcao_simples) values (]'
+                    || l_esc_a || q'[, 'CLIENTE', '12345678909', 'x', '3', 4314902, '1')]', -2290));
     confere('emitente apontando cliente de outro escritório é rejeitado (ORA-02291)',
-        espera_erro(q'[insert into nfsen_emitente (escritorio_id, tipo, cliente_id, cpf, razao_social, codigo_municipio_emissora, opcao_simples) values (]'
-                    || l_esc_a || ', ''CLIENTE'', ' || l_cli_b || q'[, '12345678909', 'x', 4314902, '1')]', -2291));
+        espera_erro(q'[insert into nfsen_emitente (escritorio_id, tipo, cliente_id, cpf, razao_social, regime_tributario, codigo_municipio_emissora, opcao_simples) values (]'
+                    || l_esc_a || ', ''CLIENTE'', ' || l_cli_b || q'[, '12345678909', 'x', '3', 4314902, '1')]', -2291));
     confere('optante ME/EPP sem regime de apuração é rejeitado (ORA-02290)',
         espera_erro('update nfsen_emitente set opcao_simples = ''3'' where emitente_id = ' || l_emi_a, -2290));
     confere('série da DPS fora de 1..49999 é rejeitada (ORA-02290)',
