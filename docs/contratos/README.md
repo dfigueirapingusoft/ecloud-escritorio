@@ -9,6 +9,7 @@ Nenhum endpoint ou campo pode ser usado no código sem estar aqui.
 | `openapi-simples-nacional.json` | Calculadora Simples Nacional | app 1.0.2, base V0073 | `GET /api/api-docs`, commit `a926d5a7` (19/11/2026) |
 | `openapi-danfse.json` | Gerador de DANFSe | 1.0.0 (Swagger 2.0) | `api/swagger/swagger.json` do repositório oficial, commit `8d79e6b2` (22/10/2026) |
 | `openapi-zapi.json` | Z-API (WhatsApp), só `send-text` | recorte | developer.z-api.io (28/11/2026) e Mecânico VIP (`db/34_mv_tow.sql`) |
+| `openapi-focus-nfsen.json` | Focus NFe v2, NFS-e Nacional (5 métodos) | recorte | versões `.md` das páginas de referência e páginas de campos da Focus (28/11/2026); pendências em `x-pendencias` |
 | `exemplos-respostas.txt` | os três | mesmas versões | respostas reais (status, headers e corpo) obtidas chamando os serviços acima |
 
 Repositórios: `github.com/ReceitaFederal/calculadora-rtc-regime-regular`,

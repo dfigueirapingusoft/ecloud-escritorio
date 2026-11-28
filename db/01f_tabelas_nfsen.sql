@@ -1,0 +1,392 @@
+--------------------------------------------------------------------------------
+-- 01f_tabelas_nfsen.sql
+-- Emissão de NFS-e do padrão nacional pela API da Focus NFe. Chamado por
+-- 01_tabelas.sql (depois do 01e). Arquitetura em docs/09-nfse-nacional-focus.md;
+-- contrato em docs/contratos/openapi-focus-nfsen.json.
+--
+-- Conteúdo:
+--   1. NFSEN_EMITENTE  prestador habilitado a emitir: o próprio escritório
+--                      (notas de honorários) ou um cliente do escritório
+--                      (o escritório emite em nome dele). Guarda os dados
+--                      fixos da DPS, o ambiente da Focus, a numeração e o
+--                      vínculo com a empresa cadastrada na Focus.
+--                      A conta da Focus é da plataforma Ecloud (revenda): o
+--                      emitente é cadastrado como empresa pela API de empresas
+--                      com o Token Master (Web Credential FOCUS_MASTER_TOKEN).
+--                      Os tokens da empresa devolvidos pela Focus NÃO ficam
+--                      aqui: vão para uma Web Credential do APEX por emitente
+--                      e ambiente (FOCUS_<EMITENTE_ID>_H / _P); a tabela só
+--                      marca se ela foi definida. O certificado A1 e a senha
+--                      vão direto para a Focus e não são gravados no banco.
+--   2. NFSEN_NOTA      uma DPS/NFS-e: dados enviados (tomador e serviço em
+--                      cópia, para a nota não mudar se o cadastro mudar),
+--                      situação, retorno da Focus, XML da NFS-e e o DANFSe
+--                      gerado pela calculadora oficial (DANFSE_ID).
+--   3. NFSEN_AVISO     avisos (webhooks) recebidos da Focus. O aviso só
+--                      dispara a releitura da nota (GET /nfsen/{ref}); nunca
+--                      vale como prova de autorização (mesma regra da Stone).
+--
+-- RTC_CHAMADA_LOG: serviços FOCUS_HOM/FOCUS_PROD e referências NFSEN_NOTA e
+-- NFSEN_EMITENTE já entram nas listas de 01_tabelas.sql, 01c, 01d e 01e.
+--
+-- VPD (02_vpd.sql): NFSEN_EMITENTE e NFSEN_NOTA usam FN_ESCRITORIO;
+-- NFSEN_AVISO usa FN_LOG (chega sem escritório e só ganha um quando a
+-- referência é encontrada).
+--
+-- Idempotente: só ignora erros de "já existe".
+-- Compatível com 19c e 23ai (JSON em CLOB IS JSON, sem IF NOT EXISTS).
+--------------------------------------------------------------------------------
+set define off
+set serveroutput on
+
+declare
+    -- Executa um DDL ignorando apenas os erros de "objeto já existe".
+    procedure ddl(p_sql in varchar2) is
+        e_ja_existe      exception; pragma exception_init(e_ja_existe,      -955);
+        e_coluna_existe  exception; pragma exception_init(e_coluna_existe,  -1430);
+        e_pk_existe      exception; pragma exception_init(e_pk_existe,      -2260);
+        e_uk_existe      exception; pragma exception_init(e_uk_existe,      -2261);
+        e_cons_nome      exception; pragma exception_init(e_cons_nome,      -2264);
+        e_fk_existe      exception; pragma exception_init(e_fk_existe,      -2275);
+        e_idx_existe     exception; pragma exception_init(e_idx_existe,     -1408);
+    begin
+        execute immediate p_sql;
+    exception
+        when e_ja_existe or e_coluna_existe or e_pk_existe or e_uk_existe
+          or e_cons_nome or e_fk_existe or e_idx_existe then
+            null;
+    end ddl;
+begin
+    ----------------------------------------------------------------------------
+    -- 1. NFSEN_EMITENTE
+    --    TIPO              ESCRITORIO (o escritório é o prestador; CLIENTE_ID
+    --                      nulo) ou CLIENTE (o cliente é o prestador).
+    --    CNPJ / CPF        documento do prestador (um dos dois), só dígitos;
+    --                      vão em cnpj_prestador / cpf_prestador.
+    --    INSCRICAO_MUNICIPAL  pré-requisito da Focus no município (vai no
+    --                      cadastro da empresa; a DPS nacional não leva esse campo).
+    --    REGIME_TRIBUTARIO regime_tributario do cadastro da empresa na Focus:
+    --                      1 Simples; 2 Simples com excesso de sublimite;
+    --                      3 Regime Normal; 4 MEI.
+    --    EMAIL / TELEFONE  contato do cadastro da empresa na Focus.
+    --    FOCUS_EMPRESA_ID  id da empresa na Focus (EmpresaResponse.id).
+    --    FOCUS_SITUACAO    PENDENTE (ainda não cadastrada), CADASTRADA, ERRO
+    --                      (FOCUS_MENSAGEM traz o erro de validação, ex.:
+    --                      certificado de outro CNPJ ou vencido).
+    --    CERTIFICADO_*     validade e CNPJ do certificado informados pela Focus
+    --                      (alerta de vencimento na página).
+    --    CODIGO_MUNICIPIO_EMISSORA  IBGE de 7 dígitos (codigo_municipio_emissora).
+    --    OPCAO_SIMPLES     codigo_opcao_simples_nacional: 1 não optante,
+    --                      2 MEI, 3 ME/EPP.
+    --    REGIME_APURACAO_SN regime_tributario_simples_nacional (só optante
+    --                      ME/EPP): 1, 2 ou 3.
+    --    REGIME_ESPECIAL   regime_especial_tributacao: 0,1,2,3,4,5,6,9.
+    --    AMBIENTE          HOMOLOGACAO (sem validade fiscal) ou PRODUCAO; decide
+    --                      a URL base (RTC_CONFIG FOCUS_HOM_BASE_URL /
+    --                      FOCUS_PROD_BASE_URL) e a Web Credential usada.
+    --    TOKEN_HOM / TOKEN_PROD  'S' quando a Web Credential do ambiente foi
+    --                      definida pela página (o token nunca é gravado).
+    --    SERIE_DPS / PROXIMO_NUMERO_DPS  numeração da DPS controlada pelo
+    --                      Ecloud (serie_dps 1..49999 na faixa da API).
+    --    Padrões da nota (o usuário pode trocar em cada nota):
+    --    CODIGO_TRIBUTACAO_ISS, DESCRICAO_SERVICO, ALIQUOTA_ISS, TRIBUTACAO_ISS,
+    --    IBS_CBS_CST e IBS_CBS_CCLASSTRIB (cClassTrib do cache RTC_DA_CCLASSTRIB).
+    --    EMAIL_COPIA       e-mail que recebe cópia de toda nota (reenvio).
+    ----------------------------------------------------------------------------
+    ddl(q'[
+        create table nfsen_emitente (
+            emitente_id                number generated by default on null as identity,
+            escritorio_id              number              default on null to_number(sys_context('CTX_ECLOUD','ESCRITORIO_ID')) not null,
+            tipo                       varchar2(10 char)   not null,
+            cliente_id                 number,
+            cnpj                       varchar2(14 char),
+            cpf                        varchar2(11 char),
+            razao_social               varchar2(150 char)  not null,
+            inscricao_municipal        varchar2(15 char),
+            regime_tributario          varchar2(1 char)    not null,
+            email                      varchar2(255 char),
+            telefone                   varchar2(20 char),
+            codigo_municipio_emissora  number(7)           not null,
+            opcao_simples              varchar2(1 char)    not null,
+            regime_apuracao_sn         varchar2(1 char),
+            regime_especial            varchar2(1 char)    default on null '0' not null,
+            ambiente                   varchar2(11 char)   default on null 'HOMOLOGACAO' not null,
+            token_hom                  varchar2(1 char)    default on null 'N' not null,
+            token_prod                 varchar2(1 char)    default on null 'N' not null,
+            serie_dps                  number(5)           default on null 1 not null,
+            proximo_numero_dps         number(15)          default on null 1 not null,
+            codigo_tributacao_iss      varchar2(6 char),
+            descricao_servico          varchar2(1000 char),
+            aliquota_iss               number(5,2),
+            tributacao_iss             varchar2(1 char)    default on null '1' not null,
+            ibs_cbs_cst                varchar2(3 char),
+            ibs_cbs_cclasstrib         varchar2(6 char),
+            email_copia                varchar2(80 char),
+            focus_empresa_id           number,
+            focus_situacao             varchar2(10 char)   default on null 'PENDENTE' not null,
+            focus_mensagem             varchar2(4000 char),
+            focus_sincronizado_em      timestamp with local time zone,
+            certificado_valido_de      timestamp with time zone,
+            certificado_valido_ate     timestamp with time zone,
+            certificado_cnpj           varchar2(14 char),
+            ativo                      varchar2(1 char)    default on null 'S' not null,
+            criado_em                  timestamp with local time zone default on null systimestamp not null,
+            criado_por                 varchar2(255 char)  default on null coalesce(sys_context('APEX$SESSION','APP_USER'), user) not null,
+            atualizado_em              timestamp with local time zone,
+            atualizado_por             varchar2(255 char),
+            constraint nfsen_emitente_pk primary key (emitente_id),
+            constraint nfsen_emitente_empresa_uk unique (focus_empresa_id),
+            constraint nfsen_emitente_regtrib_ck check (regime_tributario in ('1','2','3','4')),
+            constraint nfsen_emitente_focus_ck check (
+                   (focus_situacao = 'CADASTRADA' and focus_empresa_id is not null)
+                or (focus_situacao in ('PENDENTE','ERRO'))),
+            constraint nfsen_emitente_tipo_ck check (
+                   (tipo = 'ESCRITORIO' and cliente_id is null)
+                or (tipo = 'CLIENTE' and cliente_id is not null)),
+            constraint nfsen_emitente_doc_ck check (
+                   (cnpj is not null and cpf is null and regexp_like(cnpj, '^[0-9A-Z]{12}[0-9]{2}$'))
+                or (cpf is not null and cnpj is null and regexp_like(cpf, '^[0-9]{11}$'))),
+            constraint nfsen_emitente_mun_ck check (codigo_municipio_emissora between 1000000 and 9999999),
+            constraint nfsen_emitente_opsn_ck check (opcao_simples in ('1','2','3')),
+            constraint nfsen_emitente_regsn_ck check (
+                   (opcao_simples = '3' and regime_apuracao_sn in ('1','2','3'))
+                or (opcao_simples <> '3' and regime_apuracao_sn is null)),
+            constraint nfsen_emitente_regesp_ck check (regime_especial in ('0','1','2','3','4','5','6','9')),
+            constraint nfsen_emitente_amb_ck check (ambiente in ('HOMOLOGACAO','PRODUCAO')),
+            constraint nfsen_emitente_tokh_ck check (token_hom in ('S','N')),
+            constraint nfsen_emitente_tokp_ck check (token_prod in ('S','N')),
+            constraint nfsen_emitente_serie_ck check (serie_dps between 1 and 49999),
+            constraint nfsen_emitente_num_ck check (proximo_numero_dps between 1 and 999999999999999),
+            constraint nfsen_emitente_ctiss_ck check (regexp_like(codigo_tributacao_iss, '^[0-9]{6}$')),
+            constraint nfsen_emitente_aliq_ck check (aliquota_iss between 0 and 99.99),
+            constraint nfsen_emitente_triss_ck check (tributacao_iss in ('1','2','3','4')),
+            constraint nfsen_emitente_cst_ck check (regexp_like(ibs_cbs_cst, '^[0-9]{3}$')),
+            constraint nfsen_emitente_ccl_ck check (regexp_like(ibs_cbs_cclasstrib, '^[0-9]{6}$')),
+            constraint nfsen_emitente_ativo_ck check (ativo in ('S','N')),
+            constraint nfsen_emitente_esc_fk foreign key (escritorio_id) references escritorio (escritorio_id),
+            constraint nfsen_emitente_cli_fk foreign key (cliente_id, escritorio_id) references cliente (cliente_id, escritorio_id)
+        )]');
+    -- um prestador por documento no escritório; um único emitente ESCRITORIO
+    ddl('create unique index nfsen_emitente_doc_uk on nfsen_emitente (escritorio_id, coalesce(cnpj, cpf))');
+    ddl(q'[create unique index nfsen_emitente_esc_uk on nfsen_emitente (case when tipo = 'ESCRITORIO' then escritorio_id end)]');
+    ddl('create index nfsen_emitente_cli_ix on nfsen_emitente (cliente_id, escritorio_id)');
+    -- alvo das FKs compostas (nota de um escritório não aponta emitente de outro)
+    ddl('alter table nfsen_emitente add constraint nfsen_emitente_id_esc_uk unique (emitente_id, escritorio_id)');
+    ddl(q'[comment on table nfsen_emitente is 'Prestador habilitado a emitir NFS-e Nacional pela Focus NFe (empresa da conta da plataforma). Tokens nas Web Credentials FOCUS_<EMITENTE_ID>_H/_P; certificado só na Focus.']');
+
+    ----------------------------------------------------------------------------
+    -- 2. NFSEN_NOTA
+    --    CLIENTE_ID   cliente do escritório a que a nota pertence: o tomador
+    --                 quando o emitente é o ESCRITORIO; o próprio prestador
+    --                 quando o emitente é um CLIENTE. É ele que recebe o
+    --                 DANFSE (DANFSE.CLIENTE_ID é obrigatório).
+    --    REFERENCIA   ref da Focus (única): 'EC' || escritório || '-' || nota.
+    --    AMBIENTE     copiado do emitente no envio (não muda depois).
+    --    Tomador (cópia no momento da emissão): TOMADOR_TIPO_DOC CNPJ | CPF |
+    --                 NIF | SEM (estrangeiro sem NIF, com MOTIVO_AUSENCIA_NIF).
+    --    STATUS       RASCUNHO          ainda não enviada
+    --                 PROCESSANDO       202 da Focus (processando_autorizacao)
+    --                 AUTORIZADA        autorizado
+    --                 NEGADA            negado
+    --                 ERRO_AUTORIZACAO  erro_autorizacao (ERROS traz a lista)
+    --                 REJEITADA         400/422 na pré-validação (corrigir e
+    --                                   enviar de novo com outra referência)
+    --                 FALHA             sem resposta / 5xx (consultar antes de
+    --                                   reenviar: a Focus pode ter recebido)
+    --                 CANCELADA         cancelado
+    --    STATUS_FOCUS valor literal do campo status da Focus.
+    --    ERROS        JSON com erros[] (codigo, mensagem, correcao) da
+    --                 consulta ou do cancelamento.
+    --    XML_NFSE     XML baixado de caminho_xml_nota_fiscal; vira o DANFSE
+    --                 pela calculadora oficial (PKG_RTC_DANFSE).
+    ----------------------------------------------------------------------------
+    ddl(q'[
+        create table nfsen_nota (
+            nota_id                      number generated by default on null as identity,
+            escritorio_id                number              default on null to_number(sys_context('CTX_ECLOUD','ESCRITORIO_ID')) not null,
+            emitente_id                  number              not null,
+            cliente_id                   number              not null,
+            referencia                   varchar2(50 char),
+            ambiente                     varchar2(11 char),
+            serie_dps                    number(5),
+            numero_dps                   number(15),
+            data_emissao                 timestamp with time zone,
+            data_competencia             date                default on null trunc(sysdate) not null,
+            -- tomador
+            tomador_tipo_doc             varchar2(4 char)    not null,
+            tomador_documento            varchar2(40 char),
+            motivo_ausencia_nif          varchar2(1 char),
+            tomador_razao_social         varchar2(150 char)  not null,
+            tomador_inscricao_municipal  varchar2(15 char),
+            tomador_municipio            number(7),
+            tomador_cep                  varchar2(8 char),
+            tomador_logradouro           varchar2(255 char),
+            tomador_numero               varchar2(60 char),
+            tomador_complemento          varchar2(156 char),
+            tomador_bairro               varchar2(60 char),
+            tomador_telefone             varchar2(20 char),
+            tomador_email                varchar2(80 char),
+            -- serviço
+            codigo_municipio_prestacao   number(7)           not null,
+            codigo_tributacao_iss        varchar2(6 char)    not null,
+            descricao_servico            varchar2(1000 char) not null,
+            valor_servico                number(15,2)        not null,
+            tributacao_iss               varchar2(1 char)    default on null '1' not null,
+            aliquota_iss                 number(5,2),
+            -- reforma tributária (IBS/CBS)
+            finalidade_emissao           varchar2(1 char)    default on null '0' not null,
+            consumidor_final             varchar2(1 char)    default on null '0' not null,
+            indicador_destinatario       varchar2(1 char)    default on null '0' not null,
+            ibs_cbs_cst                  varchar2(3 char),
+            ibs_cbs_cclasstrib           varchar2(6 char),
+            -- situação e retorno da Focus
+            status                       varchar2(16 char)   default on null 'RASCUNHO' not null,
+            status_focus                 varchar2(30 char),
+            protocolo                    varchar2(60 char),
+            numero_nfse                  varchar2(20 char),
+            codigo_verificacao           varchar2(60 char),
+            chave_acesso                 varchar2(60 char),
+            data_emissao_nfse            timestamp with time zone,
+            url_consulta                 varchar2(1000 char),
+            url_danfse_focus             varchar2(1000 char),
+            caminho_xml_nfse             varchar2(1000 char),
+            caminho_xml_cancelamento     varchar2(1000 char),
+            xml_nfse                     blob,
+            xml_cancelamento             blob,
+            danfse_id                    number,
+            erros                        clob,
+            mensagem                     varchar2(4000 char),
+            http_status                  number(3),
+            justificativa_cancelamento   varchar2(255 char),
+            enviada_em                   timestamp with local time zone,
+            autorizada_em                timestamp with local time zone,
+            cancelada_em                 timestamp with local time zone,
+            ultima_consulta_em           timestamp with local time zone,
+            consultas                    number(5)           default on null 0 not null,
+            ultima_chamada_id            number,
+            criado_em                    timestamp with local time zone default on null systimestamp not null,
+            criado_por                   varchar2(255 char)  default on null coalesce(sys_context('APEX$SESSION','APP_USER'), user) not null,
+            atualizado_em                timestamp with local time zone,
+            atualizado_por               varchar2(255 char),
+            constraint nfsen_nota_pk primary key (nota_id),
+            constraint nfsen_nota_ref_uk unique (referencia),
+            constraint nfsen_nota_amb_ck check (ambiente in ('HOMOLOGACAO','PRODUCAO')),
+            constraint nfsen_nota_tdoc_ck check (
+                   (tomador_tipo_doc = 'CNPJ' and regexp_like(tomador_documento, '^[0-9A-Z]{12}[0-9]{2}$'))
+                or (tomador_tipo_doc = 'CPF'  and regexp_like(tomador_documento, '^[0-9]{11}$'))
+                or (tomador_tipo_doc = 'NIF'  and tomador_documento is not null)
+                or (tomador_tipo_doc = 'SEM'  and tomador_documento is null and motivo_ausencia_nif in ('0','1','2'))),
+            constraint nfsen_nota_mun_ck check (codigo_municipio_prestacao between 1000000 and 9999999),
+            constraint nfsen_nota_tmun_ck check (tomador_municipio between 1000000 and 9999999),
+            constraint nfsen_nota_cep_ck check (regexp_like(tomador_cep, '^[0-9]{8}$')),
+            constraint nfsen_nota_ctiss_ck check (regexp_like(codigo_tributacao_iss, '^[0-9]{6}$')),
+            constraint nfsen_nota_valor_ck check (valor_servico > 0),
+            constraint nfsen_nota_triss_ck check (tributacao_iss in ('1','2','3','4')),
+            constraint nfsen_nota_aliq_ck check (aliquota_iss between 0 and 99.99),
+            constraint nfsen_nota_fin_ck check (finalidade_emissao in ('0')),
+            constraint nfsen_nota_cfin_ck check (consumidor_final in ('0','1')),
+            constraint nfsen_nota_idest_ck check (indicador_destinatario in ('0','1')),
+            constraint nfsen_nota_cst_ck check (regexp_like(ibs_cbs_cst, '^[0-9]{3}$')),
+            constraint nfsen_nota_ccl_ck check (regexp_like(ibs_cbs_cclasstrib, '^[0-9]{6}$')),
+            constraint nfsen_nota_status_ck check (status in (
+                'RASCUNHO','PROCESSANDO','AUTORIZADA','NEGADA','ERRO_AUTORIZACAO','REJEITADA','FALHA','CANCELADA')),
+            constraint nfsen_nota_stfocus_ck check (status_focus in (
+                'processando_autorizacao','autorizado','negado','cancelado','erro_autorizacao','erro_cancelamento')),
+            -- a partir do envio a nota tem referência, ambiente e numeração fixos
+            constraint nfsen_nota_envio_ck check (
+                status = 'RASCUNHO'
+                or (referencia is not null and ambiente is not null and serie_dps is not null
+                    and numero_dps is not null and data_emissao is not null and enviada_em is not null)),
+            constraint nfsen_nota_aut_ck check (status not in ('AUTORIZADA','CANCELADA') or numero_nfse is not null),
+            constraint nfsen_nota_canc_ck check (status <> 'CANCELADA' or cancelada_em is not null),
+            constraint nfsen_nota_erros_ck check (erros is json),
+            constraint nfsen_nota_esc_fk foreign key (escritorio_id) references escritorio (escritorio_id),
+            constraint nfsen_nota_emit_fk foreign key (emitente_id, escritorio_id) references nfsen_emitente (emitente_id, escritorio_id),
+            constraint nfsen_nota_cli_fk foreign key (cliente_id, escritorio_id) references cliente (cliente_id, escritorio_id),
+            constraint nfsen_nota_danfse_fk foreign key (danfse_id) references danfse (danfse_id),
+            constraint nfsen_nota_chamada_fk foreign key (ultima_chamada_id) references rtc_chamada_log (chamada_id)
+        )]');
+    -- a mesma DPS (série + número) não sai duas vezes do mesmo emitente/ambiente (erro E0014 da Focus)
+    ddl('create unique index nfsen_nota_dps_uk on nfsen_nota (case when numero_dps is not null then emitente_id end, ambiente, serie_dps, numero_dps)');
+    ddl('create index nfsen_nota_emit_ix on nfsen_nota (emitente_id, escritorio_id, criado_em)');
+    ddl('create index nfsen_nota_cli_ix on nfsen_nota (cliente_id, escritorio_id, criado_em)');
+    ddl('create index nfsen_nota_esc_st_ix on nfsen_nota (escritorio_id, status)');
+    ddl('create index nfsen_nota_danfse_ix on nfsen_nota (danfse_id)');
+    ddl('create index nfsen_nota_chamada_ix on nfsen_nota (ultima_chamada_id)');
+    -- job de consulta: notas PROCESSANDO (e FALHA recente) de todos os escritórios
+    ddl('create index nfsen_nota_pend_ix on nfsen_nota (case when status in (''PROCESSANDO'',''FALHA'') then status end)');
+    ddl(q'[comment on table nfsen_nota is 'DPS/NFS-e Nacional emitida pela Focus NFe: dados enviados, situação, retorno, XML e DANFSE.']');
+
+    ----------------------------------------------------------------------------
+    -- 3. NFSEN_AVISO
+    --    Corpo do webhook (evento nfsen da Focus) como chegou. REFERENCIA é o
+    --    campo ref do corpo. Quando a referência é de uma nota do Ecloud,
+    --    NOTA_ID e ESCRITORIO_ID são preenchidos e a nota é relida.
+    --    SITUACAO RECEBIDO -> PROCESSADO | IGNORADO (ref desconhecida) | ERRO.
+    ----------------------------------------------------------------------------
+    ddl(q'[
+        create table nfsen_aviso (
+            aviso_id        number generated by default on null as identity,
+            escritorio_id   number,
+            nota_id         number,
+            referencia      varchar2(50 char),
+            corpo           clob                not null,
+            situacao        varchar2(10 char)   default on null 'RECEBIDO' not null,
+            mensagem        varchar2(4000 char),
+            recebido_em     timestamp with local time zone default on null systimestamp not null,
+            processado_em   timestamp with local time zone,
+            constraint nfsen_aviso_pk primary key (aviso_id),
+            constraint nfsen_aviso_corpo_ck check (corpo is json),
+            constraint nfsen_aviso_sit_ck check (situacao in ('RECEBIDO','PROCESSADO','IGNORADO','ERRO')),
+            constraint nfsen_aviso_nota_ck check (
+                   (nota_id is null and escritorio_id is null)
+                or (nota_id is not null and escritorio_id is not null)),
+            constraint nfsen_aviso_esc_fk foreign key (escritorio_id) references escritorio (escritorio_id),
+            constraint nfsen_aviso_nota_fk foreign key (nota_id) references nfsen_nota (nota_id) on delete set null
+        )]');
+    ddl('create index nfsen_aviso_esc_ix on nfsen_aviso (escritorio_id, recebido_em)');
+    ddl('create index nfsen_aviso_nota_ix on nfsen_aviso (nota_id)');
+    ddl('create index nfsen_aviso_ref_ix on nfsen_aviso (referencia)');
+    ddl(q'[comment on table nfsen_aviso is 'Avisos (webhooks) da Focus NFe para NFS-e Nacional. Só disparam a releitura da nota.']');
+
+    dbms_output.put_line('01f_tabelas_nfsen.sql: emitentes, notas e avisos da NFS-e Nacional verificados.');
+end;
+/
+
+--------------------------------------------------------------------------------
+-- Triggers: documentos só com dígitos/maiúsculas e auditoria.
+--------------------------------------------------------------------------------
+create or replace trigger nfsen_emitente_biu
+before insert or update on nfsen_emitente
+for each row
+begin
+    :new.tipo  := upper(:new.tipo);
+    :new.cnpj  := upper(regexp_replace(:new.cnpj, '[^0-9A-Za-z]', ''));
+    :new.cpf   := regexp_replace(:new.cpf, '[^0-9]', '');
+    :new.email_copia := lower(trim(:new.email_copia));
+    :new.email       := lower(trim(:new.email));
+    :new.telefone    := regexp_replace(:new.telefone, '[^0-9]', '');
+    if updating then
+        :new.atualizado_em  := systimestamp;
+        :new.atualizado_por := coalesce(sys_context('APEX$SESSION','APP_USER'), user);
+    end if;
+end;
+/
+
+create or replace trigger nfsen_nota_biu
+before insert or update on nfsen_nota
+for each row
+begin
+    :new.tomador_tipo_doc := upper(:new.tomador_tipo_doc);
+    if :new.tomador_tipo_doc in ('CNPJ', 'CPF') then
+        :new.tomador_documento := upper(regexp_replace(:new.tomador_documento, '[^0-9A-Za-z]', ''));
+    end if;
+    :new.tomador_cep      := regexp_replace(:new.tomador_cep, '[^0-9]', '');
+    :new.tomador_telefone := regexp_replace(:new.tomador_telefone, '[^0-9]', '');
+    :new.tomador_email    := lower(trim(:new.tomador_email));
+    if updating then
+        :new.atualizado_em  := systimestamp;
+        :new.atualizado_por := coalesce(sys_context('APEX$SESSION','APP_USER'), user);
+    end if;
+end;
+/

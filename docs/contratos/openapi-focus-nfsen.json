@@ -1,0 +1,1423 @@
+{
+ "openapi": "3.0.3",
+ "info": {
+  "title": "Focus NFe – NFS-e Nacional e empresas (recorte usado pelo Ecloud)",
+  "version": "v2",
+  "description": "Recorte da API v2 da Focus NFe que o Ecloud usa (PKG_FOCUS_API): os 5 métodos da NFS-e Nacional (emitir DPS, consultar, cancelar, reenviar e-mail e reenviar notificação) com o token de cada empresa, e a API de empresas (criar, listar, consultar, atualizar) com o Token Master da conta da plataforma Ecloud (revenda). A API de empresas só declara o servidor de produção. Não é o contrato completo do provedor. Schemas e exemplos copiados das versões .md das páginas de referência (lidas em 28/11/2026); enums, tamanhos e os campos marcados com x-fonte vêm das páginas de campos da Focus. Autenticação HTTP Basic: usuário = token da empresa, senha vazia; o header Authorization é injetado pela Web Credential do emitente (nunca no código). Processamento assíncrono: a emissão devolve 202 e o resultado vem pela consulta ou pelo webhook (evento nfsen), que traz os mesmos dados da consulta."
+ },
+ "servers": [
+  {
+   "url": "https://api.focusnfe.com.br/v2",
+   "description": "Produção"
+  },
+  {
+   "url": "https://homologacao.focusnfe.com.br/v2",
+   "description": "Homologação (sem validade fiscal; token próprio)"
+  }
+ ],
+ "x-fonte": [
+  "https://doc.focusnfe.com.br/reference/emitir_dps_nacional.md",
+  "https://doc.focusnfe.com.br/reference/consultar_nfse_nacional.md",
+  "https://doc.focusnfe.com.br/reference/cancelar_nfse_nacional.md",
+  "https://doc.focusnfe.com.br/reference/reenviar_email_nfsen.md",
+  "https://doc.focusnfe.com.br/reference/reenviar_hook_nfsen.md",
+  "https://doc.focusnfe.com.br/reference/autenticacao",
+  "https://doc.focusnfe.com.br/reference/ambiente",
+  "https://doc.focusnfe.com.br/docs/webhooks.md",
+  "https://campos.focusnfe.com.br/nfse_nacional_homologacao/EmissaoDPSXml.html",
+  "https://campos.focusnfe.com.br/nfse_nacional/EmissaoDPSXml.html",
+  "https://doc.focusnfe.com.br/reference/criar_empresa.md",
+  "https://doc.focusnfe.com.br/reference/atualizar_empresa.md",
+  "https://doc.focusnfe.com.br/reference/listar_empresas.md",
+  "https://doc.focusnfe.com.br/reference/consultar_empresa_por_id.md",
+  "https://doc.focusnfe.com.br/docs/como-cadastrar-uma-empresa.md"
+ ],
+ "x-pendencias": [
+  "Download do XML: caminho_xml_nota_fiscal é relativo; a documentação não diz a URL base nem se exige autenticação. A confirmar em homologação.",
+  "Payload do webhook: a documentação diz que é igual ao da consulta, sem exemplo literal. O Ecloud usa o aviso só para disparar a releitura (GET).",
+  "Cancelar: a descrição cita 'código de cancelamento 4', mas o schema só tem justificativa.",
+  "Empresas: token_producao e token_homologacao vêm vazios no exemplo; a documentação não diz quando são preenchidos. A confirmar com o Token Master.",
+  "Empresas: só o servidor de produção é declarado; não consta se a API de empresas funciona em homologação (dry_run=1 simula).",
+  "Empresas: proximo_numero_nfsen_* é o 'próximo número do RPS' calculado pela Focus; a DPS exige numero_dps/serie_dps no corpo. O Ecloud numera a DPS."
+ ],
+ "security": [
+  {
+   "basicAuth": []
+  }
+ ],
+ "components": {
+  "securitySchemes": {
+   "basicAuth": {
+    "type": "http",
+    "scheme": "basic",
+    "description": "O usuário é o token da API e a senha deve ser deixada em branco."
+   }
+  },
+  "parameters": {
+   "referencia": {
+    "name": "referencia",
+    "in": "path",
+    "required": true,
+    "schema": {
+     "type": "string"
+    },
+    "description": "Referência do DPS/NFSe."
+   }
+  },
+  "schemas": {
+   "NFSeNacionalRequest": {
+    "type": "object",
+    "properties": {
+     "data_emissao": {
+      "type": "string",
+      "description": "Data e hora da emissão da DPS (AAAA-MM-DDThh:mm:ssTZD).",
+      "format": "date-time"
+     },
+     "serie_dps": {
+      "type": "integer",
+      "description": "Série da DPS. Integer[5]; faixa de uso pela API 00001 a 49999.",
+      "minimum": 1,
+      "maximum": 49999
+     },
+     "numero_dps": {
+      "type": "integer",
+      "description": "Número da DPS. Integer[15]."
+     },
+     "data_competencia": {
+      "type": "string",
+      "description": "Data de competência da prestação (AAAA-MM-DD).",
+      "format": "date"
+     },
+     "emitente_dps": {
+      "type": "string",
+      "description": "Emitente da DPS: 1 Prestador (padrão), 2 Tomador, 3 Intermediário. O exemplo da Focus envia número (1).",
+      "enum": [
+       "1",
+       "2",
+       "3"
+      ]
+     },
+     "codigo_municipio_emissora": {
+      "type": "integer",
+      "description": "Código IBGE (7 dígitos) da localidade emissora."
+     },
+     "cnpj_prestador": {
+      "type": "string",
+      "description": "CNPJ do prestador (14 dígitos)."
+     },
+     "nif_prestador": {
+      "type": "string",
+      "description": "NIF do prestador no exterior. String[40]."
+     },
+     "codigo_opcao_simples_nacional": {
+      "type": "string",
+      "description": "Situação no Simples Nacional: 1 Não optante; 2 Optante MEI; 3 Optante ME/EPP. O exemplo da Focus envia número (1).",
+      "enum": [
+       "1",
+       "2",
+       "3"
+      ]
+     },
+     "regime_especial_tributacao": {
+      "type": "string",
+      "description": "Regime especial municipal: 0 Nenhum; 1 Ato Cooperado; 2 Estimativa; 3 Microempresa Municipal; 4 Notário ou Registrador; 5 Profissional Autônomo; 6 Sociedade de Profissionais; 9 Outros. O exemplo da Focus envia número (0).",
+      "enum": [
+       "0",
+       "1",
+       "2",
+       "3",
+       "4",
+       "5",
+       "6",
+       "9"
+      ]
+     },
+     "cnpj_tomador": {
+      "type": "string",
+      "description": "CNPJ do tomador (14 dígitos)."
+     },
+     "cpf_tomador": {
+      "type": "string",
+      "description": "CPF do tomador (11 dígitos)."
+     },
+     "nif_tomador": {
+      "type": "string",
+      "description": "NIF do tomador no exterior. String[40]."
+     },
+     "motivo_ausencia_nif_tomador": {
+      "type": "string",
+      "description": "Motivo de não informar o NIF: 0 Não informado na nota de origem; 1 Dispensado do NIF; 2 Não exigência do NIF.",
+      "enum": [
+       "0",
+       "1",
+       "2"
+      ]
+     },
+     "codigo_municipio_prestacao": {
+      "type": "string",
+      "description": "Código IBGE (7 dígitos) da localidade da prestação. String[7] (o exemplo envia número)."
+     },
+     "codigo_tributacao_nacional_iss": {
+      "type": "string",
+      "description": "Código de tributação nacional do ISSQN. String[6] (ex.: 010701)."
+     },
+     "descricao_servico": {
+      "type": "string",
+      "description": "Descrição completa do serviço. String[1000].",
+      "maxLength": 1000
+     },
+     "valor_servico": {
+      "type": "number",
+      "description": "Valor do serviço em R$. Decimal[15.2]."
+     },
+     "tributacao_iss": {
+      "type": "number",
+      "description": "Tributação do ISSQN: 1 Operação tributável; 2 Imunidade; 3 Exportação de serviço; 4 Não incidência.",
+      "enum": [
+       1,
+       2,
+       3,
+       4
+      ]
+     },
+     "cpf_prestador": {
+      "type": "string",
+      "description": "CPF do prestador pessoa física (11 dígitos). Página de campos.",
+      "x-fonte": "https://campos.focusnfe.com.br/nfse_nacional/EmissaoDPSXml.html"
+     },
+     "regime_tributario_simples_nacional": {
+      "type": "integer",
+      "description": "Regime de apuração do optante: 1 federais e municipal pelo SN; 2 federais pelo SN e ISSQN por fora; 3 federais e municipal por fora. Página de campos.",
+      "enum": [
+       1,
+       2,
+       3
+      ],
+      "x-fonte": "https://campos.focusnfe.com.br/nfse_nacional/EmissaoDPSXml.html"
+     },
+     "percentual_aliquota_relativa_municipio": {
+      "type": "number",
+      "description": "Alíquota do ISSQN do município (pAliq). Decimal[1.2]. Página de campos.",
+      "x-fonte": "https://campos.focusnfe.com.br/nfse_nacional/EmissaoDPSXml.html"
+     },
+     "razao_social_tomador": {
+      "type": "string",
+      "description": "Nome/razão social do tomador. String[150].",
+      "maxLength": 150,
+      "x-fonte": "https://campos.focusnfe.com.br/nfse_nacional/EmissaoDPSXml.html"
+     },
+     "codigo_municipio_tomador": {
+      "type": "integer",
+      "description": "Código IBGE (7 dígitos) do município do tomador.",
+      "x-fonte": "https://campos.focusnfe.com.br/nfse_nacional/EmissaoDPSXml.html"
+     },
+     "cep_tomador": {
+      "type": "integer",
+      "description": "CEP do tomador (8 dígitos).",
+      "x-fonte": "https://campos.focusnfe.com.br/nfse_nacional/EmissaoDPSXml.html"
+     },
+     "logradouro_tomador": {
+      "type": "string",
+      "description": "Logradouro do tomador. String[1-255].",
+      "maxLength": 255,
+      "x-fonte": "https://campos.focusnfe.com.br/nfse_nacional/EmissaoDPSXml.html"
+     },
+     "numero_tomador": {
+      "type": "string",
+      "description": "Número do endereço do tomador. String[1-60].",
+      "maxLength": 60,
+      "x-fonte": "https://campos.focusnfe.com.br/nfse_nacional/EmissaoDPSXml.html"
+     },
+     "complemento_tomador": {
+      "type": "string",
+      "description": "Complemento do endereço do tomador. String[1-156].",
+      "maxLength": 156,
+      "x-fonte": "https://campos.focusnfe.com.br/nfse_nacional/EmissaoDPSXml.html"
+     },
+     "bairro_tomador": {
+      "type": "string",
+      "description": "Bairro do tomador. String[1-60].",
+      "maxLength": 60,
+      "x-fonte": "https://campos.focusnfe.com.br/nfse_nacional/EmissaoDPSXml.html"
+     },
+     "telefone_tomador": {
+      "type": "integer",
+      "description": "Telefone do tomador, só dígitos. Integer[6-20].",
+      "x-fonte": "https://campos.focusnfe.com.br/nfse_nacional/EmissaoDPSXml.html"
+     },
+     "email_tomador": {
+      "type": "string",
+      "description": "E-mail do tomador. String[1-80].",
+      "maxLength": 80,
+      "x-fonte": "https://campos.focusnfe.com.br/nfse_nacional/EmissaoDPSXml.html"
+     },
+     "inscricao_municipal_tomador": {
+      "type": "string",
+      "description": "Inscrição municipal do tomador. String[15].",
+      "maxLength": 15,
+      "x-fonte": "https://campos.focusnfe.com.br/nfse_nacional/EmissaoDPSXml.html"
+     },
+     "finalidade_emissao": {
+      "type": "integer",
+      "description": "Reforma tributária: 0 NFS-e regular. Obrigatório na página de homologação.",
+      "enum": [
+       0
+      ],
+      "x-fonte": "https://campos.focusnfe.com.br/nfse_nacional_homologacao/EmissaoDPSXml.html"
+     },
+     "consumidor_final": {
+      "type": "integer",
+      "description": "Reforma tributária: 0 Não; 1 Sim. Obrigatório na página de homologação.",
+      "enum": [
+       0,
+       1
+      ],
+      "x-fonte": "https://campos.focusnfe.com.br/nfse_nacional_homologacao/EmissaoDPSXml.html"
+     },
+     "indicador_destinatario": {
+      "type": "integer",
+      "description": "Reforma tributária: 0 o destinatário é o próprio tomador; 1 o destinatário não é o próprio adquirente. Obrigatório na página de homologação.",
+      "enum": [
+       0,
+       1
+      ],
+      "x-fonte": "https://campos.focusnfe.com.br/nfse_nacional_homologacao/EmissaoDPSXml.html"
+     },
+     "ibs_cbs_situacao_tributaria": {
+      "type": "string",
+      "description": "Reforma tributária: CST do IBS/CBS. String[3]. Obrigatório na página de homologação.",
+      "maxLength": 3,
+      "x-fonte": "https://campos.focusnfe.com.br/nfse_nacional_homologacao/EmissaoDPSXml.html"
+     },
+     "ibs_cbs_classificacao_tributaria": {
+      "type": "string",
+      "description": "Reforma tributária: cClassTrib do IBS/CBS. String[6]. Obrigatório na página de homologação.",
+      "maxLength": 6,
+      "x-fonte": "https://campos.focusnfe.com.br/nfse_nacional_homologacao/EmissaoDPSXml.html"
+     }
+    }
+   },
+   "ProcessandoAutorizacao": {
+    "type": "object",
+    "properties": {
+     "status": {
+      "type": "string",
+      "description": "Situação.",
+      "enum": [
+       "processando_autorizacao"
+      ]
+     },
+     "ref": {
+      "type": "string",
+      "description": "Referência."
+     },
+     "protocolo": {
+      "type": "string",
+      "description": "Protocolo."
+     },
+     "cnpj_prestador": {
+      "type": "string",
+      "description": "Aparece no exemplo, não no schema original."
+     }
+    }
+   },
+   "NotaAutorizada": {
+    "type": "object",
+    "properties": {
+     "cnpj_prestador": {
+      "type": "string",
+      "description": "CNPJ do prestador."
+     },
+     "ref": {
+      "type": "string",
+      "description": "Referência informada na emissão."
+     },
+     "numero_rps": {
+      "type": "string",
+      "description": "Número da DPS (o exemplo de erro traz número)."
+     },
+     "serie_rps": {
+      "type": "string",
+      "description": "Série da DPS (o exemplo de erro traz número)."
+     },
+     "tipo_rps": {
+      "type": "string",
+      "description": "Tipo (o exemplo de erro traz número)."
+     },
+     "status": {
+      "type": "string",
+      "description": "Situação.",
+      "enum": [
+       "autorizado",
+       "negado",
+       "cancelado",
+       "erro_autorizacao"
+      ]
+     },
+     "numero": {
+      "type": "string",
+      "description": "Número da NFS-e."
+     },
+     "codigo_verificacao": {
+      "type": "string",
+      "description": "Código de verificação."
+     },
+     "data_emissao": {
+      "type": "string",
+      "description": "Data/hora de emissão da NFS-e.",
+      "format": "date-time"
+     },
+     "url": {
+      "type": "string",
+      "description": "Consulta pública no portal nacional (traz a chave de acesso no parâmetro chave).",
+      "format": "uri"
+     },
+     "url_danfse": {
+      "type": "string",
+      "description": "DANFSe em PDF gerado pela Focus.",
+      "format": "uri"
+     },
+     "caminho_xml_nota_fiscal": {
+      "type": "string",
+      "description": "Caminho relativo do XML da NFS-e (ex.: /arquivos/.../XMLsNFSe/NFS...-nfse.xml)."
+     }
+    }
+   },
+   "NotaCancelada": {
+    "type": "object",
+    "properties": {
+     "cnpj_prestador": {
+      "type": "string",
+      "description": "CNPJ do prestador."
+     },
+     "ref": {
+      "type": "string",
+      "description": "Referência informada na emissão."
+     },
+     "numero_rps": {
+      "type": "string",
+      "description": "Número da DPS (o exemplo de erro traz número)."
+     },
+     "serie_rps": {
+      "type": "string",
+      "description": "Série da DPS (o exemplo de erro traz número)."
+     },
+     "tipo_rps": {
+      "type": "string",
+      "description": "Tipo (o exemplo de erro traz número)."
+     },
+     "status": {
+      "type": "string",
+      "description": "Situação.",
+      "enum": [
+       "cancelado"
+      ]
+     },
+     "numero": {
+      "type": "string",
+      "description": "Número da NFS-e."
+     },
+     "codigo_verificacao": {
+      "type": "string",
+      "description": "Código de verificação."
+     },
+     "data_emissao": {
+      "type": "string",
+      "description": "Data/hora de emissão da NFS-e.",
+      "format": "date-time"
+     },
+     "url": {
+      "type": "string",
+      "description": "Consulta pública no portal nacional (traz a chave de acesso no parâmetro chave).",
+      "format": "uri"
+     },
+     "url_danfse": {
+      "type": "string",
+      "description": "DANFSe em PDF gerado pela Focus.",
+      "format": "uri"
+     },
+     "caminho_xml_nota_fiscal": {
+      "type": "string",
+      "description": "Caminho relativo do XML da NFS-e (ex.: /arquivos/.../XMLsNFSe/NFS...-nfse.xml)."
+     },
+     "caminho_xml_cancelamento": {
+      "type": "string",
+      "description": "Caminho relativo do XML do evento de cancelamento."
+     }
+    }
+   },
+   "ErroAutorizacao": {
+    "type": "object",
+    "properties": {
+     "cnpj_prestador": {
+      "type": "string",
+      "description": "CNPJ do prestador."
+     },
+     "ref": {
+      "type": "string",
+      "description": "Referência informada na emissão."
+     },
+     "numero_rps": {
+      "type": "string",
+      "description": "Número da DPS (o exemplo de erro traz número)."
+     },
+     "serie_rps": {
+      "type": "string",
+      "description": "Série da DPS (o exemplo de erro traz número)."
+     },
+     "tipo_rps": {
+      "type": "string",
+      "description": "Tipo (o exemplo de erro traz número)."
+     },
+     "status": {
+      "type": "string",
+      "description": "Situação.",
+      "enum": [
+       "erro_autorizacao"
+      ]
+     },
+     "erros": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/ErroItem"
+      }
+     }
+    }
+   },
+   "ConsultaNota": {
+    "oneOf": [
+     {
+      "$ref": "#/components/schemas/NotaAutorizada"
+     },
+     {
+      "$ref": "#/components/schemas/ProcessandoAutorizacao"
+     },
+     {
+      "$ref": "#/components/schemas/NotaCancelada"
+     },
+     {
+      "$ref": "#/components/schemas/ErroAutorizacao"
+     }
+    ]
+   },
+   "CancelamentoRequest": {
+    "type": "object",
+    "properties": {
+     "justificativa": {
+      "type": "string",
+      "description": "Justificativa do cancelamento (necessária se o código de cancelamento for 4)."
+     }
+    }
+   },
+   "CancelamentoResposta": {
+    "type": "object",
+    "properties": {
+     "status": {
+      "type": "string",
+      "description": "Situação.",
+      "enum": [
+       "cancelado",
+       "erro_cancelamento"
+      ]
+     },
+     "erros": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/ErroItem"
+      }
+     }
+    }
+   },
+   "ErroItem": {
+    "type": "object",
+    "properties": {
+     "codigo": {
+      "type": "string",
+      "description": "Código do erro (ex.: E0014, V999)."
+     },
+     "mensagem": {
+      "type": "string",
+      "description": "Mensagem."
+     },
+     "correcao": {
+      "type": "string",
+      "nullable": true,
+      "description": "Correção sugerida."
+     }
+    }
+   },
+   "ErrorResponse": {
+    "type": "object",
+    "properties": {
+     "codigo": {
+      "type": "string",
+      "description": "Código (requisicao_invalida, erro_validacao, nao_encontrado)."
+     },
+     "mensagem": {
+      "type": "string",
+      "description": "Mensagem."
+     }
+    }
+   },
+   "EmailRequest": {
+    "type": "object",
+    "required": [
+     "emails"
+    ],
+    "properties": {
+     "emails": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+       "type": "string",
+       "format": "email"
+      },
+      "description": "Lista de e-mails que recebem cópia da nota. Limitado a 10 por vez."
+     }
+    }
+   },
+   "EmailResposta": {
+    "type": "object",
+    "properties": {
+     "emails": {
+      "type": "array",
+      "items": {
+       "type": "string",
+       "format": "email"
+      }
+     }
+    }
+   },
+   "EmpresaCreate": {
+    "type": "object",
+    "description": "Recorte dos campos que o Ecloud envia (criar_empresa.md / atualizar_empresa.md). O schema da Focus não marca campos obrigatórios; o painel exige CNPJ real, razão social, contato, endereço e certificado A1.",
+    "properties": {
+     "nome": {
+      "type": "string",
+      "description": "Razão social."
+     },
+     "nome_fantasia": {
+      "type": "string",
+      "description": "Nome fantasia."
+     },
+     "cnpj": {
+      "type": "string",
+      "description": "CNPJ, 14 dígitos sem pontuação."
+     },
+     "cpf": {
+      "type": "string",
+      "description": "CPF."
+     },
+     "inscricao_municipal": {
+      "type": "integer",
+      "description": "Inscrição municipal (integer no corpo; string no retorno)."
+     },
+     "regime_tributario": {
+      "type": "integer",
+      "description": "1 Simples Nacional; 2 Simples Nacional, excesso de sublimite de receita bruta; 3 Regime Normal; 4 Simples Nacional, MEI.",
+      "enum": [
+       1,
+       2,
+       3,
+       4
+      ]
+     },
+     "email": {
+      "type": "string",
+      "description": "E-mail de contato.",
+      "format": "email"
+     },
+     "telefone": {
+      "type": "string",
+      "description": "Telefone (ex.: 4130333333)."
+     },
+     "logradouro": {
+      "type": "string",
+      "description": "Logradouro."
+     },
+     "numero": {
+      "type": "string",
+      "description": "Número (aceita SN).",
+      "maxLength": 60
+     },
+     "complemento": {
+      "type": "string",
+      "description": "Complemento."
+     },
+     "bairro": {
+      "type": "string",
+      "description": "Bairro."
+     },
+     "municipio": {
+      "type": "string",
+      "description": "Nome do município."
+     },
+     "uf": {
+      "type": "string",
+      "description": "UF."
+     },
+     "cep": {
+      "type": "integer",
+      "description": "CEP (ex.: 80210000)."
+     },
+     "arquivo_certificado_base64": {
+      "type": "string",
+      "description": "Certificado A1 (PFX/P12) em base64."
+     },
+     "senha_certificado": {
+      "type": "string",
+      "description": "Senha do certificado; obrigatória só com arquivo_certificado_base64."
+     },
+     "certificado_especifico": {
+      "type": "boolean",
+      "description": "false/omitido: o certificado vale para todas as empresas do mesmo CNPJ base."
+     },
+     "habilita_nfse": {
+      "type": "boolean",
+      "description": "NFS-e municipal. Não pode estar ligado junto com habilita_nfsen_producao."
+     },
+     "habilita_nfsen_producao": {
+      "type": "boolean",
+      "description": "NFS-e Nacional em produção."
+     },
+     "habilita_nfsen_homologacao": {
+      "type": "boolean",
+      "description": "NFS-e Nacional em homologação."
+     },
+     "enviar_email_destinatario": {
+      "type": "boolean",
+      "description": "Envia e-mail ao destinatário (produção)."
+     },
+     "enviar_email_homologacao": {
+      "type": "boolean",
+      "description": "Envia e-mail em homologação."
+     },
+     "mostrar_danfse_badge": {
+      "type": "boolean",
+      "description": "true exibe o selo da Focus na DANFSe; false = white label."
+     }
+    }
+   },
+   "EmpresaResponse": {
+    "type": "object",
+    "description": "Recorte do retorno (criar, consultar, listar, atualizar). Os tokens vêm vazios no exemplo da documentação: a confirmar em teste.",
+    "properties": {
+     "id": {
+      "type": "integer",
+      "description": "Id da empresa na Focus."
+     },
+     "nome": {
+      "type": "string",
+      "description": "Razão social."
+     },
+     "cnpj": {
+      "type": "string",
+      "description": "CNPJ."
+     },
+     "cpf": {
+      "type": "string",
+      "description": "CPF."
+     },
+     "inscricao_municipal": {
+      "type": "string",
+      "description": "Inscrição municipal."
+     },
+     "regime_tributario": {
+      "type": "string",
+      "description": "Regime tributário (string no retorno)."
+     },
+     "codigo_municipio": {
+      "type": "string",
+      "description": "Código do município."
+     },
+     "habilita_nfse": {
+      "type": "boolean",
+      "description": "NFS-e municipal."
+     },
+     "habilita_nfsen_producao": {
+      "type": "boolean",
+      "description": "NFS-e Nacional em produção."
+     },
+     "habilita_nfsen_homologacao": {
+      "type": "boolean",
+      "description": "NFS-e Nacional em homologação."
+     },
+     "certificado_valido_de": {
+      "type": "string",
+      "description": "Início da validade do certificado.",
+      "format": "date-time"
+     },
+     "certificado_valido_ate": {
+      "type": "string",
+      "description": "Fim da validade do certificado.",
+      "format": "date-time"
+     },
+     "certificado_cnpj": {
+      "type": "string",
+      "description": "CNPJ do certificado."
+     },
+     "token_producao": {
+      "type": "string",
+      "description": "Token da empresa em produção."
+     },
+     "token_homologacao": {
+      "type": "string",
+      "description": "Token da empresa em homologação."
+     }
+    }
+   },
+   "ErroEmpresa": {
+    "type": "object",
+    "description": "400 e 422 da API de empresas.",
+    "properties": {
+     "codigo": {
+      "type": "string",
+      "description": "erro_validacao, nao_encontrado, permissao_negada."
+     },
+     "mensagem": {
+      "type": "string",
+      "description": "Mensagem."
+     },
+     "erros": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "codigo": {
+         "type": "string",
+         "description": "Código."
+        },
+        "mensagem": {
+         "type": "string",
+         "description": "Mensagem."
+        },
+        "campo": {
+         "type": "string",
+         "description": "Campo com erro (ex.: arquivo_certificado_base64)."
+        }
+       }
+      }
+     }
+    }
+   },
+   "Gatilho": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string",
+      "description": "Id do gatilho."
+     },
+     "url": {
+      "type": "string",
+      "description": "URL notificada.",
+      "format": "uri"
+     },
+     "authorization": {
+      "type": "string",
+      "nullable": true
+     },
+     "authorization_header": {
+      "type": "string",
+      "nullable": true
+     },
+     "event": {
+      "type": "string",
+      "description": "Evento.",
+      "enum": [
+       "nfsen"
+      ]
+     },
+     "cnpj": {
+      "type": "string",
+      "description": "CNPJ."
+     },
+     "cpf": {
+      "type": "string",
+      "description": "CPF."
+     }
+    }
+   }
+  }
+ },
+ "paths": {
+  "/nfsen": {
+   "post": {
+    "operationId": "emitirDpsNacional",
+    "summary": "Emitir DPS (NFS-e Nacional)",
+    "parameters": [
+     {
+      "name": "ref",
+      "in": "query",
+      "required": true,
+      "schema": {
+       "type": "string"
+      },
+      "description": "Referência única para o DPS/NFSe.",
+      "example": "ref_dps_001"
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/NFSeNacionalRequest"
+       },
+       "example": {
+        "data_emissao": "2025-01-01T07:30:00-0300",
+        "serie_dps": 1,
+        "numero_dps": 1,
+        "data_competencia": "2025-01-01",
+        "emitente_dps": 1,
+        "codigo_municipio_emissora": 4106902,
+        "cnpj_prestador": "12345678000123",
+        "codigo_opcao_simples_nacional": 1,
+        "regime_especial_tributacao": 0,
+        "cnpj_tomador": "12345678000123",
+        "codigo_municipio_prestacao": 4106902,
+        "codigo_tributacao_nacional_iss": "010701",
+        "descricao_servico": "Nota emitida em caráter de TESTE",
+        "valor_servico": 1,
+        "tributacao_iss": 1
+       }
+      }
+     }
+    },
+    "responses": {
+     "202": {
+      "description": "Requisição aceita para processamento",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ProcessandoAutorizacao"
+        },
+        "example": {
+         "cnpj_prestador": "12345678000123",
+         "ref": "123456",
+         "status": "processando_autorizacao"
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Requisição inválida",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErrorResponse"
+        },
+        "example": {
+         "codigo": "requisicao_invalida",
+         "mensagem": "O campo dfe.prestador.cpf_cnpj é obrigatório."
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Não autorizado",
+      "content": {
+       "text/html": {
+        "example": "HTTP Basic: Access denied"
+       }
+      }
+     },
+     "422": {
+      "description": "Dados inválidos ou que não podem ser processados",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErrorResponse"
+        },
+        "example": {
+         "codigo": "erro_validacao",
+         "mensagem": "Já existe um DPS com esta referência."
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/nfsen/{referencia}": {
+   "parameters": [
+    {
+     "$ref": "#/components/parameters/referencia"
+    }
+   ],
+   "get": {
+    "operationId": "consultarNfseNacional",
+    "summary": "Consultar NFS-e Nacional",
+    "responses": {
+     "200": {
+      "description": "Requisição processada com sucesso",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ConsultaNota"
+        },
+        "examples": {
+         "autorizada": {
+          "value": {
+           "cnpj_prestador": "12345678000123",
+           "ref": "TRANSACTION=742130=1=0=092467d0-e275-4ff2-b633-3510643cfd03",
+           "numero_rps": "73895",
+           "serie_rps": "1",
+           "tipo_rps": "1",
+           "status": "autorizado",
+           "numero": "74798",
+           "codigo_verificacao": "ABC123",
+           "data_emissao": "2026-03-30T11:25:14-03:00",
+           "url": "https://www.nfse.gov.br/consultapublica/?tpc=1&chave=42054072212345678000123000000007479826039913594189",
+           "caminho_xml_nota_fiscal": "/arquivos/12345678000123_1/202603/XMLsNFSe/NFS42054072212345678000123000000007479826039913594189-nfse.xml",
+           "url_danfse": "https://focusnfe.s3.sa-east-1.amazonaws.com/arquivos/12345678000123_1/202603/DANFSEs/NFS42054072212345678000123000000007479826039913594189.pdf"
+          }
+         },
+         "erro_autorizacao": {
+          "value": {
+           "status": "erro_autorizacao",
+           "cnpj_prestador": "12345678000123",
+           "ref": "12345",
+           "numero_rps": 1,
+           "serie_rps": 1,
+           "tipo_rps": 1,
+           "erros": [
+            {
+             "codigo": "E0014",
+             "mensagem": "Conjunto de Série, Número, Código do Município Emissor e CNPJ/CPF informado nesta DPS já existe em uma NFS-e gerada a partir de uma DPS enviada anteriormente."
+            }
+           ]
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Recurso não encontrado",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErrorResponse"
+        },
+        "example": {
+         "codigo": "nao_encontrado",
+         "mensagem": "Nota fiscal não encontrada"
+        }
+       }
+      }
+     }
+    }
+   },
+   "delete": {
+    "operationId": "cancelarNfseNacional",
+    "summary": "Cancelar NFS-e Nacional (síncrono; só status autorizado)",
+    "requestBody": {
+     "required": false,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/CancelamentoRequest"
+       },
+       "example": {
+        "justificativa": "Emissão em duplicidade"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Requisição processada com sucesso",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CancelamentoResposta"
+        },
+        "examples": {
+         "cancelada": {
+          "value": {
+           "status": "cancelado"
+          }
+         },
+         "erro": {
+          "value": {
+           "status": "erro_cancelamento",
+           "erros": [
+            {
+             "codigo": "V999",
+             "mensagem": "NFSe fora do prazo de cancelamento permitido",
+             "correcao": null
+            }
+           ]
+          }
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Recurso não encontrado",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErrorResponse"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/nfsen/{referencia}/email": {
+   "parameters": [
+    {
+     "$ref": "#/components/parameters/referencia"
+    }
+   ],
+   "post": {
+    "operationId": "reenviarEmailNfseNacional",
+    "summary": "Reenviar e-mail da NFS-e Nacional",
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/EmailRequest"
+       },
+       "example": {
+        "emails": [
+         "nome@example.org",
+         "nome2@example.org"
+        ]
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Requisição processada com sucesso",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/EmailResposta"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Recurso não encontrado",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErrorResponse"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/nfsen/{referencia}/hook": {
+   "parameters": [
+    {
+     "$ref": "#/components/parameters/referencia"
+    }
+   ],
+   "post": {
+    "operationId": "reenviarHookNfseNacional",
+    "summary": "Reenviar notificação (webhook) para todos os gatilhos cadastrados",
+    "responses": {
+     "200": {
+      "description": "Lista de gatilhos acionados",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/Gatilho"
+         }
+        },
+        "example": [
+         {
+          "id": "Vj5rmkBq",
+          "url": "http://minha.url/nfe",
+          "authorization": null,
+          "authorization_header": null,
+          "event": "nfsen",
+          "cnpj": "12345678000123"
+         }
+        ]
+       }
+      }
+     },
+     "404": {
+      "description": "Recurso não encontrado",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErrorResponse"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/empresas": {
+   "post": {
+    "operationId": "criarEmpresa",
+    "summary": "Criar empresa (Token Master da conta; servidor só de produção)",
+    "parameters": [
+     {
+      "name": "dry_run",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "enum": [
+        1
+       ]
+      },
+      "description": "Simula a criação sem persistir os dados."
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/EmpresaCreate"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Requisição processada com sucesso",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/EmpresaResponse"
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Requisição inválida",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErroEmpresa"
+        },
+        "example": {
+         "erros": [
+          {
+           "codigo": "parametros_invalidos",
+           "mensagem": "Existe um problema no JSON recebido: 822: unexpected token at 'empresa_id=12079'"
+          }
+         ]
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Não autorizado",
+      "content": {
+       "text/html": {
+        "example": "HTTP Basic: Access denied"
+       }
+      }
+     },
+     "422": {
+      "description": "Erro de validação",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErroEmpresa"
+        },
+        "example": {
+         "codigo": "erro_validacao",
+         "mensagem": "Erro de validação",
+         "erros": [
+          {
+           "codigo": "erro_validacao",
+           "mensagem": "Arquivo certificado base64 Certificado não pertence ao CNPJ informado",
+           "campo": "arquivo_certificado_base64"
+          }
+         ]
+        }
+       }
+      }
+     }
+    }
+   },
+   "get": {
+    "operationId": "listarEmpresas",
+    "summary": "Listar empresas (até 50 por página; total no header X-Total-Count)",
+    "parameters": [
+     {
+      "name": "cnpj",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "string"
+      },
+      "description": "CNPJ, 14 dígitos sem pontuação."
+     },
+     {
+      "name": "cpf",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "string"
+      },
+      "description": "CPF, 11 dígitos."
+     },
+     {
+      "name": "offset",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "minimum": 0
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Lista de empresas",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/EmpresaResponse"
+         }
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Não autorizado"
+     }
+    }
+   }
+  },
+  "/empresas/{id}": {
+   "parameters": [
+    {
+     "name": "id",
+     "in": "path",
+     "required": true,
+     "schema": {
+      "type": "string"
+     },
+     "description": "Id da empresa na Focus."
+    }
+   ],
+   "get": {
+    "operationId": "consultarEmpresa",
+    "summary": "Consultar empresa por id",
+    "responses": {
+     "200": {
+      "description": "Requisição processada com sucesso",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/EmpresaResponse"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Empresa não encontrada",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErroEmpresa"
+        },
+        "example": {
+         "codigo": "nao_encontrado",
+         "mensagem": "Empresa não encontrada"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Empresa de outra revenda",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErroEmpresa"
+        },
+        "example": {
+         "codigo": "permissao_negada",
+         "mensagem": "Empresa não encontrada como propriedade da revenda"
+        }
+       }
+      }
+     }
+    }
+   },
+   "put": {
+    "operationId": "atualizarEmpresa",
+    "summary": "Atualizar empresa (ex.: novo certificado ou habilitar produção)",
+    "parameters": [
+     {
+      "name": "dry_run",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "enum": [
+        1
+       ]
+      },
+      "description": "Simula a alteração sem persistir os dados."
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/EmpresaCreate"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Requisição processada com sucesso",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/EmpresaResponse"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Empresa não encontrada",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErroEmpresa"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Erro de validação",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErroEmpresa"
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+ }
+}

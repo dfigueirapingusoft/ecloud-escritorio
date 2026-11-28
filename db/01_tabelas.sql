@@ -17,6 +17,8 @@
 --      assinaturas, faturas da Stone, avisos (webhooks) e login próprio.
 --   4c. Código de verificação do cadastro (01e_tabelas_verificacao.sql):
 --      pré-cadastro aguardando o código enviado por e-mail ou WhatsApp.
+--   4d. NFS-e Nacional pela Focus NFe (01f_tabelas_nfsen.sql): emitentes,
+--      notas (DPS/NFS-e) e avisos (webhooks).
 --   5. Triggers de auditoria (ATUALIZADO_EM / ATUALIZADO_POR).
 --
 -- Idempotente: pode ser executado várias vezes. Objetos que já existem são
@@ -382,10 +384,10 @@ begin
             apex_page_id           number,
             apex_session_id        number,
             constraint rtc_chamada_log_pk primary key (chamada_id),
-            constraint rtc_chamada_log_serv_ck check (servico in ('REGIME','SIMPLES','DANFSE','MIDIA','STONE','ZAPI')),
+            constraint rtc_chamada_log_serv_ck check (servico in ('REGIME','SIMPLES','DANFSE','MIDIA','STONE','ZAPI','FOCUS_HOM','FOCUS_PROD')),
             constraint rtc_chamada_log_met_ck check (metodo in ('GET','POST','PUT','DELETE')),
             constraint rtc_chamada_log_suc_ck check (sucesso in ('S','N')),
-            constraint rtc_chamada_log_ref_ck check (referencia_tipo in ('SIMULACAO','DANFSE','CACHE','ERRO_CATALOGO','TESTE_CONEXAO','ANUNCIO','ASSINATURA_FATURA','CADASTRO_VERIFICACAO')),
+            constraint rtc_chamada_log_ref_ck check (referencia_tipo in ('SIMULACAO','DANFSE','CACHE','ERRO_CATALOGO','TESTE_CONEXAO','ANUNCIO','ASSINATURA_FATURA','CADASTRO_VERIFICACAO','NFSEN_NOTA','NFSEN_EMITENTE')),
             constraint rtc_chamada_log_esc_fk foreign key (escritorio_id) references escritorio (escritorio_id)
         )]');
     ddl('create index rtc_chamada_log_esc_ix on rtc_chamada_log (escritorio_id, inicio_em)');
@@ -664,6 +666,9 @@ end;
 
 -- Código de verificação no autocadastro (e-mail ou WhatsApp)
 @@01e_tabelas_verificacao.sql
+
+-- NFS-e Nacional pela Focus NFe (emitentes, notas e avisos)
+@@01f_tabelas_nfsen.sql
 
 --------------------------------------------------------------------------------
 -- 5. TRIGGERS DE AUDITORIA

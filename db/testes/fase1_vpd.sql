@@ -44,6 +44,13 @@ declare
     l_tok_a   number;
     l_usu_a   number;
     l_ver     number;
+    -- NFS-e Nacional pela Focus NFe (01f_tabelas_nfsen.sql)
+    l_emi_a   number;
+    l_emi_b   number;
+    l_emc_a   number;
+    l_nfs_a   number;
+    l_nfs_b   number;
+    l_avi     number;
     type t_nomes is table of varchar2(30);
     l_tabelas_rurais t_nomes := t_nomes(
         'IMOVEL_RURAL','IMOVEL_CONTRAPARTE','CENTRO_CUSTO','CONTA_BANCARIA',
@@ -52,6 +59,7 @@ declare
     l_tabelas_assinatura t_nomes := t_nomes(
         'ASSINATURA','ASSINATURA_FATURA','ASSINATURA_WEBHOOK','USUARIO_SENHA_TOKEN',
         'CADASTRO_VERIFICACAO');
+    l_tabelas_nfsen t_nomes := t_nomes('NFSEN_EMITENTE','NFSEN_NOTA','NFSEN_AVISO');
 
     l_qtd     number;
     l_falhas  number := 0;
@@ -547,6 +555,126 @@ begin
     pkg_ecloud_ctx.definir_contexto('TESTE_ADMIN_B');
     confere('usuário de escritório cancelado fica sem escritório no contexto',
         pkg_ecloud_ctx.escritorio_id is null);
+
+    ----------------------------------------------------------------------------
+    -- NFS-e Nacional pela Focus NFe (01f_tabelas_nfsen.sql)
+    ----------------------------------------------------------------------------
+    pkg_ecloud_ctx.definir_contexto_sistema;
+    insert into nfsen_emitente (escritorio_id, tipo, cnpj, razao_social, regime_tributario, telefone, codigo_municipio_emissora, opcao_simples)
+    values (l_esc_a, 'escritorio', '11.222.333/0001-81', 'Escritório A Teste', '3', '(51) 3333-4444', 4314902, '1')
+    returning emitente_id into l_emi_a;
+    insert into nfsen_emitente (escritorio_id, tipo, cliente_id, cnpj, razao_social, regime_tributario,
+                                codigo_municipio_emissora, opcao_simples, regime_apuracao_sn)
+    values (l_esc_a, 'CLIENTE', l_cli_a, '11444777000161', 'Cliente do A', '1', 4314902, '3', '1')
+    returning emitente_id into l_emc_a;
+    insert into nfsen_emitente (escritorio_id, tipo, cnpj, razao_social, regime_tributario, codigo_municipio_emissora, opcao_simples)
+    values (l_esc_b, 'ESCRITORIO', '12ABC34501DE35', 'Escritório B Teste', '3', 3550308, '1')
+    returning emitente_id into l_emi_b;
+    select count(*) into l_qtd from nfsen_emitente
+     where emitente_id = l_emi_a and tipo = 'ESCRITORIO' and cnpj = '11222333000181'
+       and ambiente = 'HOMOLOGACAO' and token_hom = 'N' and serie_dps = 1 and proximo_numero_dps = 1
+       and telefone = '5133334444' and focus_situacao = 'PENDENTE';
+    confere('emitente: trigger normaliza tipo/CNPJ/telefone e padrões (homologação, sem token, série 1, PENDENTE)', l_qtd = 1);
+    confere('emitente CADASTRADA sem id da empresa na Focus é rejeitado (ORA-02290)',
+        espera_erro('update nfsen_emitente set focus_situacao = ''CADASTRADA'' where emitente_id = ' || l_emi_a, -2290));
+    confere('regime tributário da Focus fora de 1..4 é rejeitado (ORA-02290)',
+        espera_erro('update nfsen_emitente set regime_tributario = ''5'' where emitente_id = ' || l_emi_a, -2290));
+    update nfsen_emitente set focus_situacao = 'CADASTRADA', focus_empresa_id = -1 where emitente_id = l_emi_a;
+    confere('mesma empresa da Focus em dois emitentes é rejeitada (ORA-00001)',
+        espera_erro('update nfsen_emitente set focus_situacao = ''CADASTRADA'', focus_empresa_id = -1 where emitente_id = ' || l_emi_b, -1));
+    confere('segundo emitente ESCRITORIO no mesmo escritório é rejeitado (ORA-00001)',
+        espera_erro(q'[insert into nfsen_emitente (escritorio_id, tipo, cnpj, razao_social, regime_tributario, codigo_municipio_emissora, opcao_simples) values (]'
+                    || l_esc_a || q'[, 'ESCRITORIO', '11444777000161', 'x', '3', 4314902, '1')]', -1));
+    confere('emitente CLIENTE sem cliente é rejeitado (ORA-02290)',
+        espera_erro(q'[insert into nfsen_emitente (escritorio_id, tipo, cpf, razao_social, regime_tributario, codigo_municipio_emissora, opcao_simples) values (]'
+                    || l_esc_a || q'[, 'CLIENTE', '12345678909', 'x', '3', 4314902, '1')]', -2290));
+    confere('emitente apontando cliente de outro escritório é rejeitado (ORA-02291)',
+        espera_erro(q'[insert into nfsen_emitente (escritorio_id, tipo, cliente_id, cpf, razao_social, regime_tributario, codigo_municipio_emissora, opcao_simples) values (]'
+                    || l_esc_a || ', ''CLIENTE'', ' || l_cli_b || q'[, '12345678909', 'x', '3', 4314902, '1')]', -2291));
+    confere('optante ME/EPP sem regime de apuração é rejeitado (ORA-02290)',
+        espera_erro('update nfsen_emitente set opcao_simples = ''3'' where emitente_id = ' || l_emi_a, -2290));
+    confere('série da DPS fora de 1..49999 é rejeitada (ORA-02290)',
+        espera_erro('update nfsen_emitente set serie_dps = 50000 where emitente_id = ' || l_emi_a, -2290));
+    confere('município emissor com 9 dígitos é rejeitado (ORA-02290)',
+        espera_erro('update nfsen_emitente set codigo_municipio_emissora = 431490200 where emitente_id = ' || l_emi_a, -2290));
+
+    insert into nfsen_nota (escritorio_id, emitente_id, cliente_id, tomador_tipo_doc, tomador_documento,
+                            tomador_razao_social, tomador_cep, codigo_municipio_prestacao,
+                            codigo_tributacao_iss, descricao_servico, valor_servico)
+    values (l_esc_a, l_emi_a, l_cli_a, 'cnpj', '11.444.777/0001-61', 'Cliente do A', '90.010-000',
+            4314902, '171901', 'Honorários contábeis', 1500)
+    returning nota_id into l_nfs_a;
+    insert into nfsen_nota (escritorio_id, emitente_id, cliente_id, tomador_tipo_doc, tomador_documento,
+                            tomador_razao_social, codigo_municipio_prestacao, codigo_tributacao_iss,
+                            descricao_servico, valor_servico)
+    values (l_esc_b, l_emi_b, l_cli_b, 'CNPJ', '11444777000161', 'Cliente do B', 3550308, '171901',
+            'Honorários contábeis', 900)
+    returning nota_id into l_nfs_b;
+    select count(*) into l_qtd from nfsen_nota
+     where nota_id = l_nfs_a and status = 'RASCUNHO' and tomador_tipo_doc = 'CNPJ'
+       and tomador_documento = '11444777000161' and tomador_cep = '90010000' and finalidade_emissao = '0';
+    confere('nota: rascunho com tomador normalizado pelo trigger', l_qtd = 1);
+    confere('nota de A com emitente de B é rejeitada (ORA-02291)',
+        espera_erro('insert into nfsen_nota (escritorio_id, emitente_id, cliente_id, tomador_tipo_doc, tomador_documento, '
+                    || 'tomador_razao_social, codigo_municipio_prestacao, codigo_tributacao_iss, descricao_servico, valor_servico) values ('
+                    || l_esc_a || ', ' || l_emi_b || ', ' || l_cli_a
+                    || q'[, 'CNPJ', '11444777000161', 'x', 4314902, '171901', 'x', 1)]', -2291));
+    confere('nota enviada sem referência/numeração é rejeitada (ORA-02290)',
+        espera_erro('update nfsen_nota set status = ''PROCESSANDO'' where nota_id = ' || l_nfs_a, -2290));
+    confere('status da Focus desconhecido é rejeitado (ORA-02290)',
+        espera_erro('update nfsen_nota set status_focus = ''autorizada'' where nota_id = ' || l_nfs_a, -2290));
+    confere('tomador CPF com 14 dígitos é rejeitado (ORA-02290)',
+        espera_erro('update nfsen_nota set tomador_tipo_doc = ''CPF'' where nota_id = ' || l_nfs_a, -2290));
+    confere('valor do serviço zero é rejeitado (ORA-02290)',
+        espera_erro('update nfsen_nota set valor_servico = 0 where nota_id = ' || l_nfs_a, -2290));
+    update nfsen_nota
+       set status = 'PROCESSANDO', status_focus = 'processando_autorizacao', referencia = 'EC' || l_esc_a || '-' || l_nfs_a,
+           ambiente = 'HOMOLOGACAO', serie_dps = 1, numero_dps = 1, data_emissao = systimestamp, enviada_em = systimestamp
+     where nota_id = l_nfs_a;
+    confere('nota enviada com referência e numeração é aceita', sql%rowcount = 1);
+    confere('autorizada sem número da NFS-e é rejeitada (ORA-02290)',
+        espera_erro('update nfsen_nota set status = ''AUTORIZADA'' where nota_id = ' || l_nfs_a, -2290));
+    confere('mesma DPS (série e número) do mesmo emitente é rejeitada (ORA-00001)',
+        espera_erro('insert into nfsen_nota (escritorio_id, emitente_id, cliente_id, tomador_tipo_doc, tomador_documento, '
+                    || 'tomador_razao_social, codigo_municipio_prestacao, codigo_tributacao_iss, descricao_servico, valor_servico, '
+                    || 'status, referencia, ambiente, serie_dps, numero_dps, data_emissao, enviada_em) values ('
+                    || l_esc_a || ', ' || l_emi_a || ', ' || l_cli_a
+                    || q'[, 'CNPJ', '11444777000161', 'x', 4314902, '171901', 'x', 1, 'PROCESSANDO', 'REF-DUP', 'HOMOLOGACAO', 1, 1, systimestamp, systimestamp)]', -1));
+    insert into nfsen_aviso (referencia, corpo)
+    values ('desconhecida', '{"ref":"desconhecida","status":"autorizado"}')
+    returning aviso_id into l_avi;
+    confere('aviso com corpo que não é JSON é rejeitado (ORA-02290)',
+        espera_erro(q'[insert into nfsen_aviso (corpo) values ('não é json')]', -2290));
+    confere('aviso com nota e sem escritório é rejeitado (ORA-02290)',
+        espera_erro('update nfsen_aviso set nota_id = ' || l_nfs_a || ' where aviso_id = ' || l_avi, -2290));
+
+    pkg_ecloud_ctx.definir_contexto('teste_contador_a');
+    select count(*) into l_qtd from nfsen_emitente;
+    confere('A vê só os próprios emitentes (2)', l_qtd = 2);
+    select count(*) into l_qtd from nfsen_nota where nota_id = l_nfs_b;
+    confere('A não vê nota de B', l_qtd = 0);
+    select count(*) into l_qtd from nfsen_nota where nota_id = l_nfs_a;
+    confere('A vê a própria nota', l_qtd = 1);
+    update nfsen_nota set descricao_servico = 'alterado' where nota_id = l_nfs_b;
+    confere('A não altera nota de B (0 linhas)', sql%rowcount = 0);
+    update nfsen_emitente set token_prod = 'S' where emitente_id = l_emi_b;
+    confere('A não altera emitente de B (0 linhas)', sql%rowcount = 0);
+    select count(*) into l_qtd from nfsen_aviso where aviso_id = l_avi;
+    confere('A não vê aviso sem escritório', l_qtd = 0);
+    confere('A não insere nota em B (ORA-28115)',
+        espera_erro('insert into nfsen_nota (escritorio_id, emitente_id, cliente_id, tomador_tipo_doc, tomador_documento, '
+                    || 'tomador_razao_social, codigo_municipio_prestacao, codigo_tributacao_iss, descricao_servico, valor_servico) values ('
+                    || l_esc_b || ', ' || l_emi_b || ', ' || l_cli_b
+                    || q'[, 'CNPJ', '11444777000161', 'x', 3550308, '171901', 'x', 1)]', -28115));
+
+    pkg_ecloud_ctx.definir_contexto('TESTE_PLATAFORMA');
+    select count(*) into l_qtd from nfsen_aviso where aviso_id = l_avi;
+    confere('admin plataforma vê aviso sem escritório', l_qtd = 1);
+
+    pkg_ecloud_ctx.limpar_contexto;
+    for i in 1 .. l_tabelas_nfsen.count loop
+        confere('sem contexto: 0 linhas em ' || l_tabelas_nfsen(i), contar(l_tabelas_nfsen(i)) = 0);
+    end loop;
 
     ----------------------------------------------------------------------------
     -- Limpeza
