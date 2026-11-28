@@ -315,6 +315,9 @@ page 21 (
             column: CAEPF
             dataType: varchar2
         }
+        help {
+            inlineHelpText: 14 dígitos (999.999.999/999-99). Não é o CPF; deixe em branco se não houver.
+        }
     )
 
     pageItem P21_CEP (
@@ -890,6 +893,25 @@ page 21 (
         }
         security {
             authorizationScheme: @contador-ou-administrador
+        }
+    )
+
+    validation caepf-14-digitos (
+        name: CAEPF com 14 dígitos
+        validation {
+            type: functionBodyReturningBoolean
+            plsqlFunctionBody: return :P21_TIPO_PESSOA = 'J' or :P21_CAEPF is null or regexp_like(regexp_replace(:P21_CAEPF, '[^0-9]', ''), '^[0-9]{14}$');
+        }
+        error {
+            errorMessage: O CAEPF tem 14 dígitos (999.999.999/999-99). Se o produtor não tiver CAEPF, deixe o campo em branco.
+            associatedItem: @P21_CAEPF
+        }
+        execution {
+            sequence: 16
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE
         }
     )
 
