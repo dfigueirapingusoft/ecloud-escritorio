@@ -57,7 +57,7 @@ docs/      01-arquitetura.md, 02-app-apex.md, 03-deploy.md, 04-escopo-agro.md (r
            contratos/ (OpenAPI, exemplos, lcdpr-leiaute-1.3.md, openapi-midia.json do Worker de mídia,
            openapi-stone.json = recorte da Pagar.me v5)
 cloudflare/midia/  Worker de mídia (imagens dos anúncios no R2), com README de publicação
-tools/     validar_contratos.py, verificar_sql_apex.py
+tools/     validar_contratos.py, verificar_sql_apex.py, verificar_convencoes_apex.py
 ```
 
 ## Testar
@@ -73,6 +73,7 @@ sql ECLOUD@base @testes/fase2_assinatura_integracao.sql  # sandbox da Stone (STO
 node cloudflare/midia/worker.test.mjs          # Worker de mídia com R2 simulado
 sql ECLOUD@base @testes/fase2_integracao.sql   # HTTP real; precisa de APEX + credencial + RTC_CONFIG
 python3 tools/validar_contratos.py
+python3 tools/verificar_convencoes_apex.py
 $SKILLS/apex/apexlang-compile/scripts/validate-apex-app.sh apex   # SQLCL_BIN definido
 python3 tools/verificar_sql_apex.py /tmp/v.sql && sql ECLOUD@base @/tmp/v.sql
 ```
@@ -92,6 +93,8 @@ python3 tools/verificar_sql_apex.py /tmp/v.sql && sql ECLOUD@base @/tmp/v.sql
   o identificador é o Static ID (templates de e-mail: `emailTemplate ECLOUD_BOAS_VINDAS (`);
   Ajax Callback é `execution.point: ajaxCallback`. Item `hidden` e
   `starRating` não aceitam `layout.alignment`.
+* Radio group nunca exibe opção nula: todo `type: radioGroup` leva `displayNullValue: false` em `lov { }`
+  (o padrão do 26.2 é `Y`). Confira com `python3 tools/verificar_convencoes_apex.py`.
 * UF aparece só pela sigla ("SP") em todo o app: LOV compartilhada `ufs` (27 UFs fixas, sem depender do cache).
 * Teste local do app: `db/testes/dados_demo.sql <workspace> <usuario> <senha>` cria usuário e dados fictícios.
 * No PL/SQL, `JSON_VALUE` nativo ignora item methods (`type()`, `size()`): use SQL.
