@@ -1,8 +1,15 @@
 --------------------------------------------------------------------------------
 -- 08_ords_aviso_stone.sql
--- Endpoint REST (ORDS) que recebe os avisos (webhooks) da Stone:
+-- Endpoints REST (ORDS) que recebem os avisos (webhooks) da Stone e da
+-- Focus NFe (NFS-e Nacional), no mesmo módulo ecloud.avisos:
 --
 --   POST <WEBHOOK_BASE_URL>/ecloud/stone/<STONE_WEBHOOK_TOKEN>
+--   POST <WEBHOOK_BASE_URL>/ecloud/focus/<FOCUS_WEBHOOK_TOKEN>
+--
+-- Focus: o gatilho nfsen é cadastrado à mão no painel da Focus para cada
+-- empresa, sempre com a mesma URL (PKG_NFSEN.url_webhook). O handler repassa
+-- o corpo para PKG_NFSEN.RECEBER_AVISO, que acha a nota pelo ref e relê a nota
+-- na Focus (o aviso também não vale como resultado).
 --
 -- O token no caminho é o segredo do endpoint (RTC_CONFIG.STONE_WEBHOOK_TOKEN,
 -- sorteado em 05_dados_iniciais.sql). O handler só repassa o corpo para
@@ -46,7 +53,7 @@ begin
                 p_base_path      => '/ecloud/',
                 p_items_per_page => 0,
                 p_status         => 'PUBLISHED',
-                p_comments       => 'Ecloud: avisos (webhooks) da Stone');
+                p_comments       => 'Ecloud: avisos (webhooks) da Stone e da Focus NFe');
             ords.define_template(
                 p_module_name    => 'ecloud.avisos',
                 p_pattern        => 'stone/:token',
@@ -65,8 +72,26 @@ begin
     l_status := pkg_ecloud_assinatura.receber_aviso(:token, :body_text);
     :status_code := l_status;
 end;~');
+            ords.define_template(
+                p_module_name    => 'ecloud.avisos',
+                p_pattern        => 'focus/:token',
+                p_comments       => 'Token secreto no caminho (RTC_CONFIG.FOCUS_WEBHOOK_TOKEN)');
+            ords.define_handler(
+                p_module_name    => 'ecloud.avisos',
+                p_pattern        => 'focus/:token',
+                p_method         => 'POST',
+                p_source_type    => ords.source_type_plsql,
+                p_mimes_allowed  => null,
+                p_comments       => 'Guarda o aviso nfsen e relê a NFS-e na Focus',
+                p_source         => q'~
+declare
+    l_status number;
+begin
+    l_status := pkg_nfsen.receber_aviso(:token, :body_text);
+    :status_code := l_status;
+end;~');
             commit;
         end;]';
-    dbms_output.put_line('OK: endpoint POST .../ecloud/stone/:token publicado no ORDS.');
+    dbms_output.put_line('OK: endpoints POST .../ecloud/stone/:token e .../ecloud/focus/:token publicados no ORDS.');
 end;
 /

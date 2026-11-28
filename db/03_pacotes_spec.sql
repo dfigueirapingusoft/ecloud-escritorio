@@ -336,6 +336,9 @@ as
     -- p_mascarar: nomes de campos JSON separados por vírgula cujo valor sai
     -- como "***" no request e no response gravados em RTC_CHAMADA_LOG (Focus:
     -- 'arquivo_certificado_base64,senha_certificado,token_producao,token_homologacao').
+    -- p_url: URL absoluta no lugar de URL base + caminho (Focus: arquivo de
+    -- caminho_xml_nota_fiscal). Precisa estar no mesmo host da URL base do
+    -- serviço (ORA-20000 se não estiver); aceita qualquer Content-Type.
     function requisicao_json(
         p_servico              in varchar2,
         p_metodo               in varchar2,
@@ -348,7 +351,8 @@ as
         p_sem_escritorio       in boolean  default false,
         p_credencial_static_id in varchar2 default null,
         p_query                in varchar2 default null,
-        p_mascarar             in varchar2 default null) return t_resposta;
+        p_mascarar             in varchar2 default null,
+        p_url                  in varchar2 default null) return t_resposta;
 
     -- DELETE (MIDIA: apaga <C_PATH_MIDIA_OBJETOS>/<chave>).
     function delete_recurso(

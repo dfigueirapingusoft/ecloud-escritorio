@@ -154,6 +154,17 @@ as
         p_ambiente     in varchar2,
         p_referencia   in varchar2,
         p_nota_id      in number) return pkg_rtc_http.t_resposta;
+
+    -- GET de um arquivo da nota (caminho_xml_nota_fiscal ou
+    -- caminho_xml_cancelamento). Caminho relativo vai no host do ambiente
+    -- (sem /v2), com o token da empresa; URL absoluta só no mesmo host.
+    -- Pendência do contrato: a documentação não diz a URL base nem se exige
+    -- autenticação (x-pendencias); o teste de integração confirma.
+    function baixar_arquivo(
+        p_emitente_id  in number,
+        p_ambiente     in varchar2,
+        p_caminho      in varchar2,
+        p_nota_id      in number) return pkg_rtc_http.t_resposta;
 end pkg_focus_api;
 /
 
@@ -222,7 +233,8 @@ as
         p_cliente_id        in number   default null,
         p_opcao_simples     in varchar2,
         p_regime_tributario in varchar2,
-        p_regime_especial   in varchar2 default '0') return number;
+        p_regime_especial   in varchar2 default '0',
+        p_regime_apuracao_sn in varchar2 default null) return number;
 
     -- EmpresaCreate do emitente (JSON_OBJECT, ABSENT ON NULL): nome, cnpj/cpf,
     -- inscricao_municipal, regime_tributario, contato, endereço (do escritório
@@ -267,14 +279,20 @@ as
     ----------------------------------------------------------------------------
     -- Cria um RASCUNHO. Emitente ESCRITORIO: o tomador é o cliente p_cliente_id
     -- (CNPJ/CPF, razão social, endereço, e-mail, município). Emitente CLIENTE:
-    -- p_cliente_id é o próprio prestador e o tomador vem dos parâmetros
-    -- p_tomador_* (a página preenche depois). Serviço, alíquota e IBS/CBS vêm
-    -- dos padrões do emitente. Devolve NOTA_ID.
+    -- p_cliente_id é o próprio prestador (o do emitente) e o tomador vem de
+    -- outro cliente do escritório (p_tomador_cliente_id) ou dos parâmetros
+    -- p_tomador_* (a página completa o resto). Serviço, alíquota e IBS/CBS vêm
+    -- dos padrões do emitente; código de tributação e descrição são
+    -- obrigatórios (do emitente ou dos parâmetros). Devolve NOTA_ID.
     function criar_rascunho(
-        p_emitente_id        in number,
-        p_cliente_id         in number,
-        p_valor_servico      in number   default null,
-        p_descricao_servico  in varchar2 default null) return number;
+        p_emitente_id          in number,
+        p_cliente_id           in number,
+        p_valor_servico        in number,
+        p_descricao_servico    in varchar2 default null,
+        p_tomador_cliente_id   in number   default null,
+        p_tomador_tipo_doc     in varchar2 default null,
+        p_tomador_documento    in varchar2 default null,
+        p_tomador_razao_social in varchar2 default null) return number;
 
     -- Copia uma nota (qualquer situação) para um novo RASCUNHO. Devolve NOTA_ID.
     function duplicar(p_nota_id in number) return number;
@@ -336,5 +354,14 @@ as
 
     -- Cria/atualiza o job NFSEN_CONSULTAR_PENDENTES.
     procedure agendar_job;
+
+    -- URL do webhook para cadastrar no painel da Focus (evento nfsen):
+    -- <WEBHOOK_BASE_URL>/ecloud/focus/<FOCUS_WEBHOOK_TOKEN>. Sem
+    -- WEBHOOK_BASE_URL, usa o endereço do ORDS da sessão APEX.
+    function url_webhook return varchar2;
+
+    -- Testes offline: com p_ligado = true, aplicar_consulta não baixa o XML
+    -- nem gera o DANFSe (nenhuma chamada HTTP).
+    procedure modo_teste(p_ligado in boolean);
 end pkg_nfsen;
 /
