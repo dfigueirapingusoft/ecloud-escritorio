@@ -131,6 +131,7 @@ page 106 (
                    and publico = 'S'
                  order by ordem, preco_mensal desc
                 ```
+            displayNullValue: false
         }
         source {
             type: sqlQuerySingleValue

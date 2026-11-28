@@ -67,6 +67,16 @@ editável e gráficos seguem o `example-1`.
 | 113 | Trocar senha | todos | Senha atual e nova (`pkg_ecloud_auth.trocar_senha`). No menu do usuário. |
 | 9999 | Entrar | público | Cartão de vidro com o logo, links **Esqueci a senha** e **Cadastre seu escritório** e, à esquerda, a vitrine: carrossel de anúncios e depoimentos aprovados (docs/06-vitrine-login.md). |
 
+### Convenções de componentes
+
+* **Radio group nunca mostra opção nula.** No APEXlang 26.2 o `lov.displayNullValue`
+  vale `Y` por padrão (inventory, `radio-group.md`), o que desenha um botão vazio acima
+  das opções reais. Todo `pageItem` com `type: radioGroup` leva, dentro de `lov { }`,
+  `displayNullValue: false`, seja a LOV compartilhada, SQL ou estática. Se o campo puder
+  ficar sem valor, use `validation.valueRequired: false` e deixe nenhum botão marcado,
+  em vez de uma opção vazia. Conferência automática:
+  `python3 tools/verificar_convencoes_apex.py` (esperado: "OK").
+
 ## 3. Pré-requisitos no workspace
 
 1. Banco instalado (`db/instalar.sql`) e workspace com o schema da aplicação como *parsing schema*.
@@ -86,6 +96,9 @@ export SQLCL_BIN=/caminho/para/sqlcl/bin/sql
 # 2) SQL e PL/SQL das páginas contra o schema (tabelas, colunas, pacotes)
 python3 tools/verificar_sql_apex.py /tmp/verificar.sql
 sql ECLOUD@base @/tmp/verificar.sql                                   # esperado: nenhum erro fora das APIs do APEX
+
+# 3) Convenções do projeto (radio group sem opção nula etc.)
+python3 tools/verificar_convencoes_apex.py                            # esperado: "OK"
 ```
 
 Os dois passos foram executados com sucesso (SQLcl 26.3.1; Oracle AI Database 26ai Free com APEX 26.2.0 e o banco da fase 2).

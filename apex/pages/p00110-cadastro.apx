@@ -496,6 +496,7 @@ page 110 (
                    and publico = 'S'
                  order by ordem, preco_mensal desc
                 ```
+            displayNullValue: false
         }
         default {
             type: static
