@@ -1,0 +1,2095 @@
+page 46 (
+    name: Nota de serviço (NFS-e)
+    alias: NOTA-NFSE
+    title: Nota de serviço (NFS-e)
+    pageGroup: @nfsen
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+
+    region breadcrumb (
+        name: Breadcrumb
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region novo (
+        name: Nova nota
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                <p>O rascunho nasce com os padrões do emitente (serviço, alíquota, IBS/CBS) e os dados do tomador do cadastro.
+                Confira e complete antes de emitir.</p>
+                ```
+        }
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P46_NOTA_ID
+        }
+    )
+
+    region situacao (
+        name: Situação
+        type: dynamicContent
+        source {
+            plsqlFunctionBody:
+                ```plsql
+                -- Situação da nota, retorno da Focus e pendências do rascunho.
+                declare
+                    l_html varchar2(32767);
+                    l_pend varchar2(4000);
+                begin
+                    for n in (select n.*, e.razao_social emitente
+                                from nfsen_nota n
+                                join nfsen_emitente e on e.emitente_id = n.emitente_id
+                               where n.nota_id = :P46_NOTA_ID)
+                    loop
+                        l_html := '<dl class="ecl-assinatura-info">'
+                            || '<div><dt>Situação</dt><dd>' || apex_escape.html(initcap(replace(n.status, '_', ' '))) || '</dd></div>'
+                            || '<div><dt>Prestador</dt><dd>' || apex_escape.html(n.emitente) || '</dd></div>'
+                            || case when n.ambiente is not null then '<div><dt>Ambiente</dt><dd>'
+                                   || case n.ambiente when 'PRODUCAO' then 'Produção' else 'Homologação (sem validade fiscal)' end || '</dd></div>' end
+                            || case when n.referencia is not null then '<div><dt>Referência</dt><dd>' || apex_escape.html(n.referencia) || '</dd></div>' end
+                            || case when n.numero_dps is not null then '<div><dt>DPS</dt><dd>série ' || n.serie_dps || ', nº ' || n.numero_dps || '</dd></div>' end
+                            || case when n.numero_nfse is not null then '<div><dt>NFS-e</dt><dd>nº ' || apex_escape.html(n.numero_nfse) || '</dd></div>' end
+                            || case when n.chave_acesso is not null then '<div><dt>Chave de acesso</dt><dd>' || apex_escape.html(n.chave_acesso) || '</dd></div>' end
+                            || case when n.url_consulta is not null then '<div><dt>Consulta pública</dt><dd><a href="'
+                                   || apex_escape.html_attribute(n.url_consulta) || '" target="_blank" rel="noopener">abrir</a></dd></div>' end
+                            || '</dl>';
+                        if n.mensagem is not null then
+                            l_html := l_html || '<p class="' || case when n.status in ('AUTORIZADA','PROCESSANDO','CANCELADA') then 'u-info-text' else 'u-danger-text' end
+                                || '">' || apex_escape.html(n.mensagem) || '</p>';
+                        end if;
+                        if n.erros is not null then
+                            l_html := l_html || '<ul>';
+                            for r in (select codigo, mensagem, correcao
+                                        from json_table(n.erros, '$[*]'
+                                                 columns (codigo varchar2(30) path '$.codigo',
+                                                          mensagem varchar2(4000) path '$.mensagem',
+                                                          correcao varchar2(4000) path '$.correcao')))
+                            loop
+                                l_html := l_html || '<li><strong>' || apex_escape.html(r.codigo) || '</strong> '
+                                    || apex_escape.html(r.mensagem)
+                                    || case when r.correcao is not null then '<br>Correção: ' || apex_escape.html(r.correcao) end || '</li>';
+                            end loop;
+                            l_html := l_html || '</ul>';
+                        end if;
+                        if n.status in ('RASCUNHO','REJEITADA') then
+                            l_pend := pkg_nfsen.pendencias(n.nota_id);
+                            l_html := l_html || case when l_pend is null then '<p class="u-success-text">Pronta para emitir.</p>'
+                                else '<p class="u-warning-text">Antes de emitir:<br>'
+                                     || replace(apex_escape.html(l_pend), chr(10), '<br>') || '</p>' end;
+                        end if;
+                    end loop;
+                    return l_html;
+                end;
+                ```
+        }
+        layout {
+            sequence: 20
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P46_NOTA_ID
+        }
+    )
+
+    region nota (
+        name: Tomador
+        type: form
+        layout {
+            sequence: 30
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        source {
+            location: localDatabase
+            tableName: NFSEN_NOTA
+        }
+        edit {
+            enabled: true
+            allowedOperations: [
+                update
+                delete
+            ]
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P46_NOTA_ID
+        }
+    )
+
+    region servico (
+        name: Serviço
+        type: staticContent
+        layout {
+            sequence: 40
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P46_NOTA_ID
+        }
+    )
+
+    region cancelamento (
+        name: Cancelamento
+        type: staticContent
+        layout {
+            sequence: 50
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery: select 1 from nfsen_nota where nota_id = :P46_NOTA_ID and status = 'AUTORIZADA'
+        }
+        security {
+            authorizationScheme: @contador-ou-administrador
+        }
+    )
+
+    region email (
+        name: Reenviar por e-mail
+        type: staticContent
+        layout {
+            sequence: 60
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery: select 1 from nfsen_nota where nota_id = :P46_NOTA_ID and status in ('AUTORIZADA','CANCELADA')
+        }
+    )
+
+    region buttons (
+        name: Botões
+        type: staticContent
+        layout {
+            sequence: 70
+            slot: body
+        }
+        appearance {
+            template: @/buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P46_NOVO_EMITENTE_ID (
+        type: selectList
+        label {
+            label: Prestador (emitente)
+            alignment: right
+        }
+        layout {
+            sequence: 10
+            region: @novo
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        validation {
+            valueRequired: true
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select razao_social || ' (' || pkg_rural_cadastro.formatar_documento(coalesce(cnpj, cpf)) || ')' d, emitente_id r
+                  from nfsen_emitente
+                 where ativo = 'S'
+                 order by case tipo when 'ESCRITORIO' then 0 else 1 end, razao_social
+                ```
+            displayNullValue: true
+            nullDisplayValue: - Selecione -
+        }
+        sessionState {
+            storage: request
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P46_NOTA_ID
+        }
+    )
+
+    pageItem P46_NOVO_TOMADOR_ID (
+        type: popupLov
+        label {
+            label: Tomador (cliente do escritório)
+            alignment: right
+        }
+        layout {
+            sequence: 20
+            region: @novo
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        lov {
+            type: sharedComponent
+            lov: @clientes
+        }
+        sessionState {
+            storage: request
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P46_NOTA_ID
+        }
+        help {
+            inlineHelpText: Obrigatório quando o prestador é o escritório. Quando o prestador é um cliente, deixe vazio para informar um tomador de fora do cadastro.
+        }
+    )
+
+    pageItem P46_NOVO_TOMADOR_TIPO_DOC (
+        type: selectList
+        label {
+            label: Documento do tomador
+            alignment: right
+        }
+        layout {
+            sequence: 30
+            region: @novo
+            slot: regionBody
+            columnSpan: 3
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        lov {
+            type: staticValues
+            staticValues: STATIC:CNPJ;CNPJ,CPF;CPF,NIF (exterior);NIF
+            displayNullValue: true
+            nullDisplayValue: -
+        }
+        sessionState {
+            storage: request
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P46_NOTA_ID
+        }
+    )
+
+    pageItem P46_NOVO_TOMADOR_DOCUMENTO (
+        type: textField
+        label {
+            label: Número
+            alignment: right
+        }
+        layout {
+            sequence: 40
+            region: @novo
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 3
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        validation {
+            maxLength: 40
+        }
+        sessionState {
+            storage: request
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P46_NOTA_ID
+        }
+    )
+
+    pageItem P46_NOVO_TOMADOR_RAZAO (
+        type: textField
+        label {
+            label: Nome do tomador
+            alignment: right
+        }
+        layout {
+            sequence: 50
+            region: @novo
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        validation {
+            maxLength: 150
+        }
+        sessionState {
+            storage: request
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P46_NOTA_ID
+        }
+    )
+
+    pageItem P46_NOVO_VALOR (
+        type: numberField
+        label {
+            label: Valor do serviço
+            alignment: right
+        }
+        layout {
+            sequence: 60
+            region: @novo
+            slot: regionBody
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        validation {
+            valueRequired: true
+        }
+        sessionState {
+            storage: request
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P46_NOTA_ID
+        }
+    )
+
+    pageItem P46_NOVO_DESCRICAO (
+        type: textarea
+        label {
+            label: Descrição do serviço
+            alignment: right
+        }
+        layout {
+            sequence: 70
+            region: @novo
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        validation {
+            maxLength: 1000
+        }
+        sessionState {
+            storage: request
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P46_NOTA_ID
+        }
+        help {
+            inlineHelpText: Vazio usa a descrição padrão do emitente.
+        }
+    )
+
+    pageItem P46_NOTA_ID (
+        type: hidden
+        layout {
+            sequence: 1
+            region: @nota
+            slot: regionBody
+        }
+        source {
+            formRegion: @nota
+            column: NOTA_ID
+            dataType: number
+            primaryKey: true
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P46_STATUS (
+        type: hidden
+        layout {
+            sequence: 2
+            region: @nota
+            slot: regionBody
+        }
+        source {
+            formRegion: @nota
+            column: STATUS
+            dataType: varchar2
+        }
+    )
+
+    pageItem P46_DANFSE_ID (
+        type: hidden
+        layout {
+            sequence: 3
+            region: @nota
+            slot: regionBody
+        }
+        source {
+            formRegion: @nota
+            column: DANFSE_ID
+            dataType: number
+        }
+    )
+
+    pageItem P46_TOMADOR_TIPO_DOC (
+        type: selectList
+        label {
+            label: Documento
+            alignment: right
+        }
+        layout {
+            sequence: 10
+            region: @nota
+            slot: regionBody
+            columnSpan: 3
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        validation {
+            valueRequired: true
+        }
+        lov {
+            type: staticValues
+            staticValues: STATIC:CNPJ;CNPJ,CPF;CPF,NIF (exterior);NIF,Sem NIF (exterior);SEM
+            displayNullValue: false
+        }
+        source {
+            formRegion: @nota
+            column: TOMADOR_TIPO_DOC
+            dataType: varchar2
+        }
+        readOnly {
+            type: expression
+            plsqlExpression: :P46_STATUS not in ('RASCUNHO','REJEITADA')
+        }
+    )
+
+    pageItem P46_TOMADOR_DOCUMENTO (
+        type: textField
+        label {
+            label: Número
+            alignment: right
+        }
+        layout {
+            sequence: 20
+            region: @nota
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 3
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        validation {
+            maxLength: 40
+        }
+        source {
+            formRegion: @nota
+            column: TOMADOR_DOCUMENTO
+            dataType: varchar2
+        }
+        readOnly {
+            type: expression
+            plsqlExpression: :P46_STATUS not in ('RASCUNHO','REJEITADA')
+        }
+    )
+
+    pageItem P46_MOTIVO_AUSENCIA_NIF (
+        type: selectList
+        label {
+            label: Motivo sem NIF
+            alignment: right
+        }
+        layout {
+            sequence: 25
+            region: @nota
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        lov {
+            type: staticValues
+            staticValues: STATIC:Não informado na nota de origem;0,Dispensado do NIF;1,Não exigência do NIF;2
+            displayNullValue: true
+            nullDisplayValue: -
+        }
+        source {
+            formRegion: @nota
+            column: MOTIVO_AUSENCIA_NIF
+            dataType: varchar2
+        }
+        readOnly {
+            type: expression
+            plsqlExpression: :P46_STATUS not in ('RASCUNHO','REJEITADA')
+        }
+    )
+
+    pageItem P46_TOMADOR_RAZAO_SOCIAL (
+        type: textField
+        label {
+            label: Nome ou razão social
+            alignment: right
+        }
+        layout {
+            sequence: 30
+            region: @nota
+            slot: regionBody
+            columnSpan: 8
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        validation {
+            valueRequired: true
+            maxLength: 150
+        }
+        source {
+            formRegion: @nota
+            column: TOMADOR_RAZAO_SOCIAL
+            dataType: varchar2
+        }
+        readOnly {
+            type: expression
+            plsqlExpression: :P46_STATUS not in ('RASCUNHO','REJEITADA')
+        }
+    )
+
+    pageItem P46_TOMADOR_INSCRICAO_MUNICIPAL (
+        type: textField
+        label {
+            label: Inscrição municipal
+            alignment: right
+        }
+        layout {
+            sequence: 35
+            region: @nota
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        validation {
+            maxLength: 15
+        }
+        source {
+            formRegion: @nota
+            column: TOMADOR_INSCRICAO_MUNICIPAL
+            dataType: varchar2
+        }
+        readOnly {
+            type: expression
+            plsqlExpression: :P46_STATUS not in ('RASCUNHO','REJEITADA')
+        }
+    )
+
+    pageItem P46_TOMADOR_CEP (
+        type: textField
+        label {
+            label: CEP
+            alignment: right
+        }
+        layout {
+            sequence: 40
+            region: @nota
+            slot: regionBody
+            columnSpan: 3
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        validation {
+            maxLength: 8
+        }
+        source {
+            formRegion: @nota
+            column: TOMADOR_CEP
+            dataType: varchar2
+        }
+        readOnly {
+            type: expression
+            plsqlExpression: :P46_STATUS not in ('RASCUNHO','REJEITADA')
+        }
+        help {
+            inlineHelpText: Só dígitos.
+        }
+    )
+
+    pageItem P46_TOMADOR_LOGRADOURO (
+        type: textField
+        label {
+            label: Logradouro
+            alignment: right
+        }
+        layout {
+            sequence: 45
+            region: @nota
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 7
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        validation {
+            maxLength: 255
+        }
+        source {
+            formRegion: @nota
+            column: TOMADOR_LOGRADOURO
+            dataType: varchar2
+        }
+        readOnly {
+            type: expression
+            plsqlExpression: :P46_STATUS not in ('RASCUNHO','REJEITADA')
+        }
+    )
+
+    pageItem P46_TOMADOR_NUMERO (
+        type: textField
+        label {
+            label: Número
+            alignment: right
+        }
+        layout {
+            sequence: 50
+            region: @nota
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 2
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        validation {
+            maxLength: 60
+        }
+        source {
+            formRegion: @nota
+            column: TOMADOR_NUMERO
+            dataType: varchar2
+        }
+        readOnly {
+            type: expression
+            plsqlExpression: :P46_STATUS not in ('RASCUNHO','REJEITADA')
+        }
+    )
+
+    pageItem P46_TOMADOR_COMPLEMENTO (
+        type: textField
+        label {
+            label: Complemento
+            alignment: right
+        }
+        layout {
+            sequence: 55
+            region: @nota
+            slot: regionBody
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        validation {
+            maxLength: 156
+        }
+        source {
+            formRegion: @nota
+            column: TOMADOR_COMPLEMENTO
+            dataType: varchar2
+        }
+        readOnly {
+            type: expression
+            plsqlExpression: :P46_STATUS not in ('RASCUNHO','REJEITADA')
+        }
+    )
+
+    pageItem P46_TOMADOR_BAIRRO (
+        type: textField
+        label {
+            label: Bairro
+            alignment: right
+        }
+        layout {
+            sequence: 60
+            region: @nota
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        validation {
+            maxLength: 60
+        }
+        source {
+            formRegion: @nota
+            column: TOMADOR_BAIRRO
+            dataType: varchar2
+        }
+        readOnly {
+            type: expression
+            plsqlExpression: :P46_STATUS not in ('RASCUNHO','REJEITADA')
+        }
+    )
+
+    pageItem P46_TOMADOR_MUNICIPIO (
+        type: numberField
+        label {
+            label: Município (IBGE 7 dígitos)
+            alignment: right
+        }
+        layout {
+            sequence: 65
+            region: @nota
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        source {
+            formRegion: @nota
+            column: TOMADOR_MUNICIPIO
+            dataType: number
+        }
+        readOnly {
+            type: expression
+            plsqlExpression: :P46_STATUS not in ('RASCUNHO','REJEITADA')
+        }
+    )
+
+    pageItem P46_TOMADOR_EMAIL (
+        type: textField
+        label {
+            label: E-mail
+            alignment: right
+        }
+        layout {
+            sequence: 70
+            region: @nota
+            slot: regionBody
+            columnSpan: 8
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        validation {
+            maxLength: 80
+        }
+        source {
+            formRegion: @nota
+            column: TOMADOR_EMAIL
+            dataType: varchar2
+        }
+        readOnly {
+            type: expression
+            plsqlExpression: :P46_STATUS not in ('RASCUNHO','REJEITADA')
+        }
+        help {
+            inlineHelpText: A Focus manda a nota para este e-mail.
+        }
+    )
+
+    pageItem P46_TOMADOR_TELEFONE (
+        type: textField
+        label {
+            label: Telefone
+            alignment: right
+        }
+        layout {
+            sequence: 75
+            region: @nota
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        validation {
+            maxLength: 20
+        }
+        source {
+            formRegion: @nota
+            column: TOMADOR_TELEFONE
+            dataType: varchar2
+        }
+        readOnly {
+            type: expression
+            plsqlExpression: :P46_STATUS not in ('RASCUNHO','REJEITADA')
+        }
+    )
+
+    pageItem P46_DATA_COMPETENCIA (
+        type: datePicker
+        label {
+            label: Competência
+            alignment: right
+        }
+        layout {
+            sequence: 10
+            region: @servico
+            slot: regionBody
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        validation {
+            valueRequired: true
+        }
+        source {
+            formRegion: @nota
+            column: DATA_COMPETENCIA
+            dataType: date
+        }
+        readOnly {
+            type: expression
+            plsqlExpression: :P46_STATUS not in ('RASCUNHO','REJEITADA')
+        }
+    )
+
+    pageItem P46_VALOR_SERVICO (
+        type: numberField
+        label {
+            label: Valor do serviço
+            alignment: right
+        }
+        layout {
+            sequence: 20
+            region: @servico
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        validation {
+            valueRequired: true
+        }
+        source {
+            formRegion: @nota
+            column: VALOR_SERVICO
+            dataType: number
+        }
+        readOnly {
+            type: expression
+            plsqlExpression: :P46_STATUS not in ('RASCUNHO','REJEITADA')
+        }
+    )
+
+    pageItem P46_CODIGO_MUNICIPIO_PRESTACAO (
+        type: numberField
+        label {
+            label: Município da prestação (IBGE)
+            alignment: right
+        }
+        layout {
+            sequence: 30
+            region: @servico
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        validation {
+            valueRequired: true
+        }
+        source {
+            formRegion: @nota
+            column: CODIGO_MUNICIPIO_PRESTACAO
+            dataType: number
+        }
+        readOnly {
+            type: expression
+            plsqlExpression: :P46_STATUS not in ('RASCUNHO','REJEITADA')
+        }
+    )
+
+    pageItem P46_CODIGO_TRIBUTACAO_ISS (
+        type: textField
+        label {
+            label: Código de tributação nacional do ISSQN
+            alignment: right
+        }
+        layout {
+            sequence: 40
+            region: @servico
+            slot: regionBody
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        validation {
+            valueRequired: true
+            maxLength: 6
+        }
+        source {
+            formRegion: @nota
+            column: CODIGO_TRIBUTACAO_ISS
+            dataType: varchar2
+        }
+        readOnly {
+            type: expression
+            plsqlExpression: :P46_STATUS not in ('RASCUNHO','REJEITADA')
+        }
+    )
+
+    pageItem P46_TRIBUTACAO_ISS (
+        type: selectList
+        label {
+            label: Tributação do ISSQN
+            alignment: right
+        }
+        layout {
+            sequence: 50
+            region: @servico
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        validation {
+            valueRequired: true
+        }
+        lov {
+            type: staticValues
+            staticValues: STATIC:Operação tributável;1,Imunidade;2,Exportação de serviço;3,Não incidência;4
+            displayNullValue: false
+        }
+        source {
+            formRegion: @nota
+            column: TRIBUTACAO_ISS
+            dataType: varchar2
+        }
+        readOnly {
+            type: expression
+            plsqlExpression: :P46_STATUS not in ('RASCUNHO','REJEITADA')
+        }
+    )
+
+    pageItem P46_ALIQUOTA_ISS (
+        type: numberField
+        label {
+            label: Alíquota do ISSQN (%)
+            alignment: right
+        }
+        layout {
+            sequence: 60
+            region: @servico
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        source {
+            formRegion: @nota
+            column: ALIQUOTA_ISS
+            dataType: number
+        }
+        readOnly {
+            type: expression
+            plsqlExpression: :P46_STATUS not in ('RASCUNHO','REJEITADA')
+        }
+    )
+
+    pageItem P46_DESCRICAO_SERVICO (
+        type: textarea
+        label {
+            label: Descrição do serviço
+            alignment: right
+        }
+        layout {
+            sequence: 70
+            region: @servico
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        validation {
+            valueRequired: true
+            maxLength: 1000
+        }
+        source {
+            formRegion: @nota
+            column: DESCRICAO_SERVICO
+            dataType: varchar2
+        }
+        readOnly {
+            type: expression
+            plsqlExpression: :P46_STATUS not in ('RASCUNHO','REJEITADA')
+        }
+    )
+
+    pageItem P46_IBS_CBS_CST (
+        type: popupLov
+        label {
+            label: CST do IBS/CBS
+            alignment: right
+        }
+        layout {
+            sequence: 80
+            region: @servico
+            slot: regionBody
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        lov {
+            type: sharedComponent
+            lov: @cst-cbsibs
+        }
+        source {
+            formRegion: @nota
+            column: IBS_CBS_CST
+            dataType: varchar2
+        }
+        readOnly {
+            type: expression
+            plsqlExpression: :P46_STATUS not in ('RASCUNHO','REJEITADA')
+        }
+    )
+
+    pageItem P46_IBS_CBS_CCLASSTRIB (
+        type: popupLov
+        label {
+            label: cClassTrib do IBS/CBS
+            alignment: right
+        }
+        layout {
+            sequence: 90
+            region: @servico
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        lov {
+            type: sharedComponent
+            lov: @cclasstrib-cbsibs
+        }
+        source {
+            formRegion: @nota
+            column: IBS_CBS_CCLASSTRIB
+            dataType: varchar2
+        }
+        readOnly {
+            type: expression
+            plsqlExpression: :P46_STATUS not in ('RASCUNHO','REJEITADA')
+        }
+    )
+
+    pageItem P46_CONSUMIDOR_FINAL (
+        type: selectList
+        label {
+            label: Consumidor final
+            alignment: right
+        }
+        layout {
+            sequence: 100
+            region: @servico
+            slot: regionBody
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        validation {
+            valueRequired: true
+        }
+        lov {
+            type: staticValues
+            staticValues: STATIC:Não;0,Sim;1
+            displayNullValue: false
+        }
+        source {
+            formRegion: @nota
+            column: CONSUMIDOR_FINAL
+            dataType: varchar2
+        }
+        readOnly {
+            type: expression
+            plsqlExpression: :P46_STATUS not in ('RASCUNHO','REJEITADA')
+        }
+    )
+
+    pageItem P46_INDICADOR_DESTINATARIO (
+        type: selectList
+        label {
+            label: Destinatário
+            alignment: right
+        }
+        layout {
+            sequence: 110
+            region: @servico
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 8
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        validation {
+            valueRequired: true
+        }
+        lov {
+            type: staticValues
+            staticValues: STATIC:O próprio tomador;0,Outra pessoa (não é o adquirente);1
+            displayNullValue: false
+        }
+        source {
+            formRegion: @nota
+            column: INDICADOR_DESTINATARIO
+            dataType: varchar2
+        }
+        readOnly {
+            type: expression
+            plsqlExpression: :P46_STATUS not in ('RASCUNHO','REJEITADA')
+        }
+    )
+
+    pageItem P46_JUSTIFICATIVA (
+        type: textarea
+        label {
+            label: Justificativa do cancelamento
+            alignment: right
+        }
+        layout {
+            sequence: 10
+            region: @cancelamento
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        validation {
+            maxLength: 255
+        }
+        sessionState {
+            storage: request
+        }
+        help {
+            inlineHelpText: De 15 a 255 caracteres.
+        }
+    )
+
+    pageItem P46_EMAILS (
+        type: textarea
+        label {
+            label: E-mails
+            alignment: right
+        }
+        layout {
+            sequence: 10
+            region: @email
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        validation {
+            maxLength: 4000
+        }
+        sessionState {
+            storage: request
+        }
+        help {
+            inlineHelpText: Até 10 endereços, separados por vírgula, ponto e vírgula ou linha.
+        }
+    )
+
+    button voltar (
+        buttonName: VOLTAR
+        label: Voltar
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: previous
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 45
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button delete (
+        buttonName: DELETE
+        label: Excluir rascunho
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: delete
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: [
+                #DEFAULT#
+                t-Button--danger
+                t-Button--simple
+            ]
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: delete
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: &APP_TEXT$DELETE_MSG!RAW.
+            style: danger
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery: select 1 from nfsen_nota where nota_id = :P46_NOTA_ID and status = 'RASCUNHO'
+        }
+        security {
+            authorizationScheme: @contador-ou-administrador
+        }
+    )
+
+    button criar (
+        buttonName: CRIAR
+        label: Criar rascunho
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P46_NOTA_ID
+        }
+        security {
+            authorizationScheme: @contador-ou-administrador
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Salvar
+        layout {
+            sequence: 40
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: update
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery: select 1 from nfsen_nota where nota_id = :P46_NOTA_ID and status in ('RASCUNHO','REJEITADA')
+        }
+        security {
+            authorizationScheme: @contador-ou-administrador
+        }
+    )
+
+    button emitir (
+        buttonName: EMITIR
+        label: Salvar e emitir
+        layout {
+            sequence: 50
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text-with-icon
+            icon: fa-send
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: update
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: Enviar a nota para a Focus? A numeração da DPS fica reservada.
+            style: warning
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery: select 1 from nfsen_nota where nota_id = :P46_NOTA_ID and status in ('RASCUNHO','REJEITADA')
+        }
+        security {
+            authorizationScheme: @contador-ou-administrador
+        }
+    )
+
+    button atualizar (
+        buttonName: ATUALIZAR
+        label: Consultar na Focus
+        layout {
+            sequence: 60
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text-with-icon
+            icon: fa-refresh
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery: select 1 from nfsen_nota where nota_id = :P46_NOTA_ID and status in ('PROCESSANDO','FALHA','AUTORIZADA','CANCELADA')
+        }
+    )
+
+    button danfse (
+        buttonName: DANFSE
+        label: Baixar DANFSe
+        layout {
+            sequence: 70
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text-with-icon
+            icon: fa-file-pdf-o
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 42
+                items: {
+                    P42_DANFSE_ID: &P46_DANFSE_ID.
+                }
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery: select 1 from danfse d join nfsen_nota n on n.danfse_id = d.danfse_id where n.nota_id = :P46_NOTA_ID and d.status = 'GERADO'
+        }
+    )
+
+    button gerar-danfse (
+        buttonName: GERAR_DANFSE
+        label: Gerar DANFSe de novo
+        layout {
+            sequence: 80
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text-with-icon
+            icon: fa-file-pdf-o
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery: select 1 from nfsen_nota where nota_id = :P46_NOTA_ID and status in ('AUTORIZADA','CANCELADA')
+        }
+        security {
+            authorizationScheme: @contador-ou-administrador
+        }
+    )
+
+    button duplicar (
+        buttonName: DUPLICAR
+        label: Duplicar
+        layout {
+            sequence: 90
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text-with-icon
+            icon: fa-copy
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P46_NOTA_ID
+        }
+        security {
+            authorizationScheme: @contador-ou-administrador
+        }
+    )
+
+    button reenviar-hook (
+        buttonName: REENVIAR_HOOK
+        label: Pedir o aviso de novo
+        layout {
+            sequence: 100
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text-with-icon
+            icon: fa-bell-o
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery: select 1 from nfsen_nota where nota_id = :P46_NOTA_ID and status <> 'RASCUNHO'
+        }
+        security {
+            authorizationScheme: @admin-plataforma
+        }
+    )
+
+    button cancelar-nota (
+        buttonName: CANCELAR_NOTA
+        label: Cancelar a nota
+        layout {
+            sequence: 10
+            region: @cancelamento
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: [
+                #DEFAULT#
+                t-Button--danger
+                t-Button--simple
+            ]
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: Cancelar a NFS-e na prefeitura/ambiente nacional? Isso não pode ser desfeito.
+            style: danger
+        }
+        security {
+            authorizationScheme: @contador-ou-administrador
+        }
+    )
+
+    button reenviar-email (
+        buttonName: REENVIAR_EMAIL
+        label: Reenviar
+        layout {
+            sequence: 10
+            region: @email
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text-with-icon
+            icon: fa-envelope-o
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    validation tomador-novo (
+        name: Tomador do rascunho
+        validation {
+            type: expression
+            language: plsql
+            plsqlExpression: :P46_NOVO_TOMADOR_ID is not null or (:P46_NOVO_TOMADOR_TIPO_DOC is not null and :P46_NOVO_TOMADOR_RAZAO is not null)
+        }
+        error {
+            errorMessage: Escolha o tomador no cadastro ou informe o documento e o nome.
+            associatedItem: @P46_NOVO_TOMADOR_ID
+        }
+        execution {
+            sequence: 10
+        }
+        serverSideCondition {
+            whenButtonPressed: @criar
+        }
+    )
+
+    validation justificativa (
+        name: Justificativa de 15 a 255 caracteres
+        validation {
+            type: expression
+            language: plsql
+            plsqlExpression: length(trim(:P46_JUSTIFICATIVA)) between 15 and 255
+        }
+        error {
+            errorMessage: Escreva uma justificativa de 15 a 255 caracteres.
+            associatedItem: @P46_JUSTIFICATIVA
+        }
+        execution {
+            sequence: 20
+        }
+        serverSideCondition {
+            whenButtonPressed: @cancelar-nota
+        }
+    )
+
+    validation emails (
+        name: E-mails informados
+        validation {
+            type: itemIsNotNull
+            item: @P46_EMAILS
+        }
+        error {
+            errorMessage: Informe pelo menos um e-mail.
+            associatedItem: @P46_EMAILS
+        }
+        execution {
+            sequence: 30
+        }
+        serverSideCondition {
+            whenButtonPressed: @reenviar-email
+        }
+    )
+
+    process initialize-form (
+        name: Inicializar formulário
+        type: formInitialization
+        formRegion: @nota
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 8400304920
+        }
+    )
+
+    process criar (
+        name: Criar rascunho
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                -- Emitente ESCRITORIO: a nota é do cliente tomador. Emitente CLIENTE: a nota é do
+                -- próprio cliente prestador e o tomador vem do cadastro ou dos campos digitados.
+                declare
+                    l_tipo nfsen_emitente.tipo%type;
+                    l_cli  nfsen_emitente.cliente_id%type;
+                begin
+                    select tipo, cliente_id into l_tipo, l_cli
+                      from nfsen_emitente
+                     where emitente_id = :P46_NOVO_EMITENTE_ID;
+                    if l_tipo = 'ESCRITORIO' then
+                        if :P46_NOVO_TOMADOR_ID is null then
+                            raise_application_error(pkg_nfsen.c_err_dados, 'Escolha o cliente tomador.');
+                        end if;
+                        :P46_NOTA_ID := pkg_nfsen.criar_rascunho(
+                                            p_emitente_id       => :P46_NOVO_EMITENTE_ID,
+                                            p_cliente_id        => :P46_NOVO_TOMADOR_ID,
+                                            p_valor_servico     => to_number(:P46_NOVO_VALOR),
+                                            p_descricao_servico => :P46_NOVO_DESCRICAO);
+                    else
+                        :P46_NOTA_ID := pkg_nfsen.criar_rascunho(
+                                            p_emitente_id          => :P46_NOVO_EMITENTE_ID,
+                                            p_cliente_id           => l_cli,
+                                            p_valor_servico        => to_number(:P46_NOVO_VALOR),
+                                            p_descricao_servico    => :P46_NOVO_DESCRICAO,
+                                            p_tomador_cliente_id   => :P46_NOVO_TOMADOR_ID,
+                                            p_tomador_tipo_doc     => :P46_NOVO_TOMADOR_TIPO_DOC,
+                                            p_tomador_documento    => :P46_NOVO_TOMADOR_DOCUMENTO,
+                                            p_tomador_razao_social => :P46_NOVO_TOMADOR_RAZAO);
+                    end if;
+                end;
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        successMessage {
+            successMessage: Rascunho criado. Confira os dados e emita.
+        }
+        advanced {
+            executionMappingIdentifier: 2943459067
+        }
+        serverSideCondition {
+            whenButtonPressed: @criar
+        }
+    )
+
+    process process-form (
+        name: Gravar formulário
+        type: formAutoRowProcessing
+        formRegion: @nota
+        execution {
+            sequence: 20
+        }
+        advanced {
+            executionMappingIdentifier: 1916404419
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: SAVE,EMITIR,DELETE
+        }
+    )
+
+    process emitir (
+        name: Emitir
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                -- POST /nfsen?ref=: a resposta é assíncrona (202). O webhook ou o job atualizam a situação.
+                pkg_nfsen.emitir(:P46_NOTA_ID);
+                ```
+        }
+        execution {
+            sequence: 30
+        }
+        successMessage {
+            successMessage: Nota enviada. A Focus está processando; a situação muda sozinha.
+        }
+        advanced {
+            executionMappingIdentifier: 8065340186
+        }
+        serverSideCondition {
+            whenButtonPressed: @emitir
+        }
+    )
+
+    process atualizar (
+        name: Consultar na Focus
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                pkg_nfsen.atualizar(:P46_NOTA_ID);
+                ```
+        }
+        execution {
+            sequence: 40
+        }
+        successMessage {
+            successMessage: Situação consultada na Focus.
+        }
+        advanced {
+            executionMappingIdentifier: 4197855576
+        }
+        serverSideCondition {
+            whenButtonPressed: @atualizar
+        }
+    )
+
+    process gerar-danfse (
+        name: Gerar DANFSe de novo
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                pkg_nfsen.gerar_danfse(:P46_NOTA_ID);
+                ```
+        }
+        execution {
+            sequence: 50
+        }
+        successMessage {
+            successMessage: DANFSe gerado.
+        }
+        advanced {
+            executionMappingIdentifier: 6748087502
+        }
+        serverSideCondition {
+            whenButtonPressed: @gerar-danfse
+        }
+    )
+
+    process duplicar (
+        name: Duplicar
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                :P46_NOTA_ID := pkg_nfsen.duplicar(:P46_NOTA_ID);
+                ```
+        }
+        execution {
+            sequence: 60
+        }
+        successMessage {
+            successMessage: Cópia criada como rascunho.
+        }
+        advanced {
+            executionMappingIdentifier: 3523558434
+        }
+        serverSideCondition {
+            whenButtonPressed: @duplicar
+        }
+    )
+
+    process cancelar-nota (
+        name: Cancelar a nota
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                pkg_nfsen.cancelar(:P46_NOTA_ID, trim(:P46_JUSTIFICATIVA));
+                ```
+        }
+        execution {
+            sequence: 70
+        }
+        successMessage {
+            successMessage: Pedido de cancelamento processado. Veja a situação.
+        }
+        advanced {
+            executionMappingIdentifier: 2945052499
+        }
+        serverSideCondition {
+            whenButtonPressed: @cancelar-nota
+        }
+    )
+
+    process reenviar-email (
+        name: Reenviar por e-mail
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                pkg_nfsen.reenviar_email(:P46_NOTA_ID, :P46_EMAILS);
+                ```
+        }
+        execution {
+            sequence: 80
+        }
+        successMessage {
+            successMessage: E-mail reenviado pela Focus.
+        }
+        advanced {
+            executionMappingIdentifier: 4172482541
+        }
+        serverSideCondition {
+            whenButtonPressed: @reenviar-email
+        }
+    )
+
+    process reenviar-hook (
+        name: Pedir o aviso de novo
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                pkg_nfsen.reenviar_hook(:P46_NOTA_ID);
+                ```
+        }
+        execution {
+            sequence: 90
+        }
+        successMessage {
+            successMessage: A Focus vai disparar o aviso de novo.
+        }
+        advanced {
+            executionMappingIdentifier: 6518623043
+        }
+        serverSideCondition {
+            whenButtonPressed: @reenviar-hook
+        }
+    )
+
+    branch lista (
+        name: Voltar à lista depois de excluir
+        execution {
+            sequence: 10
+        }
+        behavior {
+            type: pageOrUrl
+            target: {
+                page: 45
+            }
+        }
+        serverSideCondition {
+            whenButtonPressed: @delete
+        }
+    )
+
+    branch reabrir (
+        name: Reabrir a nota
+        execution {
+            sequence: 20
+        }
+        behavior {
+            type: pageOrUrl
+            target: {
+                page: 46
+                items: {
+                    P46_NOTA_ID: &P46_NOTA_ID.
+                }
+            }
+        }
+    )
+
+)

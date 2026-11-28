@@ -34,6 +34,10 @@ editável e gráficos seguem o `example-1`.
 | 40 | DANFSe | todos | Histórico por cliente (filtro), status, mensagem e link para o PDF. |
 | 41 | Gerar DANFSe (modal) | todos | Upload do XML (até 5 MiB), stc 0/1/2, canhoto; XML recusado mostra a mensagem amigável; "Gerar novamente" com outras opções. |
 | 42 | Baixar DANFSe | todos | Download do PDF (`apex_http.download`), sujeito ao VPD. |
+| 43 | Emitentes de NFS-e | todos (criar: Administrador) | Prestadores da NFS-e Nacional (escritório e clientes): ambiente, situação do cadastro na Focus, token no ambiente, validade do certificado, numeração da DPS. Admin. da plataforma vê a URL do webhook para o painel da Focus. |
+| 44 | Emitente de NFS-e | Administrador | Criar a partir do escritório ou de um cliente; editar dados do cadastro na Focus, numeração e padrões das notas; certificado A1 (Validar com dry_run, Cadastrar, Trocar certificado); Sincronizar; passar para produção ou voltar para homologação. Admin. da plataforma grava o token à mão (Web Credential). |
+| 45 | Notas de serviço (NFS-e) | todos (criar: Contador/Administrador) | Lista com situação, prestador, tomador, valor, DPS, número da NFS-e e mensagem. |
+| 46 | Nota de serviço (NFS-e) | todos (ações: Contador/Administrador) | Rascunho (emitente, tomador do cadastro ou digitado, valor), dados do tomador e do serviço (só editáveis em rascunho/rejeitada), pendências, erros da Focus, Salvar e emitir, Consultar na Focus, Baixar/gerar DANFSe, Duplicar, Cancelar com justificativa, Reenviar e-mail; admin. da plataforma pede o webhook de novo. |
 | 50–54 | Consultas | todos | cClassTrib (com documentos fiscais), CST, NCM, NBS e atividades do Simples, lidos do cache, com a última sincronização. |
 | 60 | Configuração das APIs | admin da plataforma | URLs e tempo limite (`pkg_rtc_config.definir`), **Testar conexão** (versão do serviço e da base de cada calculadora; DANFSe mostra o status), status do cache e **Sincronizar agora**. |
 | 61/62 | Log de chamadas | Administrador | `RTC_CHAMADA_LOG` com detalhe de requisição e resposta. |

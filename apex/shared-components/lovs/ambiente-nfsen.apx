@@ -1,0 +1,19 @@
+lov ambiente-nfsen (
+    name: AMBIENTE_NFSEN
+    source {
+        location: staticValues
+    }
+
+    entry ambiente-nfsen-1 (
+        sequence: 1
+        display: Homologação
+        return: HOMOLOGACAO
+    )
+
+    entry ambiente-nfsen-2 (
+        sequence: 2
+        display: Produção
+        return: PRODUCAO
+    )
+
+)

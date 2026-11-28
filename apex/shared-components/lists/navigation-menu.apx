@@ -79,6 +79,52 @@ list navigation-menu (
         }
     )
 
+    entry notas-nfse (
+        label: NFS-e Nacional
+        icon {
+            imageIconCssClasses: fa-file-text-o
+        }
+        layout {
+            sequence: 320
+            parentEntry: @tributos-rtc
+        }
+        isCurrent {
+            type: pages
+            pages: [
+                45
+                46
+            ]
+        }
+        link {
+            target: {
+                page: 45
+            }
+        }
+    )
+
+    entry emitentes-nfse (
+        label: Emitentes de NFS-e
+        icon {
+            imageIconCssClasses: fa-id-card-o
+        }
+        layout {
+            sequence: 330
+            parentEntry: @tributos-rtc
+        }
+        isCurrent {
+            type: pages
+            pages: [
+                43
+                44
+            ]
+        }
+        link {
+            target: {
+                page: 43
+            }
+        }
+    )
+
     entry produtor-rural (
         label: Produtor rural
         icon {

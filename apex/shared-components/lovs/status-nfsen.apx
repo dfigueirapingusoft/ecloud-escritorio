@@ -1,0 +1,55 @@
+lov status-nfsen (
+    name: STATUS_NFSEN
+    source {
+        location: staticValues
+    }
+
+    entry status-nfsen-1 (
+        sequence: 1
+        display: Rascunho
+        return: RASCUNHO
+    )
+
+    entry status-nfsen-2 (
+        sequence: 2
+        display: Processando
+        return: PROCESSANDO
+    )
+
+    entry status-nfsen-3 (
+        sequence: 3
+        display: Autorizada
+        return: AUTORIZADA
+    )
+
+    entry status-nfsen-4 (
+        sequence: 4
+        display: Negada
+        return: NEGADA
+    )
+
+    entry status-nfsen-5 (
+        sequence: 5
+        display: Erro na autorização
+        return: ERRO_AUTORIZACAO
+    )
+
+    entry status-nfsen-6 (
+        sequence: 6
+        display: Rejeitada
+        return: REJEITADA
+    )
+
+    entry status-nfsen-7 (
+        sequence: 7
+        display: Falha de comunicação
+        return: FALHA
+    )
+
+    entry status-nfsen-8 (
+        sequence: 8
+        display: Cancelada
+        return: CANCELADA
+    )
+
+)

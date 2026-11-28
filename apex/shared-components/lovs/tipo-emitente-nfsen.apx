@@ -1,0 +1,19 @@
+lov tipo-emitente-nfsen (
+    name: TIPO_EMITENTE_NFSEN
+    source {
+        location: staticValues
+    }
+
+    entry tipo-emitente-nfsen-1 (
+        sequence: 1
+        display: Escritório
+        return: ESCRITORIO
+    )
+
+    entry tipo-emitente-nfsen-2 (
+        sequence: 2
+        display: Cliente
+        return: CLIENTE
+    )
+
+)
