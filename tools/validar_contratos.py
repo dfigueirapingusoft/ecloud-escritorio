@@ -32,9 +32,13 @@ OPENAPI = {
     "STONE": json.loads((CONTRATOS / "openapi-stone.json").read_text(encoding="utf-8")),
     # Z-API (WhatsApp): só o envio de texto do código de verificação (PKG_ZAPI_API)
     "ZAPI": json.loads((CONTRATOS / "openapi-zapi.json").read_text(encoding="utf-8")),
+    # Focus NFe v2: os 5 métodos da NFS-e Nacional (PKG_FOCUS_API)
+    "FOCUS": json.loads((CONTRATOS / "openapi-focus-nfsen.json").read_text(encoding="utf-8")),
 }
 SPEC_SQL += (RAIZ / "db" / "03d_pacotes_spec_assinatura.sql").read_text(encoding="utf-8")
 TABELAS_SQL += (RAIZ / "db" / "01d_tabelas_assinatura.sql").read_text(encoding="utf-8")
+TABELAS_SQL += (RAIZ / "db" / "01f_tabelas_nfsen.sql").read_text(encoding="utf-8")
+SPEC_NFSEN = (RAIZ / "db" / "03f_pacotes_spec_nfsen.sql").read_text(encoding="utf-8")
 
 falhas = []
 
@@ -80,11 +84,15 @@ METODO = {
     "c_path_stone_cobrancas": ("STONE", "delete", "/charges/{charge_id}"),
     # instância e token vão depois da barra; o sufixo é C_ZAPI_SUFIXO_TEXTO
     "c_path_zapi_instancias": ("ZAPI", "post", "/instances/{instanceId}/token/{token}/send-text"),
+    # Focus: POST /nfsen?ref=; a referência vai depois da barra nos demais
+    "c_path_focus_nfsen": ("FOCUS", "post"),
 }
 
 # Caminhos filhos (constante + "/{id}") com método próprio.
 CAMINHOS_FILHOS = {
     "c_path_stone_pedidos": [("get", "/orders/{order_id}")],
+    "c_path_focus_nfsen": [("get", "/nfsen/{referencia}"), ("delete", "/nfsen/{referencia}"),
+                           ("post", "/nfsen/{referencia}/email"), ("post", "/nfsen/{referencia}/hook")],
 }
 
 # Métodos que todo caminho com parâmetro precisa ter (além do principal).
@@ -135,6 +143,14 @@ if sufixo and modelo_zapi.endswith(sufixo.group(1)):
 else:
     falha(f"c_zapi_sufixo_texto ausente ou não fecha {modelo_zapi}")
 
+# Sufixos da Focus (depois de /nfsen/{referencia})
+for nome, modelo in (("c_focus_sufixo_email", "/nfsen/{referencia}/email"), ("c_focus_sufixo_hook", "/nfsen/{referencia}/hook")):
+    m = re.search(nome + r"\s+constant\s+varchar2\(\d+\)\s*:=\s*'([^']+)'", SPEC_SQL, re.I)
+    if m and modelo == "/nfsen/{referencia}" + m.group(1) and modelo in OPENAPI["FOCUS"]["paths"]:
+        ok(f"FOCUS   sufixo {m.group(1)} fecha {modelo}")
+    else:
+        falha(f"{nome} ausente ou não fecha {modelo}")
+
 # parâmetros de query usados pelos pacotes
 PARAMS = [
     ("REGIME", "/calculadora/observabilidade/erros", "get", "codigo"),
@@ -154,6 +170,7 @@ PARAMS = [
     ("DANFSE", "/api/danfse", "post", "stc"),
     ("DANFSE", "/api/danfse", "post", "canhoto"),
     ("STONE", "/orders", "post", "Idempotency-key"),
+    ("FOCUS", "/nfsen", "post", "ref"),
 ]
 for servico, caminho, metodo, nome in PARAMS:
     op = OPENAPI[servico]["paths"].get(caminho, {}).get(metodo, {})
@@ -350,6 +367,43 @@ CAMPOS = [
     ("ZAPI", "EnviarTextoOutput", c) for c in ["zaapId", "messageId"]
 ] + [
     ("ZAPI", "ErroZapi", c) for c in ["error"]
+] + [
+    # Focus -> NFSeNacionalRequest (PKG_NFSEN.montar_requisicao)
+    ("FOCUS", "NFSeNacionalRequest", c) for c in [
+        "data_emissao", "serie_dps", "numero_dps", "data_competencia", "emitente_dps",
+        "codigo_municipio_emissora", "cnpj_prestador", "cpf_prestador",
+        "codigo_opcao_simples_nacional", "regime_tributario_simples_nacional", "regime_especial_tributacao",
+        "cnpj_tomador", "cpf_tomador", "nif_tomador", "motivo_ausencia_nif_tomador",
+        "razao_social_tomador", "inscricao_municipal_tomador", "codigo_municipio_tomador", "cep_tomador",
+        "logradouro_tomador", "numero_tomador", "complemento_tomador", "bairro_tomador",
+        "telefone_tomador", "email_tomador",
+        "codigo_municipio_prestacao", "codigo_tributacao_nacional_iss", "descricao_servico",
+        "valor_servico", "tributacao_iss", "percentual_aliquota_relativa_municipio",
+        "finalidade_emissao", "consumidor_final", "indicador_destinatario",
+        "ibs_cbs_situacao_tributaria", "ibs_cbs_classificacao_tributaria",
+    ]
+] + [
+    # Focus <- respostas (PKG_NFSEN.emitir / aplicar_consulta / cancelar)
+    ("FOCUS", "ProcessandoAutorizacao", c) for c in ["status", "ref", "protocolo"]
+] + [
+    ("FOCUS", "NotaAutorizada", c) for c in [
+        "status", "ref", "numero", "codigo_verificacao", "data_emissao", "url", "url_danfse",
+        "caminho_xml_nota_fiscal",
+    ]
+] + [
+    ("FOCUS", "NotaCancelada", c) for c in ["status", "caminho_xml_cancelamento"]
+] + [
+    ("FOCUS", "ErroAutorizacao", c) for c in ["status", "erros.codigo", "erros.mensagem", "erros.correcao"]
+] + [
+    ("FOCUS", "CancelamentoRequest", c) for c in ["justificativa"]
+] + [
+    ("FOCUS", "CancelamentoResposta", c) for c in ["status", "erros.codigo", "erros.mensagem", "erros.correcao"]
+] + [
+    ("FOCUS", "ErrorResponse", c) for c in ["codigo", "mensagem"]
+] + [
+    ("FOCUS", "EmailRequest", c) for c in ["emails"]
+] + [
+    ("FOCUS", "Gatilho", c) for c in ["id", "url", "event"]
 ]
 
 for servico, raiz, caminho in CAMPOS:
@@ -388,6 +442,20 @@ if modo == check:
     ok("RTC_DA_ATIVIDADE_SN.MODO_FATOR_R = enum modoFatorR")
 else:
     falha(f"MODO_FATOR_R diverge: contrato={sorted(modo)} check={sorted(check)}")
+
+st_focus = set()
+for raiz in ("ProcessandoAutorizacao", "NotaAutorizada", "NotaCancelada", "ErroAutorizacao", "CancelamentoResposta"):
+    st_focus |= enum("FOCUS", raiz, "status")
+check = check_valores("nfsen_nota_stfocus_ck")
+if st_focus == check:
+    ok(f"NFSEN_NOTA.STATUS_FOCUS = união dos enums status da Focus ({len(st_focus)} valores)")
+else:
+    falha(f"STATUS_FOCUS diverge: contrato={sorted(st_focus)} check={sorted(check)}")
+consts = set(re.findall(r"c_st_\w+\s+constant\s+varchar2\(\d+\)\s*:=\s*'([^']+)'", SPEC_NFSEN, re.I))
+if consts == st_focus:
+    ok("PKG_FOCUS_API.C_ST_* = enums status da Focus")
+else:
+    falha(f"C_ST_* diverge: contrato={sorted(st_focus)} spec={sorted(consts)}")
 
 stc = None
 for p in OPENAPI["DANFSE"]["paths"]["/api/danfse"]["post"]["parameters"]:

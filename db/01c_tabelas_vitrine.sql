@@ -218,11 +218,11 @@ begin
     ----------------------------------------------------------------------------
     contexto_migracao(true);
     trocar_check('rtc_chamada_log', 'rtc_chamada_log_serv_ck',
-                 q'[servico in ('REGIME','SIMPLES','DANFSE','MIDIA','STONE','ZAPI')]');
+                 q'[servico in ('REGIME','SIMPLES','DANFSE','MIDIA','STONE','ZAPI','FOCUS_HOM','FOCUS_PROD')]');
     trocar_check('rtc_chamada_log', 'rtc_chamada_log_met_ck',
                  q'[metodo in ('GET','POST','PUT','DELETE')]');
     trocar_check('rtc_chamada_log', 'rtc_chamada_log_ref_ck',
-                 q'[referencia_tipo in ('SIMULACAO','DANFSE','CACHE','ERRO_CATALOGO','TESTE_CONEXAO','ANUNCIO','ASSINATURA_FATURA','CADASTRO_VERIFICACAO')]');
+                 q'[referencia_tipo in ('SIMULACAO','DANFSE','CACHE','ERRO_CATALOGO','TESTE_CONEXAO','ANUNCIO','ASSINATURA_FATURA','CADASTRO_VERIFICACAO','NFSEN_NOTA','NFSEN_EMITENTE')]');
     contexto_migracao(false);
 
     inserir_anuncios_da_casa;

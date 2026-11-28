@@ -43,9 +43,9 @@ português do Brasil.
 
 ```
 db/        00_pre_requisitos.sql e 00b_acesso_proxy.sql (DBA), 01_tabelas.sql (+ 01b_tabelas_rural.sql,
-           01c_tabelas_vitrine.sql, 01d_tabelas_assinatura.sql, 01e_tabelas_verificacao.sql), 02_vpd.sql,
+           01c_tabelas_vitrine.sql, 01d_tabelas_assinatura.sql, 01e_tabelas_verificacao.sql, 01f_tabelas_nfsen.sql), 02_vpd.sql,
            03_pacotes_spec.sql (+ 03b_pacotes_spec_rural.sql, 03c_pacotes_spec_vitrine.sql,
-           03d_pacotes_spec_assinatura.sql, 03e_pacotes_spec_verificacao.sql),
+           03d_pacotes_spec_assinatura.sql, 03e_pacotes_spec_verificacao.sql, 03f_pacotes_spec_nfsen.sql),
            04_views.sql, 05_dados_iniciais.sql,
            06_pacotes_body.sql (+ 06b_pacotes_body_rural.sql, 06c_pacotes_body_vitrine.sql,
            06d_pacotes_body_assinatura.sql, 06e_pacotes_body_verificacao.sql), 07_primeiro_admin.sql, 08_ords_aviso_stone.sql (webhook Stone),
@@ -56,8 +56,10 @@ docs/      01-arquitetura.md, 02-app-apex.md, 03-deploy.md, 04-escopo-agro.md (r
            05-modulo-a-rural.md, 06-vitrine-login.md (layout do Mecânico VIP, anúncios e depoimentos),
            07-autocadastro-assinatura.md (login próprio, planos e cobrança Stone; páginas 106-113 do app),
            08-verificacao-cadastro.md (código do cadastro por e-mail ou WhatsApp/Z-API),
+           09-nfse-nacional-focus.md (emissão de NFS-e Nacional pela Focus NFe),
            contratos/ (OpenAPI, exemplos, lcdpr-leiaute-1.3.md, openapi-midia.json do Worker de mídia,
-           openapi-stone.json = recorte da Pagar.me v5, openapi-zapi.json = recorte do send-text da Z-API)
+           openapi-stone.json = recorte da Pagar.me v5, openapi-zapi.json = recorte do send-text da Z-API,
+           openapi-focus-nfsen.json = recorte dos 5 métodos da NFS-e Nacional da Focus NFe)
 cloudflare/midia/  Worker de mídia (imagens dos anúncios no R2), com README de publicação
 tools/     validar_contratos.py, verificar_sql_apex.py, verificar_convencoes_apex.py
 ```
@@ -126,12 +128,15 @@ python3 tools/verificar_sql_apex.py /tmp/v.sql && sql ECLOUD@base @/tmp/v.sql
 * Números da resposta vêm como string (`"100.00"`).
 * Simples: `baseCalculo`/`valorImpostoSeletivo` são strings 13v2 na entrada.
 * `pointer` é base 0 (`#/itens/3` = item 4); `#/itens/-1` = erro da operação.
-* Município IBGE pode ter 9 dígitos.
+* Município IBGE pode ter 9 dígitos (na Focus/NFS-e Nacional é sempre 7).
 * DANFSe não tem endpoint de versão; use `/health/ready`.
 * LCDPR: fonte da verdade é `docs/contratos/lcdpr-leiaute-1.3.md`; valores sem vírgula com 2 casas
   implícitas, datas `ddmmaaaa`, `COD_CONTA` 000 = dinheiro e `COD_IMOVEL` 000 = custo comum.
 * Vitrine do login: imagens dos anúncios no R2 via Worker de mídia (`openapi-midia.json`, Web
   Credential `MIDIA_UPLOAD_TOKEN`, HTTP Header `X-Upload-Token`); o banco não guarda chave do R2.
   `DEPOIMENTO` tem duas políticas (leitura pública do APROVADO, gravação só do escritório).
+* Focus NFe (NFS-e Nacional): Basic com o token da empresa como usuário e senha vazia; token por
+  emitente e ambiente na Web Credential `FOCUS_<EMITENTE_ID>_H/_P` (nunca em tabela); emissão
+  assíncrona (202) e resultado por consulta/webhook; o webhook só dispara a releitura (GET).
 * Módulo A (produtor rural): DDL em tabela com VPD que valida linhas dá ORA-28133; ligue
   `pkg_ecloud_ctx.definir_contexto_sistema` durante a migração (ver `01b_tabelas_rural.sql`).

@@ -198,6 +198,8 @@ as
                                when 'MIDIA'   then c_midia_base_url
                                when 'STONE'   then c_stone_base_url
                                when 'ZAPI'    then c_zapi_base_url
+                               when 'FOCUS_HOM'  then c_focus_hom_base_url
+                               when 'FOCUS_PROD' then c_focus_prod_base_url
                                else 'SERVICO_INVALIDO_' || p_servico
                            end), '/');
     end url_base;
@@ -481,7 +483,8 @@ as
         p_referencia_tipo  in varchar2,
         p_referencia_id    in number,
         p_sem_escritorio   in boolean,
-        p_idempotencia     in varchar2 default null) return t_resposta
+        p_idempotencia     in varchar2 default null,
+        p_credencial       in varchar2 default null) return t_resposta
     is
         l_url    varchar2(4000) := montar_url(p_servico, p_caminho, p_query);
         l_resp   t_resposta;
@@ -512,7 +515,7 @@ as
                 p_http_method          => p_metodo,
                 p_body                 => p_corpo,
                 p_transfer_timeout     => timeout_seg,
-                p_credential_static_id => pkg_rtc_config.credencial_static_id(p_servico));
+                p_credential_static_id => coalesce(p_credencial, pkg_rtc_config.credencial_static_id(p_servico)));
             preencher_resposta(l_resp, l_inicio);
             pkg_rtc_log.finalizar(l_resp.chamada_id, l_resp.http_status, l_resp.content_type,
                                   l_resp.corpo, null, headers_log);
@@ -551,21 +554,24 @@ as
     end post_json;
 
     function requisicao_json(
-        p_servico          in varchar2,
-        p_metodo           in varchar2,
-        p_caminho          in varchar2,
-        p_corpo            in clob     default null,
-        p_operacao         in varchar2,
-        p_idempotencia     in varchar2 default null,
-        p_referencia_tipo  in varchar2 default null,
-        p_referencia_id    in number   default null,
-        p_sem_escritorio   in boolean  default false) return t_resposta is
+        p_servico              in varchar2,
+        p_metodo               in varchar2,
+        p_caminho              in varchar2,
+        p_corpo                in clob     default null,
+        p_operacao             in varchar2,
+        p_idempotencia         in varchar2 default null,
+        p_referencia_tipo      in varchar2 default null,
+        p_referencia_id        in number   default null,
+        p_sem_escritorio       in boolean  default false,
+        p_credencial_static_id in varchar2 default null,
+        p_query                in varchar2 default null) return t_resposta is
     begin
         if upper(p_metodo) not in ('GET', 'POST', 'PUT', 'DELETE') then
             raise_application_error(-20000, 'Método HTTP não suportado: ' || p_metodo);
         end if;
-        return executar_json(p_servico, upper(p_metodo), p_caminho, null, p_corpo, p_operacao,
-                             p_referencia_tipo, p_referencia_id, p_sem_escritorio, p_idempotencia);
+        return executar_json(p_servico, upper(p_metodo), p_caminho, p_query, p_corpo, p_operacao,
+                             p_referencia_tipo, p_referencia_id, p_sem_escritorio, p_idempotencia,
+                             p_credencial_static_id);
     end requisicao_json;
 
     function post_xml_blob(

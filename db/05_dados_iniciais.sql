@@ -68,7 +68,19 @@ using (
     select 'ZAPI_TOKEN_INSTANCIA', null, 'TEXTO',
            'Token da instância da Z-API (vai no caminho da URL; mascarado no log). Só vale junto com o Client-Token da Web Credential' from dual union all
     select 'ZAPI_CREDENCIAL_STATIC_ID', 'ZAPI_CLIENT_TOKEN', 'TEXTO',
-           'Static ID da Web Credential do APEX com o header Client-Token (token de segurança da conta Z-API)' from dual
+           'Static ID da Web Credential do APEX com o header Client-Token (token de segurança da conta Z-API)' from dual union all
+    -- NFS-e Nacional pela Focus NFe (01f_tabelas_nfsen.sql). O token é de cada
+    -- emitente e ambiente e fica na Web Credential FOCUS_<EMITENTE_ID>_H/_P.
+    select 'FOCUS_HOM_BASE_URL', 'https://homologacao.focusnfe.com.br/v2', 'URL',
+           'URL base da API v2 da Focus NFe em homologação (sem validade fiscal), sem barra final' from dual union all
+    select 'FOCUS_PROD_BASE_URL', 'https://api.focusnfe.com.br/v2', 'URL',
+           'URL base da API v2 da Focus NFe em produção, sem barra final' from dual union all
+    select 'FOCUS_WEBHOOK_TOKEN', null, 'TEXTO',
+           'Token aleatório da URL do aviso (webhook nfsen) da Focus. Gerado na instalação; trocar exige atualizar o gatilho na Focus' from dual union all
+    select 'NFSEN_CONSULTA_MINUTOS', '2', 'NUMERO',
+           'Intervalo do job que consulta as NFS-e ainda em processamento (reserva do webhook)' from dual union all
+    select 'NFSEN_CONSULTA_MAX', '30', 'NUMERO',
+           'Consultas automáticas por nota antes de desistir (depois só manual ou pelo aviso)' from dual
 ) o
 on (d.chave = o.chave)
 when not matched then
@@ -127,6 +139,20 @@ begin
     update rtc_config
        set valor = l_token
      where chave = 'STONE_WEBHOOK_TOKEN'
+       and valor is null;
+
+    -- token próprio para a URL do aviso da Focus (NFS-e Nacional)
+    begin
+        execute immediate
+            'select lower(rawtohex(dbms_crypto.randombytes(32))) from dual'
+            into l_token;
+    exception
+        when others then
+            l_token := lower(rawtohex(sys_guid()) || rawtohex(sys_guid()));
+    end;
+    update rtc_config
+       set valor = l_token
+     where chave = 'FOCUS_WEBHOOK_TOKEN'
        and valor is null;
 end;
 /

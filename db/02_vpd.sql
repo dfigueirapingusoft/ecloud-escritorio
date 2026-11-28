@@ -249,7 +249,7 @@ create or replace package pkg_rtc_vpd
 authid definer
 as
     -- CLIENTE, SIMULACAO, SIMULACAO_ITEM, SIMULACAO_ITEM_ERRO, DANFSE e as
-    -- tabelas do módulo A (IMOVEL_RURAL ... LCDPR_ARQUIVO)
+    -- tabelas do módulo A (IMOVEL_RURAL ... LCDPR_ARQUIVO), NFSEN_EMITENTE e NFSEN_NOTA
     function fn_escritorio(p_schema in varchar2, p_objeto in varchar2) return varchar2;
 
     -- ESCRITORIO, ASSINATURA e ASSINATURA_FATURA: admin da plataforma vê
@@ -260,7 +260,7 @@ as
     -- e sempre a própria linha (necessário para montar o contexto).
     function fn_usuario(p_schema in varchar2, p_objeto in varchar2) return varchar2;
 
-    -- RTC_CHAMADA_LOG, ASSINATURA_WEBHOOK e CADASTRO_VERIFICACAO: escritório vê
+    -- RTC_CHAMADA_LOG, ASSINATURA_WEBHOOK, CADASTRO_VERIFICACAO e NFSEN_AVISO: escritório vê
     -- o seu; linhas sem escritório (jobs, teste de conexão, aviso ainda não
     -- processado, pré-cadastro) só
     -- para o admin da plataforma e o sistema.
@@ -397,7 +397,12 @@ declare
         t_pol('USUARIO_SENHA_TOKEN', 'PKG_RTC_VPD.FN_ESCRITORIO'),
         -- Pré-cadastro (01e_tabelas_verificacao.sql): sem escritório até o
         -- código ser confirmado, então só o sistema e o admin da plataforma veem.
-        t_pol('CADASTRO_VERIFICACAO', 'PKG_RTC_VPD.FN_LOG'));
+        t_pol('CADASTRO_VERIFICACAO', 'PKG_RTC_VPD.FN_LOG'),
+        -- NFS-e Nacional pela Focus NFe (01f_tabelas_nfsen.sql). O aviso chega
+        -- sem escritório (webhook) e só ganha um quando a referência é achada.
+        t_pol('NFSEN_EMITENTE',      'PKG_RTC_VPD.FN_ESCRITORIO'),
+        t_pol('NFSEN_NOTA',          'PKG_RTC_VPD.FN_ESCRITORIO'),
+        t_pol('NFSEN_AVISO',         'PKG_RTC_VPD.FN_LOG'));
     l_existe number;
 begin
     for i in 1 .. l_pols.count loop

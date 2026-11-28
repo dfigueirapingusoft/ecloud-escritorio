@@ -340,9 +340,9 @@ begin
     --    (01_tabelas.sql e 01c_tabelas_vitrine.sql usam as mesmas listas.)
     ----------------------------------------------------------------------------
     trocar_check('rtc_chamada_log', 'rtc_chamada_log_serv_ck',
-                 q'[servico in ('REGIME','SIMPLES','DANFSE','MIDIA','STONE','ZAPI')]');
+                 q'[servico in ('REGIME','SIMPLES','DANFSE','MIDIA','STONE','ZAPI','FOCUS_HOM','FOCUS_PROD')]');
     trocar_check('rtc_chamada_log', 'rtc_chamada_log_ref_ck',
-                 q'[referencia_tipo in ('SIMULACAO','DANFSE','CACHE','ERRO_CATALOGO','TESTE_CONEXAO','ANUNCIO','ASSINATURA_FATURA','CADASTRO_VERIFICACAO')]');
+                 q'[referencia_tipo in ('SIMULACAO','DANFSE','CACHE','ERRO_CATALOGO','TESTE_CONEXAO','ANUNCIO','ASSINATURA_FATURA','CADASTRO_VERIFICACAO','NFSEN_NOTA','NFSEN_EMITENTE')]');
 
     politicas(true);
     dbms_output.put_line('01d_tabelas_assinatura.sql: planos, assinaturas, faturas e login próprio verificados.');

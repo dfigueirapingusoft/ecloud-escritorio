@@ -110,12 +110,20 @@ as
     c_zapi_instancia          constant varchar2(60) := 'ZAPI_INSTANCIA';
     c_zapi_token_instancia    constant varchar2(60) := 'ZAPI_TOKEN_INSTANCIA';
     c_zapi_credencial         constant varchar2(60) := 'ZAPI_CREDENCIAL_STATIC_ID';
+    -- NFS-e Nacional pela Focus NFe (01f_tabelas_nfsen.sql). Sem chave de
+    -- credencial: o token é de cada emitente (PKG_FOCUS_API.credencial_static_id).
+    c_focus_hom_base_url      constant varchar2(60) := 'FOCUS_HOM_BASE_URL';
+    c_focus_prod_base_url     constant varchar2(60) := 'FOCUS_PROD_BASE_URL';
+    c_focus_webhook_token     constant varchar2(60) := 'FOCUS_WEBHOOK_TOKEN';
+    c_nfsen_consulta_minutos  constant varchar2(60) := 'NFSEN_CONSULTA_MINUTOS';
+    c_nfsen_consulta_max      constant varchar2(60) := 'NFSEN_CONSULTA_MAX';
 
     -- Valor da chave; ORA-20010 se a chave não existir e p_obrigatorio = true.
     function valor(p_chave in varchar2, p_obrigatorio in boolean default true) return varchar2;
     function valor_numero(p_chave in varchar2, p_obrigatorio in boolean default true) return number;
 
-    -- URL base do serviço ('REGIME' | 'SIMPLES' | 'DANFSE' | 'MIDIA' | 'STONE' | 'ZAPI'), sem barra final.
+    -- URL base do serviço ('REGIME' | 'SIMPLES' | 'DANFSE' | 'MIDIA' | 'STONE' | 'ZAPI'
+    -- | 'FOCUS_HOM' | 'FOCUS_PROD'), sem barra final.
     function url_base(p_servico in varchar2) return varchar2;
 
     -- Static ID da Web Credential do APEX (padrão RTC_API_KEY).
@@ -197,6 +205,9 @@ as
     c_servico_midia    constant varchar2(10) := 'MIDIA';
     c_servico_stone    constant varchar2(10) := 'STONE';
     c_servico_zapi     constant varchar2(10) := 'ZAPI';
+    -- Focus NFe: um serviço por ambiente (URL base e log separados)
+    c_servico_focus_hom  constant varchar2(10) := 'FOCUS_HOM';
+    c_servico_focus_prod constant varchar2(10) := 'FOCUS_PROD';
 
     -- Caminhos validados contra os OpenAPI (relativos à URL base do serviço)
     -- openapi-regime-regular.json
@@ -222,6 +233,12 @@ as
     -- trocado por *** na URL gravada em RTC_CHAMADA_LOG.
     c_path_zapi_instancias    constant varchar2(100) := '/instances';
     c_zapi_sufixo_texto       constant varchar2(100) := '/send-text';  -- sufixo depois de /token/{token}
+    -- openapi-focus-nfsen.json (Focus NFe v2, NFS-e Nacional). POST
+    -- /nfsen?ref=; GET e DELETE /nfsen/{referencia}; POST
+    -- /nfsen/{referencia}/email e /nfsen/{referencia}/hook.
+    c_path_focus_nfsen        constant varchar2(100) := '/nfsen';
+    c_focus_sufixo_email      constant varchar2(100) := '/email';      -- sufixo depois de /nfsen/{referencia}
+    c_focus_sufixo_hook       constant varchar2(100) := '/hook';       -- sufixo depois de /nfsen/{referencia}
 
     -- Headers de resposta das calculadoras Java
     c_hdr_versao_app          constant varchar2(40) := 'X-CALC-APP-VERSION';
@@ -306,16 +323,21 @@ as
     -- /orders/{id}, DELETE /charges/{id}). p_idempotencia vai no cabeçalho
     -- Idempotency-key (a Stone devolve o mesmo pedido para a mesma chave).
     -- p_sem_escritorio = true grava o log sem escritório (job, webhook).
+    -- p_credencial_static_id troca a Web Credential do serviço por outra (Focus:
+    -- uma por emitente e ambiente, FOCUS_<EMITENTE_ID>_H/_P).
+    -- p_query sem '?', valores já codificados (Focus: 'ref=EC12-345').
     function requisicao_json(
-        p_servico          in varchar2,
-        p_metodo           in varchar2,
-        p_caminho          in varchar2,
-        p_corpo            in clob     default null,
-        p_operacao         in varchar2,
-        p_idempotencia     in varchar2 default null,
-        p_referencia_tipo  in varchar2 default null,
-        p_referencia_id    in number   default null,
-        p_sem_escritorio   in boolean  default false) return t_resposta;
+        p_servico              in varchar2,
+        p_metodo               in varchar2,
+        p_caminho              in varchar2,
+        p_corpo                in clob     default null,
+        p_operacao             in varchar2,
+        p_idempotencia         in varchar2 default null,
+        p_referencia_tipo      in varchar2 default null,
+        p_referencia_id        in number   default null,
+        p_sem_escritorio       in boolean  default false,
+        p_credencial_static_id in varchar2 default null,
+        p_query                in varchar2 default null) return t_resposta;
 
     -- DELETE (MIDIA: apaga <C_PATH_MIDIA_OBJETOS>/<chave>).
     function delete_recurso(
@@ -563,3 +585,6 @@ end pkg_rtc_danfse;
 
 -- Código de verificação do cadastro (e-mail ou WhatsApp pela Z-API)
 @@03e_pacotes_spec_verificacao.sql
+
+-- NFS-e Nacional pela Focus NFe
+@@03f_pacotes_spec_nfsen.sql
