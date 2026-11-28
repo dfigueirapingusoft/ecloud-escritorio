@@ -815,7 +815,8 @@ as
             select p_emitente_id, p_cliente_id,
                    case when c.tipo_pessoa = 'F' then 'CPF' else 'CNPJ' end,
                    coalesce(c.cnpj, c.cpf), c.razao_social,
-                   municipio7(c.municipio_ibge),
+                   -- mesma regra de municipio7 (função privada não entra em SQL: PLS-00231)
+                   case when c.municipio_ibge between 1000000 and 9999999 then c.municipio_ibge end,
                    case when regexp_like(c.cep, '^[0-9]{8}$') then c.cep end,
                    c.endereco, c.numero, c.complemento, c.bairro,
                    substr(regexp_replace(c.telefone, '[^0-9]', ''), 1, 20),
@@ -1059,6 +1060,7 @@ as
         l_xml   blob;
         l_stc   varchar2(1);
         l_id    number;
+        l_msg   varchar2(4000);
     begin
         if l_n.status not in (c_autorizada, c_cancelada) then
             raise_application_error(c_err_situacao, 'O DANFSe só existe para nota autorizada ou cancelada.');
@@ -1067,8 +1069,9 @@ as
         if l_xml is null or dbms_lob.getlength(l_xml) = 0 then
             l_resp := pkg_focus_api.baixar_arquivo(l_n.emitente_id, l_n.ambiente, l_n.caminho_xml_nfse, p_nota_id);
             if l_resp.erro is not null or l_resp.http_status <> 200 or l_resp.corpo is null then
+                l_msg := 'XML da NFS-e não baixado: ' || substr(mensagem_erro(l_resp), 1, 3900);
                 update nfsen_nota
-                   set mensagem = 'XML da NFS-e não baixado: ' || substr(mensagem_erro(l_resp), 1, 3900)
+                   set mensagem = l_msg
                  where nota_id = p_nota_id;
                 commit;
                 raise_application_error(c_err_xml, 'Não foi possível baixar o XML da NFS-e na Focus.');
@@ -1116,6 +1119,7 @@ as
         l_prot    varchar2(60);
         l_erros   clob;
         l_msg     varchar2(4000);
+        l_msg_danfse varchar2(4000);
         l_status  varchar2(16);
     begin
         if not json_valido(p_json) then
@@ -1194,8 +1198,9 @@ as
                 gerar_danfse(p_nota_id);
             exception
                 when others then
+                    l_msg_danfse := substr('DANFSe: ' || sqlerrm, 1, 4000);
                     update nfsen_nota
-                       set mensagem = substr('DANFSe: ' || sqlerrm, 1, 4000)
+                       set mensagem = l_msg_danfse
                      where nota_id = p_nota_id and mensagem is null;
                     commit;
             end;
@@ -1205,6 +1210,7 @@ as
     procedure atualizar(p_nota_id in number, p_sem_escritorio in boolean default false) is
         l_n    nfsen_nota%rowtype := nota(p_nota_id);
         l_resp pkg_rtc_http.t_resposta;
+        l_msg  varchar2(4000);
     begin
         if l_n.status in (c_rascunho, c_rejeitada) or l_n.referencia is null then
             raise_application_error(c_err_situacao, 'A nota ainda não foi enviada à Focus.');
@@ -1216,7 +1222,8 @@ as
         commit;
 
         if l_resp.erro is not null or l_resp.http_status >= 500 then
-            update nfsen_nota set mensagem = mensagem_erro(l_resp) where nota_id = p_nota_id;
+            l_msg := mensagem_erro(l_resp);
+            update nfsen_nota set mensagem = l_msg where nota_id = p_nota_id;
             commit;
             if not p_sem_escritorio then
                 raise_application_error(c_err_sem_resp, 'A Focus não respondeu. Tente de novo em instantes.');
@@ -1233,8 +1240,9 @@ as
         elsif l_resp.http_status = 200 then
             aplicar_consulta(p_nota_id, l_resp.corpo, l_resp.http_status);
         else
+            l_msg := mensagem_erro(l_resp);
             update nfsen_nota
-               set mensagem = mensagem_erro(l_resp), http_status = l_resp.http_status
+               set mensagem = l_msg, http_status = l_resp.http_status
              where nota_id = p_nota_id;
             commit;
             if not p_sem_escritorio then
