@@ -166,5 +166,12 @@ as
     -- (PKG_ECLOUD_ASSINATURA.rotina_diaria). Faz commit. Devolve as linhas
     -- apagadas.
     function expurgar return number;
+
+    -- Só para os testes sem envio (testes/fase2_verificacao.sql): com a
+    -- simulação ligada o código não sai por e-mail nem WhatsApp e fica em
+    -- ULTIMO_CODIGO_SIMULADO. Só liga em contexto de sistema e fora de uma
+    -- sessão do APEX (-20155 no app), para a página nunca ver o código.
+    procedure simular_envio(p_ligar in boolean default true);
+    function ultimo_codigo_simulado return varchar2;
 end pkg_ecloud_verificacao;
 /
