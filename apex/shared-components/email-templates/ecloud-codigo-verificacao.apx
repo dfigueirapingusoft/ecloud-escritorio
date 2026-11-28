@@ -1,0 +1,30 @@
+emailTemplate ECLOUD_CODIGO_VERIFICACAO (
+    name: Ecloud - Código de verificação
+    comments {
+        comments: Static ID ECLOUD_CODIGO_VERIFICACAO, usado por PKG_ECLOUD_VERIFICACAO (APEX_MAIL) no cadastro.
+    }
+    emailSubject: Seu código do Ecloud: #CODIGO#
+    htmlFormat {
+        body:
+            ```html
+            <p>Olá, #NOME#.</p>
+            <p>Use o código abaixo para confirmar o cadastro do seu escritório no Ecloud:</p>
+            <p style="font-size:28px;font-weight:700;letter-spacing:6px">#CODIGO#</p>
+            <p>Ele vale por #MINUTOS# minutos. Não compartilhe este código com ninguém.</p>
+            <p>Se você não pediu este cadastro, ignore este e-mail: nenhuma conta é criada sem o código.</p>
+            ```
+        footer:
+            ```html
+            <p style="color:#6b7280;font-size:12px">Ecloud - Escritório Cloud. Este e-mail foi enviado automaticamente; não responda.</p>
+            ```
+    }
+    plainTextFormat {
+        content:
+            ```
+            Olá, #NOME#.
+
+            Seu código de verificação do Ecloud é #CODIGO#. Ele vale por #MINUTOS# minutos.
+            Não compartilhe este código com ninguém. Se você não pediu este cadastro, ignore este e-mail.
+            ```
+    }
+)

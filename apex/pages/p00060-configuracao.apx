@@ -533,6 +533,172 @@ page 60 (
         }
     )
 
+    region zapi (
+        name: Código do cadastro e WhatsApp (Z-API)
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                <p>O autocadastro manda um código por e-mail ou WhatsApp antes de criar a conta. O WhatsApp usa a
+                instância da Z-API da plataforma. O token de segurança da conta (header Client-Token) não fica aqui:
+                ele é guardado na Web Credential <strong>ZAPI_CLIENT_TOKEN</strong> do workspace APEX.</p>
+                ```
+        }
+        layout {
+            sequence: 40
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P60_CADASTRO_EXIGE_CODIGO (
+        type: switch
+        label {
+            label: Exigir código no cadastro
+            alignment: right
+        }
+        layout {
+            sequence: 10
+            region: @zapi
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            useDefaults: false
+            onValue: S
+            offValue: N
+        }
+        source {
+            type: expression
+            plsqlExpression: pkg_ecloud_verificacao.exige_codigo
+            used: always
+        }
+        sessionState {
+            storage: request
+        }
+    )
+
+    pageItem P60_ZAPI_INSTANCIA (
+        type: textField
+        label {
+            label: ID da instância
+            alignment: right
+        }
+        layout {
+            sequence: 20
+            region: @zapi
+            slot: regionBody
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 100
+        }
+        source {
+            type: expression
+            plsqlExpression: pkg_rtc_config.valor('ZAPI_INSTANCIA', false)
+            used: always
+        }
+        sessionState {
+            storage: request
+        }
+        help {
+            inlineHelpText: Vazio = código só por e-mail.
+        }
+    )
+
+    pageItem P60_ZAPI_TOKEN_INSTANCIA (
+        type: password
+        label {
+            label: Token da instância
+            alignment: right
+        }
+        layout {
+            sequence: 30
+            region: @zapi
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            maxLength: 200
+        }
+        advanced {
+            customAttributes: autocomplete="off"
+        }
+        sessionState {
+            storage: request
+        }
+        help {
+            inlineHelpText: Deixe em branco para manter o atual. Não aparece na tela nem no log.
+        }
+    )
+
+    button salvar-zapi (
+        buttonName: SALVAR_ZAPI
+        label: Salvar
+        layout {
+            sequence: 10
+            region: @zapi
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    process salvar-zapi (
+        name: Salvar código do cadastro e Z-API
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                -- Só o admin da plataforma chega aqui (e PKG_RTC_CONFIG.DEFINIR confere de novo).
+                -- Token em branco mantém o atual; instância em branco desliga o WhatsApp.
+                pkg_rtc_config.definir('CADASTRO_EXIGE_CODIGO', nvl(:P60_CADASTRO_EXIGE_CODIGO, 'N'));
+                pkg_rtc_config.definir('ZAPI_INSTANCIA', :P60_ZAPI_INSTANCIA);
+                if :P60_ZAPI_INSTANCIA is null then
+                    pkg_rtc_config.definir('ZAPI_TOKEN_INSTANCIA', null);
+                elsif :P60_ZAPI_TOKEN_INSTANCIA is not null then
+                    pkg_rtc_config.definir('ZAPI_TOKEN_INSTANCIA', :P60_ZAPI_TOKEN_INSTANCIA);
+                end if;
+                ```
+        }
+        execution {
+            sequence: 15
+        }
+        advanced {
+            executionMappingIdentifier: 1943909901
+        }
+        successMessage {
+            successMessage: Configuração do cadastro salva.
+        }
+        serverSideCondition {
+            whenButtonPressed: @salvar-zapi
+        }
+    )
+
     process salvar (
         name: Salvar URLs
         type: executeCode

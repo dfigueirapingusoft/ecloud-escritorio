@@ -36,9 +36,21 @@ especulação. O WhatsApp usa a Z-API, a mesma integração do Mecânico VIP
    (`da***@gmail.com`, `(51) 9****-0000`), com **Reenviar** (pode trocar de
    canal).
 3. `confirmar` confere o código e chama `PKG_ECLOUD_CADASTRO.cadastrar_com_hash`,
-   que cria a conta e manda as boas-vindas. A página entra direto no app
-   (fase 3 decide se reaproveita o login automático atual ou se leva para a
-   tela de login com o e-mail preenchido, sem guardar a senha na sessão).
+   que cria a conta e manda as boas-vindas. A página leva para a tela de login
+   com "Conta criada! Entre com o seu e-mail e a senha que você escolheu.": a
+   senha só existe no pedido do passo 1 (`storage: request`) e não fica na
+   sessão do APEX para um login automático.
+
+Na página: o passo 1 é o formulário de sempre, com "Receber o código de
+confirmação por" (E-mail; WhatsApp só com a Z-API configurada) e o botão
+**Continuar**. O passo 2 (região "Confirme o seu contato", visível quando
+`P110_CHAVE` está preenchido) tem o código, "Reenviar por" (só com Z-API),
+**Confirmar e criar conta**, **Reenviar código** e **Corrigir os dados** (volta
+ao formulário; a senha precisa ser digitada de novo). `P110_CHAVE` é um item
+escondido protegido (o navegador não troca a chave). O IP do limite de envios
+é o último endereço do `X-Forwarded-For` (o que o balanceador do ORDS viu) ou o
+`REMOTE_ADDR`. Com `CADASTRO_EXIGE_CODIGO = 'N'` a página mostra o botão antigo
+**Criar conta e entrar**, que cadastra e entra direto.
 
 ## Regras
 
@@ -68,7 +80,7 @@ não respondeu, não configurada).
 | 1 | `db/03d` + `06d`: `PKG_ECLOUD_CADASTRO.validar` e `cadastrar_com_hash` (o cadastro direto continua igual) |
 | 1 | `docs/contratos/openapi-zapi.json` (recorte do `send-text`) e o validador |
 | 2 | `db/06e_pacotes_body_verificacao.sql`; serviço `ZAPI` em `PKG_RTC_CONFIG` (URL e Web Credential); `PKG_RTC_LOG` troca o token do caminho por `***` na URL e no erro e o `message` do corpo da Z-API por `***` (o código não fica no log); a rotina diária da assinatura chama o expurgo; testes `fase2_verificacao.sql` (envio simulado) e `fase2_verificacao_integracao.sql <celular>` (Z-API real) |
-| 3 | Página 110 em dois passos, template de e-mail `ECLOUD_CODIGO_VERIFICACAO`, campos da Z-API na Configuração global |
+| 3 | Página 110 em dois passos (`apex/pages/p00110-cadastro.apx`) e template de e-mail `ECLOUD_CODIGO_VERIFICACAO` (`apex/shared-components/email-templates/ecloud-codigo-verificacao.apx`). As chaves `ZAPI_*` e `CADASTRO_EXIGE_CODIGO` aparecem na Configuração global (página de RTC_CONFIG), que só o admin da plataforma edita |
 
 ## Mensagens
 
