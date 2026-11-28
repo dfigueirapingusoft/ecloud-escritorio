@@ -16,8 +16,8 @@ list navigation-menu (
         }
     )
 
-    entry receita (
-        label: Receita
+    entry tributos-rtc (
+        label: Tributos RTC
         icon {
             imageIconCssClasses: fa-university
         }
@@ -39,7 +39,7 @@ list navigation-menu (
         }
         layout {
             sequence: 300
-            parentEntry: @receita
+            parentEntry: @tributos-rtc
         }
         isCurrent {
             type: pages
@@ -63,7 +63,7 @@ list navigation-menu (
         }
         layout {
             sequence: 310
-            parentEntry: @receita
+            parentEntry: @tributos-rtc
         }
         isCurrent {
             type: pages
