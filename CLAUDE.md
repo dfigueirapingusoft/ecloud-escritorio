@@ -99,6 +99,9 @@ python3 tools/verificar_sql_apex.py /tmp/v.sql && sql ECLOUD@base @/tmp/v.sql
   `starRating` não aceitam `layout.alignment`.
 * Radio group nunca exibe opção nula: todo `type: radioGroup` leva `displayNullValue: false` em `lov { }`
   (o padrão do 26.2 é `Y`). Confira com `python3 tools/verificar_convencoes_apex.py`.
+* Campos esticados no app inteiro: todo `pageItem` visível (menos `hidden`) leva
+  `templateOptions: [ #DEFAULT# t-Form-fieldContainer--stretchInputs ]` em `appearance`
+  (Stretch Form Item do Universal Theme); a largura vem só do `columnSpan`. Mesmo verificador.
 * Página 110 (cadastro) tem dois passos: formulário -> código (`P110_CHAVE` escondido e protegido); a senha
   fica só no pedido (`storage: request`), então depois do código a pessoa entra pelo login.
 * UF aparece só pela sigla ("SP") em todo o app: LOV compartilhada `ufs` (27 UFs fixas, sem depender do cache).

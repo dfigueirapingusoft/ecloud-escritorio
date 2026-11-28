@@ -47,7 +47,10 @@ page 111 (
         }
         appearance {
             template: @/hidden
-            templateOptions: #DEFAULT#
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
             icon: fa-envelope-o
             valuePlaceholder: E-mail
         }

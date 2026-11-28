@@ -76,6 +76,27 @@ editável e gráficos seguem o `example-1`.
   ficar sem valor, use `validation.valueRequired: false` e deixe nenhum botão marcado,
   em vez de uma opção vazia. Conferência automática:
   `python3 tools/verificar_convencoes_apex.py` (esperado: "OK").
+* **Campos esticados (stretch) no app inteiro.** Todo `pageItem` visível (qualquer `type`
+  menos `hidden`) leva a opção de template *Stretch Form Item* do Universal Theme
+  (`@/8842.262/universal-theme/stretch-form-item/item`, classe
+  `t-Form-fieldContainer--stretchInputs`), assim o campo ocupa toda a largura das colunas
+  do grid (`layout.columnSpan`) em vez de ficar do tamanho do conteúdo, como acontecia com
+  UF e Município no cadastro (página 110):
+
+  ```
+  appearance {
+      template: @/required-floating
+      templateOptions: [
+          #DEFAULT#
+          t-Form-fieldContainer--stretchInputs
+      ]
+  }
+  ```
+
+  O tema não tem um padrão global para isso (o tema é assinado e `componentDefaults` não
+  guarda opções de item), e a opção de região *Stretch Form Fields* (`t-Form--stretchInputs`)
+  dependeria de cada região, então a regra fica no item. A largura do campo é decidida só
+  pelo `columnSpan`. Também conferido por `python3 tools/verificar_convencoes_apex.py`.
 
 ## 3. Pré-requisitos no workspace
 
@@ -97,7 +118,7 @@ export SQLCL_BIN=/caminho/para/sqlcl/bin/sql
 python3 tools/verificar_sql_apex.py /tmp/verificar.sql
 sql ECLOUD@base @/tmp/verificar.sql                                   # esperado: nenhum erro fora das APIs do APEX
 
-# 3) Convenções do projeto (radio group sem opção nula etc.)
+# 3) Convenções do projeto (radio group sem opção nula, campos esticados etc.)
 python3 tools/verificar_convencoes_apex.py                            # esperado: "OK"
 ```
 
