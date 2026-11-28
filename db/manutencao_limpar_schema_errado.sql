@@ -14,6 +14,9 @@
 --   SQL> @db/manutencao_limpar_schema_errado.sql WKSP_ECLOUD EXECUTAR
 -- LISTAR só mostra o que sairia. EXECUTAR apaga (não tem volta: confira antes).
 --------------------------------------------------------------------------------
+-- set define on: a sessão pode ter vindo de um script com set define off
+-- (ex.: os testes), e aí &1/&2 não seriam substituídos.
+set define on
 set verify off
 set serveroutput on size unlimited
 whenever sqlerror exit failure
@@ -40,7 +43,8 @@ declare
     end executar;
 begin
     if l_modo not in ('LISTAR', 'EXECUTAR') then
-        raise_application_error(-20001, 'Segundo parâmetro: LISTAR ou EXECUTAR.');
+        raise_application_error(-20001, 'Segundo parâmetro: LISTAR ou EXECUTAR (recebido: "' || l_modo
+            || '"). Confira se a sessão está com SET DEFINE ON.');
     end if;
     if l_app is null or user = l_app then
         raise_application_error(-20002,
