@@ -48,7 +48,8 @@ db/        00_pre_requisitos.sql e 00b_acesso_proxy.sql (DBA), 01_tabelas.sql (+
            03d_pacotes_spec_assinatura.sql, 03e_pacotes_spec_verificacao.sql, 03f_pacotes_spec_nfsen.sql),
            04_views.sql, 05_dados_iniciais.sql,
            06_pacotes_body.sql (+ 06b_pacotes_body_rural.sql, 06c_pacotes_body_vitrine.sql,
-           06d_pacotes_body_assinatura.sql, 06e_pacotes_body_verificacao.sql), 07_primeiro_admin.sql, 08_ords_aviso_stone.sql (webhook Stone),
+           06d_pacotes_body_assinatura.sql, 06e_pacotes_body_verificacao.sql, 06f_pacotes_body_nfsen.sql), 07_primeiro_admin.sql,
+           08_ords_aviso_stone.sql (webhooks Stone e Focus),
            instalar.sql, manutencao_limpar_schema_errado.sql (objetos instalados no schema errado), testes/
 apex/      fonte APEXlang 26.2 (fase 3): application.apx, shared-components/ (static-files/app.css com a
            paleta Ecloud, anuncios.js, depoimentos.js, cep.js, app-processes.apx), pages/
@@ -76,6 +77,8 @@ sql ECLOUD@base @testes/fase2_assinatura.sql   # autocadastro, login próprio e 
 sql ECLOUD@base @testes/fase2_assinatura_integracao.sql  # sandbox da Stone (STONE_API_KEY com sk_test_)
 sql ECLOUD@base @testes/fase2_verificacao.sql  # código de verificação do cadastro (envio simulado)
 sql ECLOUD@base @testes/fase2_verificacao_integracao.sql 51999990000  # Z-API real (manda WhatsApp ao celular)
+sql ECLOUD@base @testes/fase2_nfsen.sql        # NFS-e Nacional/Focus sem HTTP (exemplos do contrato)
+sql ECLOUD@base @testes/fase2_nfsen_integracao.sql <CNPJ_PRESTADOR> <IBGE> <COD_TRIB> <CNPJ_TOMADOR> S  # homologação real da Focus
 node cloudflare/midia/worker.test.mjs          # Worker de mídia com R2 simulado
 sql ECLOUD@base @testes/fase2_integracao.sql   # HTTP real; precisa de APEX + credencial + RTC_CONFIG
 python3 tools/validar_contratos.py

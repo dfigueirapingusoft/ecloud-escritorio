@@ -507,9 +507,10 @@ as
         p_sem_escritorio   in boolean,
         p_idempotencia     in varchar2 default null,
         p_credencial       in varchar2 default null,
-        p_mascarar         in varchar2 default null) return t_resposta
+        p_mascarar         in varchar2 default null,
+        p_url              in varchar2 default null) return t_resposta
     is
-        l_url    varchar2(4000) := montar_url(p_servico, p_caminho, p_query);
+        l_url    varchar2(4000) := coalesce(p_url, montar_url(p_servico, p_caminho, p_query));
         l_resp   t_resposta;
         l_inicio timestamp with time zone;
     begin
@@ -526,7 +527,8 @@ as
         begin
             garantir_workspace;
             definir_headers(case when p_corpo is not null then 'application/json' end,
-                            'application/json, application/problem+json');
+                            case when p_url is not null then '*/*'
+                                 else 'application/json, application/problem+json' end);
             -- Stone: a mesma chave devolve o mesmo pedido (não cobra em dobro)
             if p_idempotencia is not null then
                 apex_web_service.g_request_headers(apex_web_service.g_request_headers.count + 1).name := 'Idempotency-key';
@@ -588,14 +590,20 @@ as
         p_sem_escritorio       in boolean  default false,
         p_credencial_static_id in varchar2 default null,
         p_query                in varchar2 default null,
-        p_mascarar             in varchar2 default null) return t_resposta is
+        p_mascarar             in varchar2 default null,
+        p_url                  in varchar2 default null) return t_resposta is
+        l_host varchar2(400) := regexp_substr(pkg_rtc_config.url_base(p_servico), '^https?://[^/]+');
     begin
         if upper(p_metodo) not in ('GET', 'POST', 'PUT', 'DELETE') then
             raise_application_error(-20000, 'Método HTTP não suportado: ' || p_metodo);
         end if;
+        -- URL absoluta só no host do próprio serviço (a credencial não vaza para outro site)
+        if p_url is not null and (l_host is null or p_url not like l_host || '/%') then
+            raise_application_error(-20000, 'URL fora do serviço ' || p_servico || ': ' || substr(p_url, 1, 200));
+        end if;
         return executar_json(p_servico, upper(p_metodo), p_caminho, p_query, p_corpo, p_operacao,
                              p_referencia_tipo, p_referencia_id, p_sem_escritorio, p_idempotencia,
-                             p_credencial_static_id, p_mascarar);
+                             p_credencial_static_id, p_mascarar, p_url);
     end requisicao_json;
 
     function post_xml_blob(
@@ -2213,3 +2221,6 @@ end pkg_rtc_danfse;
 
 -- Código de verificação do cadastro (e-mail ou WhatsApp pela Z-API)
 @@06e_pacotes_body_verificacao.sql
+
+-- NFS-e Nacional pela Focus NFe (empresas, emissão, webhook e job)
+@@06f_pacotes_body_nfsen.sql

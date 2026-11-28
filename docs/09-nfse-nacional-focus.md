@@ -191,9 +191,12 @@ emitente vai para produção.
 ## 9. Fases
 
 1. **Fase 1 (este documento)**: contrato, DDL, VPD, configuração, specs.
-2. **Fase 2**: bodies (`06f_pacotes_body_nfsen.sql`), endpoint ORDS, job,
-   `testes/fase2_nfsen.sql` (offline, com os exemplos do contrato) e
-   `testes/fase2_nfsen_integracao.sql` (homologação da Focus).
+2. **Fase 2**: bodies (`06f_pacotes_body_nfsen.sql`), endpoint ORDS
+   (`08_ords_aviso_stone.sql`, template `focus/:token`), job
+   (`PKG_NFSEN.agendar_job`), `testes/fase2_nfsen.sql` (offline, com os
+   exemplos do contrato) e `testes/fase2_nfsen_integracao.sql` (homologação da
+   Focus). Para ligar o job: `exec pkg_nfsen.agendar_job`. URL para o painel da
+   Focus: `select pkg_nfsen.url_webhook from dual`.
 3. **Fase 3**: páginas APEXlang (Emitentes, Notas, Nota com ações Emitir /
    Atualizar / Cancelar / Reenviar e-mail / DANFSe).
 4. **Fase 4**: deploy.
