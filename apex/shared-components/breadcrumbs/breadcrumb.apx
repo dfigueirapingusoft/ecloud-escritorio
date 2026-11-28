@@ -430,4 +430,62 @@ breadcrumb breadcrumb (
         }
     )
 
+    entry emitentes-nfse (
+        name: Emitentes de NFS-e
+        pageNumber: 43
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 43
+            }
+        }
+    )
+
+    entry emitente-nfse (
+        name: Emitente
+        pageNumber: 44
+        appearance {
+            parentEntry: @emitentes-nfse
+        }
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 44
+            }
+        }
+    )
+
+    entry notas-nfse (
+        name: Notas de serviço
+        pageNumber: 45
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 45
+            }
+        }
+    )
+
+    entry nota-nfse (
+        name: Nota
+        pageNumber: 46
+        appearance {
+            parentEntry: @notas-nfse
+        }
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 46
+            }
+        }
+    )
+
 )

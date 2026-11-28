@@ -1,0 +1,359 @@
+page 45 (
+    name: Notas de serviço (NFS-e)
+    alias: NOTAS-NFSE
+    title: Notas de serviço (NFS-e)
+    pageGroup: @nfsen
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+
+    region breadcrumb (
+        name: Breadcrumb
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region notas (
+        name: Notas
+        type: interactiveReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select n.nota_id,
+                       n.status,
+                       e.razao_social as emitente,
+                       n.tomador_razao_social as tomador,
+                       n.valor_servico,
+                       n.data_competencia,
+                       n.numero_dps,
+                       n.numero_nfse,
+                       n.ambiente,
+                       cast(n.enviada_em as date) as enviada_em,
+                       cast(n.autorizada_em as date) as autorizada_em,
+                       n.referencia,
+                       n.mensagem
+                  from nfsen_nota n
+                  join nfsen_emitente e
+                    on e.emitente_id = n.emitente_id
+                ```
+        }
+        layout {
+            sequence: 20
+            slot: body
+        }
+        link {
+            linkColumn: customTarget
+            target: {
+                page: 46
+                items: {
+                    P46_NOTA_ID: \#NOTA_ID#\
+                }
+                action: resetPagination
+            }
+            linkIcon: <span aria-label="Abrir"><span class="fa fa-edit" aria-hidden="true" title="Abrir"></span></span>
+        }
+        pagination {
+            type: rowRangesXToY
+        }
+        messages {
+            whenNoDataFound: Nenhum registro encontrado.
+        }
+        actionsMenu {
+            subscription: false
+        }
+
+        column NOTA_ID (
+            type: plainText
+            heading {
+                heading: Nota
+            }
+            layout {
+                sequence: 1
+            }
+            source {
+                dataType: number
+            }
+        )
+
+        column STATUS (
+            type: plainTextBasedOnLov
+            heading {
+                heading: Situação
+            }
+            lov {
+                lov: @status-nfsen
+            }
+            layout {
+                sequence: 2
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        column EMITENTE (
+            type: plainText
+            heading {
+                heading: Prestador
+            }
+            layout {
+                sequence: 3
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        column TOMADOR (
+            type: plainText
+            heading {
+                heading: Tomador
+            }
+            layout {
+                sequence: 4
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        column VALOR_SERVICO (
+            type: plainText
+            heading {
+                heading: Valor
+            }
+            layout {
+                sequence: 5
+            }
+            appearance {
+                formatMask: FML999G999G999G990D00
+            }
+            source {
+                dataType: number
+            }
+        )
+
+        column DATA_COMPETENCIA (
+            type: plainText
+            heading {
+                heading: Competência
+            }
+            layout {
+                sequence: 6
+            }
+            appearance {
+                formatMask: DD/MM/YYYY
+            }
+            source {
+                dataType: date
+            }
+        )
+
+        column NUMERO_DPS (
+            type: plainText
+            heading {
+                heading: Nº DPS
+            }
+            layout {
+                sequence: 7
+            }
+            source {
+                dataType: number
+            }
+        )
+
+        column NUMERO_NFSE (
+            type: plainText
+            heading {
+                heading: Nº NFS-e
+            }
+            layout {
+                sequence: 8
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        column AMBIENTE (
+            type: plainTextBasedOnLov
+            heading {
+                heading: Ambiente
+            }
+            lov {
+                lov: @ambiente-nfsen
+            }
+            layout {
+                sequence: 9
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        column ENVIADA_EM (
+            type: plainText
+            heading {
+                heading: Enviada em
+            }
+            layout {
+                sequence: 10
+            }
+            appearance {
+                formatMask: DD/MM/YYYY HH24:MI
+            }
+            source {
+                dataType: date
+            }
+        )
+
+        column AUTORIZADA_EM (
+            type: plainText
+            heading {
+                heading: Autorizada em
+            }
+            layout {
+                sequence: 11
+            }
+            appearance {
+                formatMask: DD/MM/YYYY HH24:MI
+            }
+            source {
+                dataType: date
+            }
+        )
+
+        column REFERENCIA (
+            type: plainText
+            heading {
+                heading: Referência
+            }
+            layout {
+                sequence: 12
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        column MENSAGEM (
+            type: plainText
+            heading {
+                heading: Mensagem
+            }
+            layout {
+                sequence: 13
+            }
+            source {
+                dataType: varchar2
+            }
+        )
+
+        savedReport 1837055429 (
+            visibility: primaryDefault
+            view {
+                rowsPerPage: 50
+            }
+
+            displayColumn NOTA_ID (
+                sequence: 1
+            )
+
+            displayColumn STATUS (
+                sequence: 2
+            )
+
+            displayColumn EMITENTE (
+                sequence: 3
+            )
+
+            displayColumn TOMADOR (
+                sequence: 4
+            )
+
+            displayColumn VALOR_SERVICO (
+                sequence: 5
+            )
+
+            displayColumn DATA_COMPETENCIA (
+                sequence: 6
+            )
+
+            displayColumn NUMERO_DPS (
+                sequence: 7
+            )
+
+            displayColumn NUMERO_NFSE (
+                sequence: 8
+            )
+
+            displayColumn AMBIENTE (
+                sequence: 9
+            )
+
+            displayColumn ENVIADA_EM (
+                sequence: 10
+            )
+
+            displayColumn MENSAGEM (
+                sequence: 11
+            )
+
+            sort (
+                column: NOTA_ID
+                sort {
+                    sequence: 1
+                    direction: desc
+                }
+            )
+
+        )
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Nova nota
+        layout {
+            sequence: 10
+            region: @notas
+            slot: rightOfInteractiveReportSearchBar
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 46
+                clearCache: 46
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+        security {
+            authorizationScheme: @contador-ou-administrador
+        }
+    )
+
+)

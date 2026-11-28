@@ -197,6 +197,12 @@ emitente vai para produção.
    exemplos do contrato) e `testes/fase2_nfsen_integracao.sql` (homologação da
    Focus). Para ligar o job: `exec pkg_nfsen.agendar_job`. URL para o painel da
    Focus: `select pkg_nfsen.url_webhook from dual`.
-3. **Fase 3**: páginas APEXlang (Emitentes, Notas, Nota com ações Emitir /
-   Atualizar / Cancelar / Reenviar e-mail / DANFSe).
+3. **Fase 3**: páginas APEXlang 43-46 no menu Tributos RTC (descrição em
+   `docs/02-app-apex.md`): Emitentes (43) e Emitente (44, com certificado A1,
+   dry_run, sincronização, ambiente e token manual só para o admin da
+   plataforma); Notas (45) e Nota (46, rascunho, Salvar e emitir, Consultar,
+   DANFSe pela página 42, Duplicar, Cancelar, Reenviar e-mail, Reenviar aviso).
+   Toda ação chama `PKG_NFSEN`; a página não faz HTTP. O certificado e a
+   senha são itens só do pedido (o arquivo some no fim do pedido); o token
+   manual também.
 4. **Fase 4**: deploy.

@@ -1,0 +1,1813 @@
+page 44 (
+    name: Emitente de NFS-e
+    alias: EMITENTE-NFSE
+    title: Emitente de NFS-e
+    pageGroup: @nfsen
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+
+    region breadcrumb (
+        name: Breadcrumb
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region novo (
+        name: Novo emitente
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                <p>Escolha quem presta o serviço. O documento, a razão social, o endereço e o município vêm do cadastro
+                do escritório ou do cliente. Depois de criar, cadastre o emitente na Focus com o certificado A1.</p>
+                ```
+        }
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P44_EMITENTE_ID
+        }
+    )
+
+    region emitente (
+        name: Dados do emitente
+        type: form
+        layout {
+            sequence: 20
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        source {
+            location: localDatabase
+            tableName: NFSEN_EMITENTE
+        }
+        edit {
+            enabled: true
+            allowedOperations: [
+                update
+            ]
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P44_EMITENTE_ID
+        }
+    )
+
+    region padroes (
+        name: Padrões das notas
+        type: staticContent
+        layout {
+            sequence: 30
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P44_EMITENTE_ID
+        }
+    )
+
+    region focus (
+        name: Cadastro na Focus NFe
+        type: dynamicContent
+        source {
+            plsqlFunctionBody:
+                ```plsql
+                -- Situação do vínculo com a empresa na conta da plataforma. Tokens e certificado
+                -- nunca aparecem: a tabela só marca se a Web Credential do ambiente existe.
+                declare
+                    l_html varchar2(32767);
+                begin
+                    for e in (select * from nfsen_emitente where emitente_id = :P44_EMITENTE_ID) loop
+                        l_html := '<dl class="ecl-assinatura-info">'
+                            || '<div><dt>Situação</dt><dd>' || case e.focus_situacao when 'CADASTRADA' then 'Cadastrada'
+                                   when 'ERRO' then 'Com erro' else 'Ainda não cadastrada' end || '</dd></div>'
+                            || case when e.focus_empresa_id is not null then
+                                   '<div><dt>ID na Focus</dt><dd>' || e.focus_empresa_id || '</dd></div>' end
+                            || '<div><dt>Ambiente</dt><dd>' || case e.ambiente when 'PRODUCAO' then 'Produção' else 'Homologação (sem validade fiscal)' end || '</dd></div>'
+                            || '<div><dt>Token de homologação</dt><dd>' || case e.token_hom when 'S' then 'Definido' else 'Não definido' end || '</dd></div>'
+                            || '<div><dt>Token de produção</dt><dd>' || case e.token_prod when 'S' then 'Definido' else 'Não definido' end || '</dd></div>'
+                            || case when e.certificado_valido_ate is not null then
+                                   '<div><dt>Certificado</dt><dd>' || to_char(e.certificado_valido_de, 'DD/MM/YYYY') || ' a '
+                                   || to_char(e.certificado_valido_ate, 'DD/MM/YYYY')
+                                   || case when e.certificado_valido_ate < systimestamp then ' (vencido)'
+                                           when e.certificado_valido_ate < systimestamp + interval '30' day then ' (vence em menos de 30 dias)' end
+                                   || '</dd></div>' end
+                            || case when e.focus_sincronizado_em is not null then
+                                   '<div><dt>Última sincronização</dt><dd>' || to_char(e.focus_sincronizado_em, 'DD/MM/YYYY HH24:MI') || '</dd></div>' end
+                            || '</dl>'
+                            || case when e.focus_mensagem is not null then
+                                   '<p class="' || case when e.focus_situacao = 'ERRO' then 'u-danger-text' else 'u-warning-text' end || '">'
+                                   || apex_escape.html(e.focus_mensagem) || '</p>' end;
+                    end loop;
+                    return l_html;
+                end;
+                ```
+        }
+        layout {
+            sequence: 40
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P44_EMITENTE_ID
+        }
+    )
+
+    region certificado (
+        name: Certificado A1
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                <p>O certificado e a senha vão direto para a Focus e não ficam guardados no Ecloud. Use <strong>Validar</strong>
+                para conferir sem gravar nada na Focus.</p>
+                ```
+        }
+        layout {
+            sequence: 50
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P44_EMITENTE_ID
+        }
+        security {
+            authorizationScheme: @administrador
+        }
+    )
+
+    region token (
+        name: Token informado à mão
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                <p>Só quando a Focus não devolver o token da empresa no cadastro: cole o token do painel. Ele vai para a
+                Web Credential do emitente e não fica em tabela nem no log.</p>
+                ```
+        }
+        layout {
+            sequence: 60
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P44_EMITENTE_ID
+        }
+        security {
+            authorizationScheme: @admin-plataforma
+        }
+    )
+
+    region buttons (
+        name: Botões
+        type: staticContent
+        layout {
+            sequence: 70
+            slot: body
+        }
+        appearance {
+            template: @/buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    pageItem P44_PRESTADOR (
+        type: radioGroup
+        label {
+            label: Prestador
+            alignment: right
+        }
+        layout {
+            sequence: 10
+            region: @novo
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        validation {
+            valueRequired: true
+        }
+        lov {
+            type: staticValues
+            staticValues: STATIC:O próprio escritório (honorários);ESCRITORIO,Um cliente do escritório;CLIENTE
+            displayNullValue: false
+        }
+        default {
+            type: static
+            staticValue: CLIENTE
+        }
+        sessionState {
+            storage: request
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P44_EMITENTE_ID
+        }
+    )
+
+    pageItem P44_CLIENTE_ID (
+        type: popupLov
+        label {
+            label: Cliente
+            alignment: right
+        }
+        layout {
+            sequence: 20
+            region: @novo
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        lov {
+            type: sharedComponent
+            lov: @clientes
+        }
+        sessionState {
+            storage: request
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P44_EMITENTE_ID
+        }
+        help {
+            inlineHelpText: Obrigatório quando o prestador é um cliente.
+        }
+    )
+
+    pageItem P44_NOVO_OPCAO_SIMPLES (
+        type: selectList
+        label {
+            label: Situação no Simples Nacional
+            alignment: right
+        }
+        layout {
+            sequence: 30
+            region: @novo
+            slot: regionBody
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        validation {
+            valueRequired: true
+        }
+        lov {
+            type: staticValues
+            staticValues: STATIC:Não optante;1,Optante MEI;2,Optante ME/EPP;3
+            displayNullValue: true
+            nullDisplayValue: - Selecione -
+        }
+        sessionState {
+            storage: request
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P44_EMITENTE_ID
+        }
+    )
+
+    pageItem P44_NOVO_REGIME_APURACAO_SN (
+        type: selectList
+        label {
+            label: Apuração no Simples (ME/EPP)
+            alignment: right
+        }
+        layout {
+            sequence: 40
+            region: @novo
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        lov {
+            type: staticValues
+            staticValues: STATIC:Federais e municipal pelo Simples;1,Federais pelo Simples e ISSQN por fora;2,Federais e municipal por fora;3
+            displayNullValue: true
+            nullDisplayValue: - Só para ME/EPP -
+        }
+        sessionState {
+            storage: request
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P44_EMITENTE_ID
+        }
+    )
+
+    pageItem P44_NOVO_REGIME_TRIBUTARIO (
+        type: selectList
+        label {
+            label: Regime tributário (cadastro na Focus)
+            alignment: right
+        }
+        layout {
+            sequence: 50
+            region: @novo
+            slot: regionBody
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        validation {
+            valueRequired: true
+        }
+        lov {
+            type: staticValues
+            staticValues: STATIC:Simples Nacional;1,Simples Nacional com excesso de sublimite;2,Regime normal;3,MEI;4
+            displayNullValue: true
+            nullDisplayValue: - Selecione -
+        }
+        sessionState {
+            storage: request
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P44_EMITENTE_ID
+        }
+    )
+
+    pageItem P44_NOVO_REGIME_ESPECIAL (
+        type: selectList
+        label {
+            label: Regime especial municipal
+            alignment: right
+        }
+        layout {
+            sequence: 60
+            region: @novo
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        validation {
+            valueRequired: true
+        }
+        lov {
+            type: staticValues
+            staticValues: STATIC:Nenhum;0,Ato cooperado;1,Estimativa;2,Microempresa municipal;3,Notário ou registrador;4,Profissional autônomo;5,Sociedade de profissionais;6,Outros;9
+            displayNullValue: false
+        }
+        default {
+            type: static
+            staticValue: 0
+        }
+        sessionState {
+            storage: request
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P44_EMITENTE_ID
+        }
+    )
+
+    pageItem P44_EMITENTE_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @emitente
+            slot: regionBody
+        }
+        source {
+            formRegion: @emitente
+            column: EMITENTE_ID
+            dataType: number
+            primaryKey: true
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P44_TIPO (
+        type: hidden
+        layout {
+            sequence: 11
+            region: @emitente
+            slot: regionBody
+        }
+        source {
+            formRegion: @emitente
+            column: TIPO
+            dataType: varchar2
+        }
+    )
+
+    pageItem P44_RAZAO_SOCIAL (
+        type: displayOnly
+        label {
+            label: Razão social
+            alignment: right
+        }
+        layout {
+            sequence: 20
+            region: @emitente
+            slot: regionBody
+            columnSpan: 8
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        source {
+            formRegion: @emitente
+            column: RAZAO_SOCIAL
+            dataType: varchar2
+        }
+    )
+
+    pageItem P44_DOCUMENTO (
+        type: displayOnly
+        label {
+            label: CPF/CNPJ
+            alignment: right
+        }
+        layout {
+            sequence: 25
+            region: @emitente
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        source {
+            type: sqlQuerySingleValue
+            sqlQuery: select pkg_rural_cadastro.formatar_documento(coalesce(cnpj, cpf)) from nfsen_emitente where emitente_id = :P44_EMITENTE_ID
+        }
+    )
+
+    pageItem P44_INSCRICAO_MUNICIPAL (
+        type: textField
+        label {
+            label: Inscrição municipal
+            alignment: right
+        }
+        layout {
+            sequence: 30
+            region: @emitente
+            slot: regionBody
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        validation {
+            maxLength: 15
+        }
+        source {
+            formRegion: @emitente
+            column: INSCRICAO_MUNICIPAL
+            dataType: varchar2
+        }
+        help {
+            inlineHelpText: Pré-requisito da Focus em muitos municípios.
+        }
+    )
+
+    pageItem P44_EMAIL (
+        type: textField
+        label {
+            label: E-mail
+            alignment: right
+        }
+        layout {
+            sequence: 40
+            region: @emitente
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 5
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        validation {
+            maxLength: 255
+        }
+        source {
+            formRegion: @emitente
+            column: EMAIL
+            dataType: varchar2
+        }
+    )
+
+    pageItem P44_TELEFONE (
+        type: textField
+        label {
+            label: Telefone
+            alignment: right
+        }
+        layout {
+            sequence: 50
+            region: @emitente
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 3
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        validation {
+            maxLength: 20
+        }
+        source {
+            formRegion: @emitente
+            column: TELEFONE
+            dataType: varchar2
+        }
+    )
+
+    pageItem P44_REGIME_TRIBUTARIO (
+        type: selectList
+        label {
+            label: Regime tributário (cadastro na Focus)
+            alignment: right
+        }
+        layout {
+            sequence: 60
+            region: @emitente
+            slot: regionBody
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        validation {
+            valueRequired: true
+        }
+        lov {
+            type: staticValues
+            staticValues: STATIC:Simples Nacional;1,Simples Nacional com excesso de sublimite;2,Regime normal;3,MEI;4
+            displayNullValue: false
+        }
+        source {
+            formRegion: @emitente
+            column: REGIME_TRIBUTARIO
+            dataType: varchar2
+        }
+    )
+
+    pageItem P44_REGIME_ESPECIAL (
+        type: selectList
+        label {
+            label: Regime especial municipal
+            alignment: right
+        }
+        layout {
+            sequence: 70
+            region: @emitente
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        validation {
+            valueRequired: true
+        }
+        lov {
+            type: staticValues
+            staticValues: STATIC:Nenhum;0,Ato cooperado;1,Estimativa;2,Microempresa municipal;3,Notário ou registrador;4,Profissional autônomo;5,Sociedade de profissionais;6,Outros;9
+            displayNullValue: false
+        }
+        source {
+            formRegion: @emitente
+            column: REGIME_ESPECIAL
+            dataType: varchar2
+        }
+    )
+
+    pageItem P44_OPCAO_SIMPLES (
+        type: selectList
+        label {
+            label: Situação no Simples Nacional
+            alignment: right
+        }
+        layout {
+            sequence: 80
+            region: @emitente
+            slot: regionBody
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        validation {
+            valueRequired: true
+        }
+        lov {
+            type: staticValues
+            staticValues: STATIC:Não optante;1,Optante MEI;2,Optante ME/EPP;3
+            displayNullValue: false
+        }
+        source {
+            formRegion: @emitente
+            column: OPCAO_SIMPLES
+            dataType: varchar2
+        }
+    )
+
+    pageItem P44_REGIME_APURACAO_SN (
+        type: selectList
+        label {
+            label: Apuração no Simples (ME/EPP)
+            alignment: right
+        }
+        layout {
+            sequence: 90
+            region: @emitente
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        lov {
+            type: staticValues
+            staticValues: STATIC:Federais e municipal pelo Simples;1,Federais pelo Simples e ISSQN por fora;2,Federais e municipal por fora;3
+            displayNullValue: true
+            nullDisplayValue: - Só para ME/EPP -
+        }
+        source {
+            formRegion: @emitente
+            column: REGIME_APURACAO_SN
+            dataType: varchar2
+        }
+    )
+
+    pageItem P44_SERIE_DPS (
+        type: numberField
+        label {
+            label: Série da DPS
+            alignment: right
+        }
+        layout {
+            sequence: 100
+            region: @emitente
+            slot: regionBody
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        validation {
+            valueRequired: true
+        }
+        source {
+            formRegion: @emitente
+            column: SERIE_DPS
+            dataType: number
+        }
+        help {
+            inlineHelpText: De 1 a 49999.
+        }
+    )
+
+    pageItem P44_PROXIMO_NUMERO_DPS (
+        type: numberField
+        label {
+            label: Próximo número da DPS
+            alignment: right
+        }
+        layout {
+            sequence: 110
+            region: @emitente
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        validation {
+            valueRequired: true
+        }
+        source {
+            formRegion: @emitente
+            column: PROXIMO_NUMERO_DPS
+            dataType: number
+        }
+        help {
+            inlineHelpText: Numeração controlada pelo Ecloud. Só altere para continuar a sequência de outro sistema.
+        }
+    )
+
+    pageItem P44_ATIVO (
+        type: switch
+        label {
+            label: Ativo
+            alignment: right
+        }
+        layout {
+            sequence: 120
+            region: @emitente
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        source {
+            formRegion: @emitente
+            column: ATIVO
+            dataType: varchar2
+        }
+        settings {
+            useDefaults: false
+            onValue: S
+            offValue: N
+        }
+    )
+
+    pageItem P44_CODIGO_TRIBUTACAO_ISS (
+        type: textField
+        label {
+            label: Código de tributação nacional do ISSQN
+            alignment: right
+        }
+        layout {
+            sequence: 10
+            region: @padroes
+            slot: regionBody
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        validation {
+            maxLength: 6
+        }
+        source {
+            formRegion: @emitente
+            column: CODIGO_TRIBUTACAO_ISS
+            dataType: varchar2
+        }
+        help {
+            inlineHelpText: 6 dígitos (item, subitem e desdobro da lista nacional).
+        }
+    )
+
+    pageItem P44_TRIBUTACAO_ISS (
+        type: selectList
+        label {
+            label: Tributação do ISSQN
+            alignment: right
+        }
+        layout {
+            sequence: 20
+            region: @padroes
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        validation {
+            valueRequired: true
+        }
+        lov {
+            type: staticValues
+            staticValues: STATIC:Operação tributável;1,Imunidade;2,Exportação de serviço;3,Não incidência;4
+            displayNullValue: false
+        }
+        source {
+            formRegion: @emitente
+            column: TRIBUTACAO_ISS
+            dataType: varchar2
+        }
+    )
+
+    pageItem P44_ALIQUOTA_ISS (
+        type: numberField
+        label {
+            label: Alíquota do ISSQN (%)
+            alignment: right
+        }
+        layout {
+            sequence: 30
+            region: @padroes
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        source {
+            formRegion: @emitente
+            column: ALIQUOTA_ISS
+            dataType: number
+        }
+    )
+
+    pageItem P44_DESCRICAO_SERVICO (
+        type: textarea
+        label {
+            label: Descrição do serviço
+            alignment: right
+        }
+        layout {
+            sequence: 40
+            region: @padroes
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        validation {
+            maxLength: 1000
+        }
+        source {
+            formRegion: @emitente
+            column: DESCRICAO_SERVICO
+            dataType: varchar2
+        }
+    )
+
+    pageItem P44_IBS_CBS_CST (
+        type: popupLov
+        label {
+            label: CST do IBS/CBS
+            alignment: right
+        }
+        layout {
+            sequence: 50
+            region: @padroes
+            slot: regionBody
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        lov {
+            type: sharedComponent
+            lov: @cst-cbsibs
+        }
+        source {
+            formRegion: @emitente
+            column: IBS_CBS_CST
+            dataType: varchar2
+        }
+    )
+
+    pageItem P44_IBS_CBS_CCLASSTRIB (
+        type: popupLov
+        label {
+            label: cClassTrib do IBS/CBS
+            alignment: right
+        }
+        layout {
+            sequence: 60
+            region: @padroes
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 6
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        lov {
+            type: sharedComponent
+            lov: @cclasstrib-cbsibs
+        }
+        source {
+            formRegion: @emitente
+            column: IBS_CBS_CCLASSTRIB
+            dataType: varchar2
+        }
+    )
+
+    pageItem P44_EMAIL_COPIA (
+        type: textField
+        label {
+            label: E-mail que recebe cópia das notas
+            alignment: right
+        }
+        layout {
+            sequence: 70
+            region: @padroes
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        validation {
+            maxLength: 80
+        }
+        source {
+            formRegion: @emitente
+            column: EMAIL_COPIA
+            dataType: varchar2
+        }
+    )
+
+    pageItem P44_CERTIFICADO (
+        type: fileUpload
+        label {
+            label: Certificado A1 (.pfx ou .p12)
+            alignment: right
+        }
+        layout {
+            sequence: 10
+            region: @certificado
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        display {
+            displayAs: inlineDropzone
+            dropzoneTitle: Arraste o certificado A1
+            dropzoneDesc: ou clique para escolher o arquivo
+        }
+        storage {
+            type: appTempFiles
+            purgeFileAt: endOfRequest
+            fileTypes: .pfx,.p12,application/x-pkcs12
+            maxFileSize: 100
+        }
+    )
+
+    pageItem P44_SENHA_CERTIFICADO (
+        type: password
+        label {
+            label: Senha do certificado
+            alignment: right
+        }
+        layout {
+            sequence: 20
+            region: @certificado
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        validation {
+            maxLength: 128
+        }
+        advanced {
+            customAttributes: autocomplete="new-password"
+        }
+        sessionState {
+            storage: request
+        }
+    )
+
+    pageItem P44_TOKEN_AMBIENTE (
+        type: selectList
+        label {
+            label: Ambiente do token
+            alignment: right
+        }
+        layout {
+            sequence: 10
+            region: @token
+            slot: regionBody
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        lov {
+            type: staticValues
+            staticValues: STATIC:Homologação;HOMOLOGACAO,Produção;PRODUCAO
+            displayNullValue: false
+        }
+        sessionState {
+            storage: request
+        }
+    )
+
+    pageItem P44_TOKEN (
+        type: password
+        label {
+            label: Token da empresa
+            alignment: right
+        }
+        layout {
+            sequence: 20
+            region: @token
+            slot: regionBody
+            startNewRow: false
+            columnSpan: 8
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
+        }
+        validation {
+            maxLength: 200
+        }
+        advanced {
+            customAttributes: autocomplete="off"
+        }
+        sessionState {
+            storage: request
+        }
+    )
+
+    button voltar (
+        buttonName: VOLTAR
+        label: Voltar
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: previous
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 43
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button criar (
+        buttonName: CRIAR
+        label: Criar emitente
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P44_EMITENTE_ID
+        }
+        security {
+            authorizationScheme: @administrador
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Salvar alterações
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: update
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P44_EMITENTE_ID
+        }
+        security {
+            authorizationScheme: @administrador
+        }
+    )
+
+    button validar (
+        buttonName: VALIDAR
+        label: Validar na Focus
+        layout {
+            sequence: 10
+            region: @certificado
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text-with-icon
+            icon: fa-check-circle-o
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P44_EMITENTE_ID
+        }
+        security {
+            authorizationScheme: @administrador
+        }
+    )
+
+    button cadastrar (
+        buttonName: CADASTRAR
+        label: Cadastrar na Focus
+        layout {
+            sequence: 20
+            region: @certificado
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text-with-icon
+            icon: fa-cloud-upload
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery: select 1 from nfsen_emitente where emitente_id = :P44_EMITENTE_ID and focus_situacao <> 'CADASTRADA'
+        }
+        security {
+            authorizationScheme: @administrador
+        }
+    )
+
+    button trocar-certificado (
+        buttonName: TROCAR_CERTIFICADO
+        label: Trocar certificado
+        layout {
+            sequence: 30
+            region: @certificado
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text-with-icon
+            icon: fa-refresh
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery: select 1 from nfsen_emitente where emitente_id = :P44_EMITENTE_ID and focus_situacao = 'CADASTRADA'
+        }
+        security {
+            authorizationScheme: @administrador
+        }
+    )
+
+    button sincronizar (
+        buttonName: SINCRONIZAR
+        label: Sincronizar com a Focus
+        layout {
+            sequence: 10
+            region: @focus
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text-with-icon
+            icon: fa-refresh
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery: select 1 from nfsen_emitente where emitente_id = :P44_EMITENTE_ID and focus_situacao = 'CADASTRADA'
+        }
+        security {
+            authorizationScheme: @administrador
+        }
+    )
+
+    button producao (
+        buttonName: PRODUCAO
+        label: Passar para produção
+        layout {
+            sequence: 20
+            region: @focus
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text-with-icon
+            icon: fa-flag
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: As próximas notas deste emitente terão validade fiscal. Continuar?
+            style: warning
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery: select 1 from nfsen_emitente where emitente_id = :P44_EMITENTE_ID and focus_situacao = 'CADASTRADA' and ambiente = 'HOMOLOGACAO'
+        }
+        security {
+            authorizationScheme: @administrador
+        }
+    )
+
+    button homologacao (
+        buttonName: HOMOLOGACAO
+        label: Voltar para homologação
+        layout {
+            sequence: 30
+            region: @focus
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text-with-icon
+            icon: fa-flask
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: rowsReturned
+            sqlQuery: select 1 from nfsen_emitente where emitente_id = :P44_EMITENTE_ID and ambiente = 'PRODUCAO'
+        }
+        security {
+            authorizationScheme: @administrador
+        }
+    )
+
+    button definir-token (
+        buttonName: DEFINIR_TOKEN
+        label: Gravar token
+        layout {
+            sequence: 10
+            region: @token
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text-with-icon
+            icon: fa-key
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P44_EMITENTE_ID
+        }
+        security {
+            authorizationScheme: @admin-plataforma
+        }
+    )
+
+    validation cliente-obrigatorio (
+        name: Cliente quando o prestador é cliente
+        validation {
+            type: expression
+            language: plsql
+            plsqlExpression: :P44_PRESTADOR = 'ESCRITORIO' or :P44_CLIENTE_ID is not null
+        }
+        error {
+            errorMessage: Escolha o cliente que presta o serviço.
+            associatedItem: @P44_CLIENTE_ID
+        }
+        execution {
+            sequence: 10
+        }
+        serverSideCondition {
+            whenButtonPressed: @criar
+        }
+    )
+
+    validation apuracao-sn (
+        name: Apuração só para ME/EPP optante
+        validation {
+            type: expression
+            language: plsql
+            plsqlExpression: (:P44_OPCAO_SIMPLES = '3') = (:P44_REGIME_APURACAO_SN is not null)
+        }
+        error {
+            errorMessage: Informe a apuração no Simples só quando o emitente é ME/EPP optante.
+            associatedItem: @P44_REGIME_APURACAO_SN
+        }
+        execution {
+            sequence: 20
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+    validation apuracao-sn-novo (
+        name: Apuração só para ME/EPP optante (novo)
+        validation {
+            type: expression
+            language: plsql
+            plsqlExpression: (:P44_NOVO_OPCAO_SIMPLES = '3') = (:P44_NOVO_REGIME_APURACAO_SN is not null)
+        }
+        error {
+            errorMessage: Informe a apuração no Simples só quando o emitente é ME/EPP optante.
+            associatedItem: @P44_NOVO_REGIME_APURACAO_SN
+        }
+        execution {
+            sequence: 30
+        }
+        serverSideCondition {
+            whenButtonPressed: @criar
+        }
+    )
+
+    validation token-obrigatorio (
+        name: Ambiente e token
+        validation {
+            type: expression
+            language: plsql
+            plsqlExpression: :P44_TOKEN_AMBIENTE is not null and :P44_TOKEN is not null
+        }
+        error {
+            errorMessage: Escolha o ambiente e cole o token.
+            associatedItem: @P44_TOKEN
+        }
+        execution {
+            sequence: 40
+        }
+        serverSideCondition {
+            whenButtonPressed: @definir-token
+        }
+    )
+
+    process initialize-form (
+        name: Inicializar formulário
+        type: formInitialization
+        formRegion: @emitente
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 1411865231
+        }
+    )
+
+    process criar (
+        name: Criar emitente
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                -- Escritório: p_cliente_id nulo. Documento, razão social e município vêm do cadastro.
+                :P44_EMITENTE_ID := pkg_nfsen.criar_emitente(
+                                        p_cliente_id         => case when :P44_PRESTADOR = 'CLIENTE' then to_number(:P44_CLIENTE_ID) end,
+                                        p_opcao_simples      => :P44_NOVO_OPCAO_SIMPLES,
+                                        p_regime_tributario  => :P44_NOVO_REGIME_TRIBUTARIO,
+                                        p_regime_especial    => :P44_NOVO_REGIME_ESPECIAL,
+                                        p_regime_apuracao_sn => :P44_NOVO_REGIME_APURACAO_SN);
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        successMessage {
+            successMessage: Emitente criado. Agora cadastre-o na Focus com o certificado A1.
+        }
+        advanced {
+            executionMappingIdentifier: 1159731978
+        }
+        serverSideCondition {
+            whenButtonPressed: @criar
+        }
+    )
+
+    process process-form (
+        name: Gravar formulário
+        type: formAutoRowProcessing
+        formRegion: @emitente
+        execution {
+            sequence: 20
+        }
+        successMessage {
+            successMessage: Alterações salvas.
+        }
+        advanced {
+            executionMappingIdentifier: 1860218925
+        }
+        serverSideCondition {
+            whenButtonPressed: @save
+        }
+    )
+
+    process validar (
+        name: Validar na Focus (dry_run)
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                -- dry_run=1: a Focus só valida (certificado, CNPJ, campos); nada é gravado lá.
+                pkg_nfsen.cadastrar_na_focus(
+                    p_emitente_id       => :P44_EMITENTE_ID,
+                    p_temp_file_name    => :P44_CERTIFICADO,
+                    p_senha_certificado => :P44_SENHA_CERTIFICADO,
+                    p_dry_run           => true);
+                ```
+        }
+        execution {
+            sequence: 30
+        }
+        successMessage {
+            successMessage: Validação feita. Veja a situação do cadastro na Focus.
+        }
+        advanced {
+            executionMappingIdentifier: 7228435582
+        }
+        serverSideCondition {
+            whenButtonPressed: @validar
+        }
+    )
+
+    process cadastrar (
+        name: Cadastrar na Focus
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                -- POST /empresas (ou PUT se a empresa já existe na conta). Grava o vínculo e os
+                -- tokens devolvidos nas Web Credentials do emitente.
+                pkg_nfsen.cadastrar_na_focus(
+                    p_emitente_id       => :P44_EMITENTE_ID,
+                    p_temp_file_name    => :P44_CERTIFICADO,
+                    p_senha_certificado => :P44_SENHA_CERTIFICADO);
+                ```
+        }
+        execution {
+            sequence: 40
+        }
+        successMessage {
+            successMessage: Cadastro na Focus atualizado.
+        }
+        advanced {
+            executionMappingIdentifier: 2740425520
+        }
+        serverSideCondition {
+            whenButtonPressed: @cadastrar
+        }
+    )
+
+    process trocar-certificado (
+        name: Trocar certificado
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                pkg_nfsen.atualizar_certificado(
+                    p_emitente_id       => :P44_EMITENTE_ID,
+                    p_temp_file_name    => :P44_CERTIFICADO,
+                    p_senha_certificado => :P44_SENHA_CERTIFICADO);
+                ```
+        }
+        execution {
+            sequence: 50
+        }
+        successMessage {
+            successMessage: Certificado enviado à Focus.
+        }
+        advanced {
+            executionMappingIdentifier: 5785479445
+        }
+        serverSideCondition {
+            whenButtonPressed: @trocar-certificado
+        }
+    )
+
+    process sincronizar (
+        name: Sincronizar com a Focus
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                pkg_nfsen.sincronizar_empresa(:P44_EMITENTE_ID);
+                ```
+        }
+        execution {
+            sequence: 60
+        }
+        successMessage {
+            successMessage: Dados da Focus atualizados.
+        }
+        advanced {
+            executionMappingIdentifier: 5600138717
+        }
+        serverSideCondition {
+            whenButtonPressed: @sincronizar
+        }
+    )
+
+    process producao (
+        name: Passar para produção
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                pkg_nfsen.definir_ambiente(:P44_EMITENTE_ID, 'PRODUCAO');
+                ```
+        }
+        execution {
+            sequence: 70
+        }
+        successMessage {
+            successMessage: Emitente em produção.
+        }
+        advanced {
+            executionMappingIdentifier: 9511435228
+        }
+        serverSideCondition {
+            whenButtonPressed: @producao
+        }
+    )
+
+    process homologacao (
+        name: Voltar para homologação
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                pkg_nfsen.definir_ambiente(:P44_EMITENTE_ID, 'HOMOLOGACAO');
+                ```
+        }
+        execution {
+            sequence: 80
+        }
+        successMessage {
+            successMessage: Emitente em homologação.
+        }
+        advanced {
+            executionMappingIdentifier: 2624768884
+        }
+        serverSideCondition {
+            whenButtonPressed: @homologacao
+        }
+    )
+
+    process definir-token (
+        name: Gravar token
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                -- Vai para a Web Credential FOCUS_<EMITENTE_ID>_H/_P; o item é só do pedido.
+                pkg_focus_api.definir_token(:P44_EMITENTE_ID, :P44_TOKEN_AMBIENTE, :P44_TOKEN);
+                ```
+        }
+        execution {
+            sequence: 90
+        }
+        successMessage {
+            successMessage: Token gravado na Web Credential do emitente.
+        }
+        advanced {
+            executionMappingIdentifier: 9471228733
+        }
+        serverSideCondition {
+            whenButtonPressed: @definir-token
+        }
+    )
+
+    branch reabrir (
+        name: Reabrir o emitente
+        execution {
+            sequence: 10
+        }
+        behavior {
+            type: pageOrUrl
+            target: {
+                page: 44
+                items: {
+                    P44_EMITENTE_ID: &P44_EMITENTE_ID.
+                }
+            }
+        }
+    )
+
+)

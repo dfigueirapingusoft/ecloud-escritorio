@@ -21,3 +21,7 @@ pageGroup administracao (
 pageGroup rural (
     name: Produtor rural
 )
+
+pageGroup nfsen (
+    name: NFS-e Nacional
+)

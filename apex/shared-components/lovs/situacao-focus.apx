@@ -1,0 +1,25 @@
+lov situacao-focus (
+    name: SITUACAO_FOCUS
+    source {
+        location: staticValues
+    }
+
+    entry situacao-focus-1 (
+        sequence: 1
+        display: Pendente
+        return: PENDENTE
+    )
+
+    entry situacao-focus-2 (
+        sequence: 2
+        display: Cadastrada
+        return: CADASTRADA
+    )
+
+    entry situacao-focus-3 (
+        sequence: 3
+        display: Com erro
+        return: ERRO
+    )
+
+)
