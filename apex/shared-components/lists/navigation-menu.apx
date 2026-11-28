@@ -16,13 +16,30 @@ list navigation-menu (
         }
     )
 
+    entry tributos-rtc (
+        label: Tributos RTC
+        icon {
+            imageIconCssClasses: fa-university
+        }
+        layout {
+            sequence: 40
+        }
+        link {
+            target: {
+                type: url
+                url: #
+            }
+        }
+    )
+
     entry simulacoes (
         label: Simulações
         icon {
             imageIconCssClasses: fa-calculator
         }
         layout {
-            sequence: 20
+            sequence: 300
+            parentEntry: @tributos-rtc
         }
         isCurrent {
             type: pages
@@ -45,7 +62,8 @@ list navigation-menu (
             imageIconCssClasses: fa-file-pdf-o
         }
         layout {
-            sequence: 30
+            sequence: 310
+            parentEntry: @tributos-rtc
         }
         isCurrent {
             type: pages
@@ -67,7 +85,7 @@ list navigation-menu (
             imageIconCssClasses: fa-leaf
         }
         layout {
-            sequence: 35
+            sequence: 30
         }
         link {
             target: {
@@ -302,7 +320,7 @@ list navigation-menu (
             imageIconCssClasses: fa-building-o
         }
         layout {
-            sequence: 40
+            sequence: 20
         }
         isCurrent {
             type: pages
