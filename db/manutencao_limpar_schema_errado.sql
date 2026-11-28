@@ -6,7 +6,8 @@
 -- Só apaga um objeto quando o MESMO nome e tipo também existem no schema da
 -- aplicação: o que for só do ADMIN (ou de outro uso) não é tocado. Tabelas
 -- caem com CASCADE CONSTRAINTS PURGE (índices, LOBs, triggers e políticas VPD
--- vão junto). O contexto CTX_ECLOUD não é mexido (o instalar.sql o religa).
+-- vão junto). Os jobs do Ecloud (RTC_JOB_*, ECLOUD_ASSINATURA_DIARIA,
+-- ECLOUD_WEBHOOK_REPROCESSA) também saem. O contexto CTX_ECLOUD não é mexido (o instalar.sql o religa).
 --
 -- Conecte DIRETO no schema a limpar (ex.: ADMIN, sem proxy) e rode:
 --   SQL> @db/manutencao_limpar_schema_errado.sql WKSP_ECLOUD LISTAR
@@ -75,6 +76,26 @@ begin
         executar('drop ' || lower(o.object_type) || ' ' || o.object_name
             || case o.object_type when 'TABLE' then ' cascade constraints purge'
                                   when 'TYPE' then ' force' end);
+    end loop;
+
+    -- Jobs do DBMS_SCHEDULER criados pelos pacotes do Ecloud (nomes fixos)
+    for j in (select job_name
+                from user_scheduler_jobs
+               where job_name in ('RTC_JOB_SINCRONIZAR_CACHE', 'RTC_JOB_EXPURGAR_LOG',
+                                  'ECLOUD_ASSINATURA_DIARIA', 'ECLOUD_WEBHOOK_REPROCESSA')
+               order by job_name)
+    loop
+        l_qtd := l_qtd + 1;
+        dbms_output.put_line(case when l_modo = 'EXECUTAR' then 'EXECUTANDO ' else 'SAIRIA     ' end
+            || 'dbms_scheduler.drop_job(''' || j.job_name || ''')');
+        if l_modo = 'EXECUTAR' then
+            begin
+                dbms_scheduler.drop_job(job_name => j.job_name, force => true);
+            exception
+                when others then
+                    dbms_output.put_line('   falhou: ' || sqlerrm);
+            end;
+        end if;
     end loop;
 
     -- Endpoint dos avisos da Stone, se o 08_ords_aviso_stone.sql rodou aqui
