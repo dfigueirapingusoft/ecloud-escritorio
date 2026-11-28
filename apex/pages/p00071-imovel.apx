@@ -537,6 +537,9 @@ page 71 (
             column: CAEPF
             dataType: varchar2
         }
+        help {
+            inlineHelpText: 14 dígitos (999.999.999/999-99). Não é o CPF; deixe em branco se não houver.
+        }
     )
 
     pageItem P71_INSCRICAO_ESTADUAL (
@@ -1101,6 +1104,25 @@ page 71 (
         }
         security {
             authorizationScheme: @contador-ou-administrador
+        }
+    )
+
+    validation caepf-14-digitos (
+        name: CAEPF com 14 dígitos
+        validation {
+            type: functionBodyReturningBoolean
+            plsqlFunctionBody: return :P71_CAEPF is null or regexp_like(regexp_replace(:P71_CAEPF, '[^0-9]', ''), '^[0-9]{14}$');
+        }
+        error {
+            errorMessage: O CAEPF tem 14 dígitos (999.999.999/999-99). Se o produtor não tiver CAEPF, deixe o campo em branco.
+            associatedItem: @P71_CAEPF
+        }
+        execution {
+            sequence: 15
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE
         }
     )
 

@@ -149,6 +149,12 @@ as
         elsif p_error.ora_sqlcode = -2292 then
             l_result.message := 'Não é possível excluir: há registros que dependem deste.';
             l_result.additional_info := null;
+        elsif p_error.ora_sqlcode = -2290 then
+            -- Restrição de verificação (formato de documento, CEP etc.): sem o ORA cru
+            l_result.message := 'Algum campo está fora do formato esperado (' ||
+                                apex_error.extract_constraint_name(p_error => p_error) ||
+                                '). Confira os documentos e tente de novo.';
+            l_result.additional_info := null;
         elsif p_error.ora_sqlcode = -2291 then
             l_result.message := 'Valor informado não encontrado no cadastro relacionado (' ||
                                 apex_error.extract_constraint_name(p_error => p_error) || ').';
