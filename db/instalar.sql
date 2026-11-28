@@ -10,6 +10,24 @@
 whenever sqlerror exit failure rollback
 set serveroutput on
 
+-- Instala no schema da aplicação, nunca no do DBA: rodar como ADMIN cria as
+-- tabelas no ADMIN e liga o contexto CTX_ECLOUD ao pacote dele, o que derruba
+-- todas as páginas do app (erro no código de limpeza de sessão / HTTP 400).
+prompt == Conferindo o schema
+begin
+    if user in ('ADMIN', 'SYS', 'SYSTEM') then
+        raise_application_error(-20004,
+            'Conectado como ' || user || '. Rode o instalar.sql como o schema da aplicação '
+            || '(ex.: WKSP_ECLOUD, ou "ADMIN"[WKSP_ECLOUD] por proxy).');
+    end if;
+end;
+/
+
+-- O contexto é global no banco: se outro schema rodou o 02_vpd.sql, ele fica
+-- ligado ao pacote daquele schema e o 01_tabelas.sql falha com ORA-01031.
+-- Religa ao pacote deste schema antes de tudo (o 02_vpd.sql repete).
+create or replace context ctx_ecloud using pkg_ecloud_ctx;
+
 -- Pré-requisito: EXECUTE em DBMS_CRYPTO (hash das senhas e tokens do login
 -- próprio). Só avisa aqui; quem precisa dele de verdade são os bodies.
 prompt == Conferindo pré-requisitos
