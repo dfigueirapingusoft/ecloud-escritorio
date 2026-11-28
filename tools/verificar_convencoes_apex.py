@@ -9,6 +9,10 @@ Regras atuais:
     template "Stretch Form Item" (t-Form-fieldContainer--stretchInputs) em
     appearance.templateOptions, para o campo ocupar toda a largura da coluna
     do grid em vez de ficar do tamanho do conteúdo.
+  * A consulta de uma LOV própria do item (lov { type: sqlQuery }) começa
+    direto em select/with: com um comentário (--) na frente, o APEX 26.2
+    trata a consulta como corpo PL/SQL e o item não renderiza (PLS-00428,
+    que aparece como ORA-20987). Também tem que devolver só 2 colunas.
 
 Uso: python3 tools/verificar_convencoes_apex.py [pasta_apex]
 Saída: "OK" ou a lista de itens fora do padrão (código de saída 1).
@@ -33,6 +37,9 @@ for arq in sorted(raiz.rglob("*.apx")):
             aparencia = re.search(r"^\s{8}appearance\s*\{(.*?)^\s{8}\}", bloco, re.M | re.S)
             if not aparencia or "t-Form-fieldContainer--stretchInputs" not in aparencia.group(1):
                 problemas.append(f"{arq}:{linha}: {m.group(2)} (sem t-Form-fieldContainer--stretchInputs)")
+        consulta = re.search(r"^\s*lov\s*\{\s*type:\s*sqlQuery\s*sqlQuery:\s*```sql\s*\n\s*(\S+)", bloco, re.M)
+        if consulta and consulta.group(1).lower() not in ("select", "with"):
+            problemas.append(f"{arq}:{linha}: {m.group(2)} (consulta da LOV não começa em select/with)")
         if not re.search(r"^\s*type:\s*radioGroup\s*$", bloco, re.M):
             continue
         lov = re.search(r"^\s*lov\s*\{(.*?)^\s{8}\}", bloco, re.M | re.S)
