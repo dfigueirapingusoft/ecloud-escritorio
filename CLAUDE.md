@@ -114,6 +114,7 @@ python3 tools/verificar_sql_apex.py /tmp/v.sql && sql ECLOUD@base @/tmp/v.sql
 * No PL/SQL, `JSON_VALUE` nativo ignora item methods (`type()`, `size()`): use SQL.
 * Função privada de pacote não pode ser usada dentro de SQL (PLS-00231): torne-a
   pública (ex.: `PKG_ECLOUD_UTIL`) ou calcule antes em variável.
+* `SQLERRM` também não entra em SQL (ORA-00904): guarde em variável antes do `UPDATE`/`INSERT`.
 * `APEX_CREDENTIAL` é de direitos do invocador: rode como o schema da aplicação, não como SYS.
 * `DBMS_CRYPTO` exige o grant de `00_pre_requisitos.sql` (como ADMIN); sem ele os bodies do login não
   compilam. Use-o por SQL dinâmico em scripts de dados para não abortar a instalação.
