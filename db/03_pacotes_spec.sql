@@ -21,7 +21,8 @@
 --        PKG_RTC_DADOS_ABERTOS, PKG_RTC_CALC, PKG_RTC_DANFSE e, no fim,
 --        03b_pacotes_spec_rural.sql (módulo A – produtor rural),
 --        03c_pacotes_spec_vitrine.sql (anúncios e depoimentos do login) e
---        03d_pacotes_spec_assinatura.sql (autocadastro, login e assinatura).
+--        03d_pacotes_spec_assinatura.sql (autocadastro, login e assinatura) e
+--        03e_pacotes_spec_verificacao.sql (código do cadastro e Z-API).
 -- Idempotente (CREATE OR REPLACE).
 --------------------------------------------------------------------------------
 set define off
@@ -103,12 +104,18 @@ as
     c_assinatura_tolerancia   constant varchar2(60) := 'ASSINATURA_TOLERANCIA_DIAS';
     c_webhook_base_url        constant varchar2(60) := 'WEBHOOK_BASE_URL';
     c_email_remetente         constant varchar2(60) := 'EMAIL_REMETENTE';
+    -- Código de verificação do cadastro e WhatsApp pela Z-API (01e_tabelas_verificacao.sql)
+    c_cadastro_exige_codigo   constant varchar2(60) := 'CADASTRO_EXIGE_CODIGO';
+    c_zapi_base_url           constant varchar2(60) := 'ZAPI_BASE_URL';
+    c_zapi_instancia          constant varchar2(60) := 'ZAPI_INSTANCIA';
+    c_zapi_token_instancia    constant varchar2(60) := 'ZAPI_TOKEN_INSTANCIA';
+    c_zapi_credencial         constant varchar2(60) := 'ZAPI_CREDENCIAL_STATIC_ID';
 
     -- Valor da chave; ORA-20010 se a chave não existir e p_obrigatorio = true.
     function valor(p_chave in varchar2, p_obrigatorio in boolean default true) return varchar2;
     function valor_numero(p_chave in varchar2, p_obrigatorio in boolean default true) return number;
 
-    -- URL base do serviço ('REGIME' | 'SIMPLES' | 'DANFSE' | 'MIDIA' | 'STONE'), sem barra final.
+    -- URL base do serviço ('REGIME' | 'SIMPLES' | 'DANFSE' | 'MIDIA' | 'STONE' | 'ZAPI'), sem barra final.
     function url_base(p_servico in varchar2) return varchar2;
 
     -- Static ID da Web Credential do APEX (padrão RTC_API_KEY).
@@ -117,13 +124,15 @@ as
     -- Static ID da Web Credential de um serviço: MIDIA -> MIDIA_UPLOAD_TOKEN
     -- (RTC_CONFIG MIDIA_CREDENCIAL_STATIC_ID); STONE -> STONE_API_KEY
     -- (RTC_CONFIG STONE_CREDENCIAL_STATIC_ID, HTTP Header Authorization com
-    -- "Basic " + base64 de "<chave secreta>:"); os demais -> RTC_API_KEY.
+    -- "Basic " + base64 de "<chave secreta>:"); ZAPI -> ZAPI_CLIENT_TOKEN
+    -- (RTC_CONFIG ZAPI_CREDENCIAL_STATIC_ID, HTTP Header Client-Token); os
+    -- demais -> RTC_API_KEY.
     function credencial_static_id(p_servico in varchar2) return varchar2;
 
     -- Grava (MERGE) uma chave. Exige ADMIN_PLATAFORMA ou contexto de sistema
     -- (ORA-20011). Valida o valor pelo tipo da chave (ORA-20012): URL começa
     -- com http:// ou https:// (produção usa https) e não termina em barra;
-    -- NUMERO precisa ser numérico.
+    -- NUMERO precisa ser numérico; BOOLEANO só aceita S ou N.
     procedure definir(p_chave in varchar2, p_valor in varchar2);
 end pkg_rtc_config;
 /
@@ -187,6 +196,7 @@ as
     c_servico_danfse   constant varchar2(10) := 'DANFSE';
     c_servico_midia    constant varchar2(10) := 'MIDIA';
     c_servico_stone    constant varchar2(10) := 'STONE';
+    c_servico_zapi     constant varchar2(10) := 'ZAPI';
 
     -- Caminhos validados contra os OpenAPI (relativos à URL base do serviço)
     -- openapi-regime-regular.json
@@ -207,6 +217,11 @@ as
     -- openapi-stone.json (Pagar.me API v5; o id vai depois da barra)
     c_path_stone_pedidos      constant varchar2(100) := '/orders';    -- POST; GET /orders/{order_id}
     c_path_stone_cobrancas    constant varchar2(100) := '/charges';   -- DELETE /charges/{charge_id}
+    -- openapi-zapi.json (Z-API; a instância e o token vão depois da barra:
+    -- /instances/{instanceId}/token/{token}/send-text). O token do caminho é
+    -- trocado por *** na URL gravada em RTC_CHAMADA_LOG.
+    c_path_zapi_instancias    constant varchar2(100) := '/instances';
+    c_zapi_sufixo_texto       constant varchar2(100) := '/send-text';  -- sufixo depois de /token/{token}
 
     -- Headers de resposta das calculadoras Java
     c_hdr_versao_app          constant varchar2(40) := 'X-CALC-APP-VERSION';
@@ -286,7 +301,8 @@ as
         p_referencia_tipo  in varchar2 default null,
         p_referencia_id    in number   default null) return t_resposta;
 
-    -- Requisição JSON com qualquer método (STONE: POST /orders, GET
+    -- Requisição JSON com qualquer método (ZAPI: POST /instances/{id}/token/
+    -- {token}/send-text; STONE: POST /orders, GET
     -- /orders/{id}, DELETE /charges/{id}). p_idempotencia vai no cabeçalho
     -- Idempotency-key (a Stone devolve o mesmo pedido para a mesma chave).
     -- p_sem_escritorio = true grava o log sem escritório (job, webhook).
@@ -544,3 +560,6 @@ end pkg_rtc_danfse;
 
 -- Autocadastro, login próprio e assinatura cobrada pela Stone
 @@03d_pacotes_spec_assinatura.sql
+
+-- Código de verificação do cadastro (e-mail ou WhatsApp pela Z-API)
+@@03e_pacotes_spec_verificacao.sql

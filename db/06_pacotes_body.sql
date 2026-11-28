@@ -238,6 +238,8 @@ as
                     || ': use http(s)://host/caminho, sem barra no final.');
             elsif l_tipo = 'NUMERO' and pkg_ecloud_util.para_numero(l_valor) is null then
                 raise_application_error(-20012, 'Valor numérico inválido para ' || l_chave || '.');
+            elsif l_tipo = 'BOOLEANO' and l_valor not in ('S', 'N') then
+                raise_application_error(-20012, 'Use S ou N em ' || l_chave || '.');
             end if;
         end if;
 

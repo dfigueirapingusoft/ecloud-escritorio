@@ -8,6 +8,7 @@ Nenhum endpoint ou campo pode ser usado no código sem estar aqui.
 | `openapi-regime-regular.json` | Calculadora Regime Regular (CBS/IBS/IS) | app 1.7.2, base V0073 (09/11/2026) | `GET /api/api-docs` da aplicação compilada do repositório oficial, commit `def97056` (25/11/2026) |
 | `openapi-simples-nacional.json` | Calculadora Simples Nacional | app 1.0.2, base V0073 | `GET /api/api-docs`, commit `a926d5a7` (19/11/2026) |
 | `openapi-danfse.json` | Gerador de DANFSe | 1.0.0 (Swagger 2.0) | `api/swagger/swagger.json` do repositório oficial, commit `8d79e6b2` (22/10/2026) |
+| `openapi-zapi.json` | Z-API (WhatsApp), só `send-text` | recorte | developer.z-api.io (28/11/2026) e Mecânico VIP (`db/34_mv_tow.sql`) |
 | `exemplos-respostas.txt` | os três | mesmas versões | respostas reais (status, headers e corpo) obtidas chamando os serviços acima |
 
 Repositórios: `github.com/ReceitaFederal/calculadora-rtc-regime-regular`,
