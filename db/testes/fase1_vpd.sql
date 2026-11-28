@@ -43,13 +43,15 @@ declare
     l_aviso   number;
     l_tok_a   number;
     l_usu_a   number;
+    l_ver     number;
     type t_nomes is table of varchar2(30);
     l_tabelas_rurais t_nomes := t_nomes(
         'IMOVEL_RURAL','IMOVEL_CONTRAPARTE','CENTRO_CUSTO','CONTA_BANCARIA',
         'CATEGORIA_CAIXA','LIVRO_CAIXA','EXTRATO_LAYOUT_CSV','EXTRATO_IMPORTACAO',
         'EXTRATO_ITEM','CONCILIACAO','REGRA_CONCILIACAO','LCDPR_ARQUIVO');
     l_tabelas_assinatura t_nomes := t_nomes(
-        'ASSINATURA','ASSINATURA_FATURA','ASSINATURA_WEBHOOK','USUARIO_SENHA_TOKEN');
+        'ASSINATURA','ASSINATURA_FATURA','ASSINATURA_WEBHOOK','USUARIO_SENHA_TOKEN',
+        'CADASTRO_VERIFICACAO');
 
     l_qtd     number;
     l_falhas  number := 0;
@@ -480,6 +482,22 @@ begin
     confere('senha fora do formato pbkdf2 é rejeitada (ORA-02290)',
         espera_erro('update usuario set senha_hash = ''texto-puro'' where usuario_id = ' || l_usu_a, -2290));
 
+    -- Pré-cadastro do código de verificação (01e_tabelas_verificacao.sql)
+    insert into cadastro_verificacao (chave, canal, destino, cnpj, email, dados, senha_hash, codigo_hash, expira_em)
+    values (rpad('c', 64, 'c'), 'EMAIL', 'pre@ecloud.invalid', '11444777000161', 'pre@ecloud.invalid',
+            '{"razaoSocial":"Pré-cadastro"}', 'pbkdf2$20000$00$00', rpad('d', 64, 'd'), systimestamp + interval '10' minute)
+    returning verificacao_id into l_ver;
+    confere('pré-cadastro com canal desconhecido é rejeitado (ORA-02290)',
+        espera_erro('update cadastro_verificacao set canal = ''SMS'' where verificacao_id = ' || l_ver, -2290));
+    confere('pré-cadastro com senha fora do formato pbkdf2 é rejeitado (ORA-02290)',
+        espera_erro('update cadastro_verificacao set senha_hash = ''texto-puro'' where verificacao_id = ' || l_ver, -2290));
+    confere('pré-cadastro CONFIRMADO sem escritório é rejeitado (ORA-02290)',
+        espera_erro('update cadastro_verificacao set situacao = ''CONFIRMADO'', confirmado_em = systimestamp where verificacao_id = ' || l_ver, -2290));
+    confere('pré-cadastro com dados que não são JSON é rejeitado (ORA-02290)',
+        espera_erro('update cadastro_verificacao set dados = ''não é json'' where verificacao_id = ' || l_ver, -2290));
+    confere('chave de verificação repetida é rejeitada (ORA-00001)',
+        espera_erro(q'[insert into cadastro_verificacao (chave, canal, destino, cnpj, email, dados, senha_hash, codigo_hash, expira_em) values (rpad('c', 64, 'c'), 'EMAIL', 'x', 'x', 'x', '{}', 'pbkdf2$1$0$0', 'x', systimestamp)]', -1));
+
     pkg_ecloud_ctx.definir_contexto('teste_contador_a');
     confere('contexto A: situação TESTE', pkg_ecloud_ctx.situacao_escritorio = 'TESTE');
     select count(*) into l_qtd from assinatura;
@@ -492,6 +510,10 @@ begin
     confere('A não vê aviso sem escritório', l_qtd = 0);
     select count(*) into l_qtd from usuario_senha_token where token_id = l_tok_a;
     confere('A vê o token do próprio escritório', l_qtd = 1);
+    select count(*) into l_qtd from cadastro_verificacao where verificacao_id = l_ver;
+    confere('A não vê pré-cadastro (sem escritório)', l_qtd = 0);
+    update cadastro_verificacao set tentativas = 9 where verificacao_id = l_ver;
+    confere('A não altera pré-cadastro (0 linhas)', sql%rowcount = 0);
     confere('A não insere fatura em B (ORA-28115)',
         espera_erro('insert into assinatura_fatura (escritorio_id, assinatura_id, periodo_inicio, periodo_fim, valor, vencimento) values ('
                     || l_esc_b || ', ' || l_ass_b || ', sysdate + 60, sysdate + 90, 10, sysdate + 60)', -28115));
@@ -509,6 +531,8 @@ begin
     confere('admin plataforma vê as faturas de todos os escritórios', l_qtd = 2);
     select count(*) into l_qtd from assinatura_webhook where webhook_id = l_aviso;
     confere('admin plataforma vê aviso sem escritório', l_qtd = 1);
+    select count(*) into l_qtd from cadastro_verificacao where verificacao_id = l_ver;
+    confere('admin plataforma vê pré-cadastro', l_qtd = 1);
 
     pkg_ecloud_ctx.limpar_contexto;
     for i in 1 .. l_tabelas_assinatura.count loop

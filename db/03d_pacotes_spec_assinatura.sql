@@ -281,6 +281,40 @@ as
         p_escritorio_id   out number,
         p_usuario_id      out number);
 
+    -- Só valida (mesmas regras e erros de CADASTRAR, sem gravar nada). Usado
+    -- por PKG_ECLOUD_VERIFICACAO.iniciar antes de mandar o código.
+    procedure validar(
+        p_cnpj            in  varchar2,
+        p_razao_social    in  varchar2,
+        p_uf              in  varchar2,
+        p_municipio_ibge  in  number,
+        p_nome            in  varchar2,
+        p_email           in  varchar2,
+        p_senha           in  varchar2,
+        p_plano_codigo    in  varchar2);
+
+    -- Igual a CADASTRAR, mas recebe a senha já em hash (USUARIO.SENHA_HASH).
+    -- Só para PKG_ECLOUD_VERIFICACAO.confirmar, que guarda o hash no
+    -- pré-cadastro e nunca o texto da senha.
+    procedure cadastrar_com_hash(
+        p_cnpj            in  varchar2,
+        p_razao_social    in  varchar2,
+        p_nome_fantasia   in  varchar2 default null,
+        p_uf              in  varchar2,
+        p_municipio_ibge  in  number,
+        p_telefone        in  varchar2 default null,
+        p_cep             in  varchar2 default null,
+        p_logradouro      in  varchar2 default null,
+        p_numero          in  varchar2 default null,
+        p_complemento     in  varchar2 default null,
+        p_bairro          in  varchar2 default null,
+        p_nome            in  varchar2,
+        p_email           in  varchar2,
+        p_senha_hash      in  varchar2,
+        p_plano_codigo    in  varchar2,
+        p_escritorio_id   out number,
+        p_usuario_id      out number);
+
     procedure enviar_boas_vindas(p_usuario_id in number);
 
     -- "Esqueci a senha": envia o link se o e-mail existir (não revela).

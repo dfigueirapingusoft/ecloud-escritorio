@@ -57,7 +57,18 @@ using (
     select 'ASSINATURA_TOLERANCIA_DIAS', '5', 'NUMERO',
            'Dias depois do vencimento até o escritório ficar suspenso' from dual union all
     select 'EMAIL_REMETENTE', 'nao-responda@escritoriocloud.com.br', 'TEXTO',
-           'Remetente dos e-mails de conta (boas-vindas, senha). Precisa ser Approved Sender no OCI Email Delivery' from dual
+           'Remetente dos e-mails de conta (boas-vindas, senha). Precisa ser Approved Sender no OCI Email Delivery' from dual union all
+    -- Código de verificação do cadastro (01e_tabelas_verificacao.sql) e WhatsApp pela Z-API
+    select 'CADASTRO_EXIGE_CODIGO', 'S', 'BOOLEANO',
+           'S = o autocadastro só cria a conta depois do código enviado por e-mail ou WhatsApp; N = cria direto' from dual union all
+    select 'ZAPI_BASE_URL', 'https://api.z-api.io', 'URL',
+           'URL base da API da Z-API (WhatsApp), sem barra final' from dual union all
+    select 'ZAPI_INSTANCIA', null, 'TEXTO',
+           'ID da instância da Z-API (painel > Instâncias). Vazio = código só por e-mail' from dual union all
+    select 'ZAPI_TOKEN_INSTANCIA', null, 'TEXTO',
+           'Token da instância da Z-API (vai no caminho da URL; mascarado no log). Só vale junto com o Client-Token da Web Credential' from dual union all
+    select 'ZAPI_CREDENCIAL_STATIC_ID', 'ZAPI_CLIENT_TOKEN', 'TEXTO',
+           'Static ID da Web Credential do APEX com o header Client-Token (token de segurança da conta Z-API)' from dual
 ) o
 on (d.chave = o.chave)
 when not matched then

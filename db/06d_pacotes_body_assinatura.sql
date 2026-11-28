@@ -1530,34 +1530,25 @@ as
         raise_application_error(c_err_entrada, p_msg);
     end erro;
 
-    procedure cadastrar(
+    -- Validações do cadastro (menos a política de senha, que fica com quem
+    -- chama). Lê ESCRITORIO, USUARIO e PLANO em contexto de sistema (quem
+    -- chama guarda e restaura o contexto). Devolve o PLANO_ID.
+    function conferir(
         p_cnpj            in  varchar2,
         p_razao_social    in  varchar2,
-        p_nome_fantasia   in  varchar2 default null,
         p_uf              in  varchar2,
         p_municipio_ibge  in  number,
-        p_telefone        in  varchar2 default null,
-        p_cep             in  varchar2 default null,
-        p_logradouro      in  varchar2 default null,
-        p_numero          in  varchar2 default null,
-        p_complemento     in  varchar2 default null,
-        p_bairro          in  varchar2 default null,
+        p_cep             in  varchar2,
         p_nome            in  varchar2,
         p_email           in  varchar2,
-        p_senha           in  varchar2,
-        p_plano_codigo    in  varchar2,
-        p_escritorio_id   out number,
-        p_usuario_id      out number)
+        p_plano_codigo    in  varchar2) return number
     is
-        l_ctx   t_ctx := guardar;
         l_cnpj  varchar2(18) := pkg_ecloud_util.normalizar_cnpj(p_cnpj);
         l_email varchar2(255) := lower(trim(p_email));
         l_uf    varchar2(2) := upper(trim(p_uf));
         l_cep   varchar2(20) := regexp_replace(p_cep, '[^0-9]', '');
         l_plano number;
-        l_dias  number;
         l_qtd   number;
-        l_ass   number;
     begin
         if trim(p_razao_social) is null or l_uf is null or p_municipio_ibge is null
            or trim(p_nome) is null or l_email is null then
@@ -1575,7 +1566,6 @@ as
         if l_cep is not null and length(l_cep) <> 8 then
             erro('CEP inválido: use 8 dígitos.');
         end if;
-        pkg_ecloud_auth.validar_politica(p_senha);
 
         pkg_ecloud_ctx.definir_contexto_sistema;
         select count(*) into l_qtd from escritorio where cnpj = l_cnpj;
@@ -1598,6 +1588,75 @@ as
             when no_data_found then
                 raise_application_error(c_err_plano, 'Escolha um dos planos disponíveis.');
         end;
+        return l_plano;
+    end conferir;
+
+    procedure validar(
+        p_cnpj            in  varchar2,
+        p_razao_social    in  varchar2,
+        p_uf              in  varchar2,
+        p_municipio_ibge  in  number,
+        p_nome            in  varchar2,
+        p_email           in  varchar2,
+        p_senha           in  varchar2,
+        p_plano_codigo    in  varchar2)
+    is
+        l_ctx   t_ctx := guardar;
+        l_plano number;
+    begin
+        pkg_ecloud_auth.validar_politica(p_senha);
+        l_plano := conferir(p_cnpj, p_razao_social, p_uf, p_municipio_ibge, null,
+                            p_nome, p_email, p_plano_codigo);
+        restaurar(l_ctx);
+    exception
+        when others then
+            restaurar(l_ctx);
+            raise;
+    end validar;
+
+    -- Cria escritório, usuário e assinatura. Recebe a senha em texto
+    -- (P_SENHA, passa pela política e vira hash aqui) ou já em hash
+    -- (P_SENHA_HASH, vindo do pré-cadastro do código de verificação).
+    procedure criar_conta(
+        p_cnpj            in  varchar2,
+        p_razao_social    in  varchar2,
+        p_nome_fantasia   in  varchar2,
+        p_uf              in  varchar2,
+        p_municipio_ibge  in  number,
+        p_telefone        in  varchar2,
+        p_cep             in  varchar2,
+        p_logradouro      in  varchar2,
+        p_numero          in  varchar2,
+        p_complemento     in  varchar2,
+        p_bairro          in  varchar2,
+        p_nome            in  varchar2,
+        p_email           in  varchar2,
+        p_senha           in  varchar2,
+        p_senha_hash      in  varchar2,
+        p_plano_codigo    in  varchar2,
+        p_escritorio_id   out number,
+        p_usuario_id      out number)
+    is
+        l_ctx   t_ctx := guardar;
+        l_cnpj  varchar2(18) := pkg_ecloud_util.normalizar_cnpj(p_cnpj);
+        l_email varchar2(255) := lower(trim(p_email));
+        l_uf    varchar2(2) := upper(trim(p_uf));
+        l_cep   varchar2(20) := regexp_replace(p_cep, '[^0-9]', '');
+        l_hash  usuario.senha_hash%type;
+        l_plano number;
+        l_dias  number;
+        l_ass   number;
+    begin
+        if p_senha_hash is null then
+            pkg_ecloud_auth.validar_politica(p_senha);
+            l_hash := pkg_ecloud_auth.hash_senha(p_senha);
+        elsif p_senha_hash like 'pbkdf2$%' then
+            l_hash := p_senha_hash;
+        else
+            erro('Senha inválida.');
+        end if;
+        l_plano := conferir(p_cnpj, p_razao_social, p_uf, p_municipio_ibge, p_cep,
+                            p_nome, p_email, p_plano_codigo);
         l_dias := coalesce(pkg_rtc_config.valor_numero(pkg_rtc_config.c_assinatura_teste_dias, false), 14);
 
         insert into escritorio (cnpj, razao_social, nome_fantasia, uf, municipio_ibge, email, telefone,
@@ -1611,7 +1670,7 @@ as
 
         insert into usuario (escritorio_id, username, nome, email, perfil, senha_hash)
         values (p_escritorio_id, upper(l_email), trim(p_nome), l_email,
-                pkg_ecloud_ctx.c_perfil_admin, pkg_ecloud_auth.hash_senha(p_senha))
+                pkg_ecloud_ctx.c_perfil_admin, l_hash)
         returning usuario_id into p_usuario_id;
 
         l_ass := pkg_ecloud_assinatura.iniciar(p_escritorio_id, l_plano);
@@ -1638,7 +1697,60 @@ as
             rollback;
             restaurar(l_ctx);
             raise;
+    end criar_conta;
+
+    procedure cadastrar(
+        p_cnpj            in  varchar2,
+        p_razao_social    in  varchar2,
+        p_nome_fantasia   in  varchar2 default null,
+        p_uf              in  varchar2,
+        p_municipio_ibge  in  number,
+        p_telefone        in  varchar2 default null,
+        p_cep             in  varchar2 default null,
+        p_logradouro      in  varchar2 default null,
+        p_numero          in  varchar2 default null,
+        p_complemento     in  varchar2 default null,
+        p_bairro          in  varchar2 default null,
+        p_nome            in  varchar2,
+        p_email           in  varchar2,
+        p_senha           in  varchar2,
+        p_plano_codigo    in  varchar2,
+        p_escritorio_id   out number,
+        p_usuario_id      out number)
+    is
+    begin
+        criar_conta(p_cnpj, p_razao_social, p_nome_fantasia, p_uf, p_municipio_ibge, p_telefone,
+                    p_cep, p_logradouro, p_numero, p_complemento, p_bairro, p_nome, p_email,
+                    p_senha, null, p_plano_codigo, p_escritorio_id, p_usuario_id);
     end cadastrar;
+
+    procedure cadastrar_com_hash(
+        p_cnpj            in  varchar2,
+        p_razao_social    in  varchar2,
+        p_nome_fantasia   in  varchar2 default null,
+        p_uf              in  varchar2,
+        p_municipio_ibge  in  number,
+        p_telefone        in  varchar2 default null,
+        p_cep             in  varchar2 default null,
+        p_logradouro      in  varchar2 default null,
+        p_numero          in  varchar2 default null,
+        p_complemento     in  varchar2 default null,
+        p_bairro          in  varchar2 default null,
+        p_nome            in  varchar2,
+        p_email           in  varchar2,
+        p_senha_hash      in  varchar2,
+        p_plano_codigo    in  varchar2,
+        p_escritorio_id   out number,
+        p_usuario_id      out number)
+    is
+    begin
+        if p_senha_hash is null then
+            erro('Senha inválida.');
+        end if;
+        criar_conta(p_cnpj, p_razao_social, p_nome_fantasia, p_uf, p_municipio_ibge, p_telefone,
+                    p_cep, p_logradouro, p_numero, p_complemento, p_bairro, p_nome, p_email,
+                    null, p_senha_hash, p_plano_codigo, p_escritorio_id, p_usuario_id);
+    end cadastrar_com_hash;
 
     procedure enviar_boas_vindas(p_usuario_id in number) is
         l_ctx        t_ctx := guardar;

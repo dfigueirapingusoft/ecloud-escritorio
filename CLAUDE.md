@@ -43,19 +43,21 @@ português do Brasil.
 
 ```
 db/        00_pre_requisitos.sql e 00b_acesso_proxy.sql (DBA), 01_tabelas.sql (+ 01b_tabelas_rural.sql,
-           01c_tabelas_vitrine.sql, 01d_tabelas_assinatura.sql), 02_vpd.sql, 03_pacotes_spec.sql
-           (+ 03b_pacotes_spec_rural.sql, 03c_pacotes_spec_vitrine.sql, 03d_pacotes_spec_assinatura.sql),
+           01c_tabelas_vitrine.sql, 01d_tabelas_assinatura.sql, 01e_tabelas_verificacao.sql), 02_vpd.sql,
+           03_pacotes_spec.sql (+ 03b_pacotes_spec_rural.sql, 03c_pacotes_spec_vitrine.sql,
+           03d_pacotes_spec_assinatura.sql, 03e_pacotes_spec_verificacao.sql),
            04_views.sql, 05_dados_iniciais.sql,
            06_pacotes_body.sql (+ 06b_pacotes_body_rural.sql, 06c_pacotes_body_vitrine.sql,
            06d_pacotes_body_assinatura.sql), 07_primeiro_admin.sql, 08_ords_aviso_stone.sql (webhook Stone),
-           instalar.sql, testes/
+           instalar.sql, manutencao_limpar_schema_errado.sql (objetos instalados no schema errado), testes/
 apex/      fonte APEXlang 26.2 (fase 3): application.apx, shared-components/ (static-files/app.css com a
            paleta Ecloud, anuncios.js, depoimentos.js, cep.js, app-processes.apx), pages/
 docs/      01-arquitetura.md, 02-app-apex.md, 03-deploy.md, 04-escopo-agro.md (roadmap Agro),
            05-modulo-a-rural.md, 06-vitrine-login.md (layout do Mecânico VIP, anúncios e depoimentos),
            07-autocadastro-assinatura.md (login próprio, planos e cobrança Stone; páginas 106-113 do app),
+           08-verificacao-cadastro.md (código do cadastro por e-mail ou WhatsApp/Z-API),
            contratos/ (OpenAPI, exemplos, lcdpr-leiaute-1.3.md, openapi-midia.json do Worker de mídia,
-           openapi-stone.json = recorte da Pagar.me v5)
+           openapi-stone.json = recorte da Pagar.me v5, openapi-zapi.json = recorte do send-text da Z-API)
 cloudflare/midia/  Worker de mídia (imagens dos anúncios no R2), com README de publicação
 tools/     validar_contratos.py, verificar_sql_apex.py, verificar_convencoes_apex.py
 ```
@@ -110,6 +112,10 @@ python3 tools/verificar_sql_apex.py /tmp/v.sql && sql ECLOUD@base @/tmp/v.sql
   `Basic base64("sk_...:")`); valores em centavos; `Idempotency-key` no POST /orders; o webhook
   só dispara a releitura do pedido (`GET /orders/{id}`). Login é próprio (`PKG_ECLOUD_AUTH`),
   não conta APEX (decisão do Daniel em 27/11/2026).
+* Z-API (WhatsApp do código do cadastro): `POST /instances/{id}/token/{token}/send-text` com
+  `{phone, message}` (phone só dígitos com 55). ID e token da instância em `RTC_CONFIG` (token mascarado
+  no log); o token de segurança da conta só na Web Credential `ZAPI_CLIENT_TOKEN` (HTTP Header
+  `Client-Token`), decisão do Daniel em 28/11/2026.
 * Números da resposta vêm como string (`"100.00"`).
 * Simples: `baseCalculo`/`valorImpostoSeletivo` são strings 13v2 na entrada.
 * `pointer` é base 0 (`#/itens/3` = item 4); `#/itens/-1` = erro da operação.

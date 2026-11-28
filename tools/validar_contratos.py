@@ -30,6 +30,8 @@ OPENAPI = {
     "MIDIA": json.loads((CONTRATOS / "openapi-midia.json").read_text(encoding="utf-8")),
     # Stone / Pagar.me API v5: recorte usado na mensalidade (PKG_STONE_API)
     "STONE": json.loads((CONTRATOS / "openapi-stone.json").read_text(encoding="utf-8")),
+    # Z-API (WhatsApp): só o envio de texto do código de verificação (PKG_ZAPI_API)
+    "ZAPI": json.loads((CONTRATOS / "openapi-zapi.json").read_text(encoding="utf-8")),
 }
 SPEC_SQL += (RAIZ / "db" / "03d_pacotes_spec_assinatura.sql").read_text(encoding="utf-8")
 TABELAS_SQL += (RAIZ / "db" / "01d_tabelas_assinatura.sql").read_text(encoding="utf-8")
@@ -76,6 +78,8 @@ METODO = {
     "c_path_stone_pedidos": ("STONE", "post"),
     # o id vai depois da barra
     "c_path_stone_cobrancas": ("STONE", "delete", "/charges/{charge_id}"),
+    # instância e token vão depois da barra; o sufixo é C_ZAPI_SUFIXO_TEXTO
+    "c_path_zapi_instancias": ("ZAPI", "post", "/instances/{instanceId}/token/{token}/send-text"),
 }
 
 # Caminhos filhos (constante + "/{id}") com método próprio.
@@ -122,6 +126,14 @@ for const, filhos in CAMINHOS_FILHOS.items():
 for const in METODO:
     if const not in declarados:
         falha(f"{const}: esperado no validador mas não declarado em 03_pacotes_spec.sql")
+
+# Sufixo do envio de texto da Z-API: o caminho montado precisa terminar nele.
+sufixo = re.search(r"c_zapi_sufixo_texto\s+constant\s+varchar2\(\d+\)\s*:=\s*'([^']+)'", SPEC_SQL, re.I)
+modelo_zapi = METODO["c_path_zapi_instancias"][2]
+if sufixo and modelo_zapi.endswith(sufixo.group(1)):
+    ok(f"ZAPI    sufixo {sufixo.group(1)} fecha {modelo_zapi}")
+else:
+    falha(f"c_zapi_sufixo_texto ausente ou não fecha {modelo_zapi}")
 
 # parâmetros de query usados pelos pacotes
 PARAMS = [
@@ -331,6 +343,13 @@ CAMPOS = [
 ] + [
     # Stone <- ErroStone (mensagem_erro)
     ("STONE", "ErroStone", c) for c in ["message", "errors"]
+] + [
+    # Z-API -> EnviarTextoInput / <- EnviarTextoOutput, ErroZapi (PKG_ZAPI_API.enviar_texto)
+    ("ZAPI", "EnviarTextoInput", c) for c in ["phone", "message"]
+] + [
+    ("ZAPI", "EnviarTextoOutput", c) for c in ["zaapId", "messageId"]
+] + [
+    ("ZAPI", "ErroZapi", c) for c in ["error"]
 ]
 
 for servico, raiz, caminho in CAMPOS:

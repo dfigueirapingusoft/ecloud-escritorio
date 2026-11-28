@@ -1,0 +1,108 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Z-API (WhatsApp) - recorte usado pelo Ecloud",
+    "version": "1",
+    "description": "Recorte da API da Z-API com SOMENTE o envio de texto que o Ecloud usa para mandar o código de verificação do autocadastro pelo WhatsApp (PKG_ZAPI_API). Não é o contrato completo do provedor. Fontes: documentação oficial (developer.z-api.io, lida em 28/11/2026) e o app Mecânico VIP, que já envia por esse caminho em produção (db/34_mv_tow.sql, MV_TOW_API.send_text). O ID e o token da instância vão no caminho da URL; o token de segurança da conta vai no header Client-Token, injetado pela Web Credential ZAPI_CLIENT_TOKEN. Com o token de segurança ativado no painel, a Z-API recusa toda chamada sem esse header."
+  },
+  "servers": [
+    { "url": "https://api.z-api.io", "description": "Produção (única)" }
+  ],
+  "x-fonte": [
+    "https://developer.z-api.io/en/message/send-text",
+    "https://developer.z-api.io/en/security/introduction",
+    "https://developer.z-api.io/security/client-token"
+  ],
+  "components": {
+    "securitySchemes": {
+      "clientToken": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "Client-Token",
+        "description": "Token de Segurança da Conta (painel > Segurança). Depois de 'Ativar Token', toda requisição sem ele é recusada com {\"error\": \"null not allowed\"}."
+      }
+    },
+    "parameters": {
+      "instanceId": {
+        "name": "instanceId", "in": "path", "required": true,
+        "schema": { "type": "string" },
+        "description": "ID da instância (painel > Instâncias)."
+      },
+      "token": {
+        "name": "token", "in": "path", "required": true,
+        "schema": { "type": "string" },
+        "description": "Token da instância. O Ecloud troca por *** na URL gravada em RTC_CHAMADA_LOG."
+      }
+    },
+    "schemas": {
+      "EnviarTextoInput": {
+        "type": "object",
+        "required": ["phone", "message"],
+        "x-fonte": "https://developer.z-api.io/en/message/send-text",
+        "properties": {
+          "phone": {
+            "type": "string",
+            "description": "Código do país + DDD + número, só dígitos, sem máscara. Ex.: 5511999999999.",
+            "example": "5511999999999"
+          },
+          "message": { "type": "string", "description": "Texto a enviar." },
+          "delayMessage": { "type": "integer", "minimum": 1, "maximum": 15, "description": "Espera em segundos antes de enviar (opcional; o Ecloud não usa)." }
+        }
+      },
+      "EnviarTextoOutput": {
+        "type": "object",
+        "x-fonte": "https://developer.z-api.io/en/message/send-text",
+        "properties": {
+          "zaapId": { "type": "string", "description": "ID da mensagem na Z-API." },
+          "messageId": { "type": "string", "description": "ID da mensagem no WhatsApp." },
+          "id": { "type": "string", "description": "Mesmo valor de messageId (compatibilidade com o Zapier)." }
+        },
+        "example": {
+          "zaapId": "3999984263738042930CD6ECDE9VDWSA",
+          "messageId": "D241XXXX732339502B68",
+          "id": "D241XXXX732339502B68"
+        }
+      },
+      "ErroZapi": {
+        "type": "object",
+        "x-fonte": "https://developer.z-api.io/security/client-token",
+        "description": "Corpo de erro observado na documentação de segurança (sem Client-Token: {\"error\": \"null not allowed\"}). O status HTTP não é documentado: o Ecloud trata como falha qualquer status fora de 2xx.",
+        "properties": {
+          "error": { "type": "string" }
+        }
+      }
+    }
+  },
+  "security": [ { "clientToken": [] } ],
+  "paths": {
+    "/instances/{instanceId}/token/{token}/send-text": {
+      "parameters": [
+        { "$ref": "#/components/parameters/instanceId" },
+        { "$ref": "#/components/parameters/token" }
+      ],
+      "post": {
+        "summary": "Envia mensagem de texto",
+        "operationId": "enviarTexto",
+        "x-fonte": "https://developer.z-api.io/en/message/send-text",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/EnviarTextoInput" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Mensagem aceita para envio.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnviarTextoOutput" } } }
+          },
+          "405": { "description": "Método HTTP errado." },
+          "415": { "description": "Falta Content-Type: application/json." },
+          "default": {
+            "description": "Erro (ex.: Client-Token ausente ou inválido).",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErroZapi" } } }
+          }
+        }
+      }
+    }
+  }
+}

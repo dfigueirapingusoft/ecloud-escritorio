@@ -1,0 +1,148 @@
+--------------------------------------------------------------------------------
+-- 01e_tabelas_verificacao.sql
+-- Código de verificação no autocadastro (e-mail ou WhatsApp pela Z-API), para
+-- barrar cadastros de especulação. Chamado por 01_tabelas.sql (depois do 01d).
+-- Regras em docs/08-verificacao-cadastro.md.
+--
+-- Conteúdo:
+--   1. CADASTRO_VERIFICACAO  pré-cadastro: os dados do formulário ficam aqui
+--                            (senha já em hash PBKDF2, código só em hash
+--                            SHA-256) até a pessoa digitar o código certo.
+--                            Só então PKG_ECLOUD_VERIFICACAO chama o
+--                            cadastro e nascem escritório, usuário e
+--                            assinatura. Antes disso não há ESCRITORIO_ID:
+--                            a coluna fica nula e é preenchida na confirmação.
+--   2. RTC_CHAMADA_LOG       aceita o serviço ZAPI e a referência
+--                            CADASTRO_VERIFICACAO.
+--
+-- VPD: CADASTRO_VERIFICACAO usa PKG_RTC_VPD.FN_LOG (02_vpd.sql). Linha sem
+-- escritório (pré-cadastro) só é vista pelo sistema e pelo admin da
+-- plataforma; a tela pública de cadastro chega nela só pelo pacote, que roda
+-- em contexto de sistema.
+--
+-- Os segredos da Z-API não ficam aqui: o token de segurança da conta
+-- (Client-Token) está na Web Credential ZAPI_CLIENT_TOKEN do APEX.
+--
+-- Idempotente: só ignora erros de "já existe".
+-- Compatível com 19c e 23ai (JSON em CLOB IS JSON).
+--------------------------------------------------------------------------------
+set define off
+set serveroutput on
+
+declare
+    -- Executa um DDL ignorando apenas os erros de "objeto já existe".
+    procedure ddl(p_sql in varchar2) is
+        e_ja_existe      exception; pragma exception_init(e_ja_existe,      -955);
+        e_coluna_existe  exception; pragma exception_init(e_coluna_existe,  -1430);
+        e_pk_existe      exception; pragma exception_init(e_pk_existe,      -2260);
+        e_uk_existe      exception; pragma exception_init(e_uk_existe,      -2261);
+        e_cons_nome      exception; pragma exception_init(e_cons_nome,      -2264);
+        e_fk_existe      exception; pragma exception_init(e_fk_existe,      -2275);
+        e_idx_existe     exception; pragma exception_init(e_idx_existe,     -1408);
+    begin
+        execute immediate p_sql;
+    exception
+        when e_ja_existe or e_coluna_existe or e_pk_existe or e_uk_existe
+          or e_cons_nome or e_fk_existe or e_idx_existe then
+            null;
+    end ddl;
+
+    -- RTC_CHAMADA_LOG tem VPD e o Oracle avalia a política durante o DDL que
+    -- valida linhas (ORA-28133): desliga só durante a troca do CHECK;
+    -- 02_vpd.sql recria a política em seguida. Mesmo motivo do 01d.
+    procedure politica_log(p_ligar in boolean) is
+    begin
+        for r in (select object_name, policy_name
+                    from user_policies
+                   where object_name = 'RTC_CHAMADA_LOG')
+        loop
+            dbms_rls.enable_policy(
+                object_schema => sys_context('USERENV', 'CURRENT_SCHEMA'),
+                object_name   => r.object_name,
+                policy_name   => r.policy_name,
+                enable        => p_ligar);
+        end loop;
+    end politica_log;
+
+    -- Troca o CHECK de uma coluna (remove e cria de novo com a lista nova).
+    procedure trocar_check(p_tabela in varchar2, p_constraint in varchar2, p_condicao in varchar2) is
+        e_nao_existe exception; pragma exception_init(e_nao_existe, -2443);
+    begin
+        begin
+            execute immediate 'alter table ' || p_tabela || ' drop constraint ' || p_constraint;
+        exception
+            when e_nao_existe then null;
+        end;
+        execute immediate 'alter table ' || p_tabela || ' add constraint ' || p_constraint
+                       || ' check (' || p_condicao || ')';
+    end trocar_check;
+begin
+    ----------------------------------------------------------------------------
+    -- 1. CADASTRO_VERIFICACAO
+    --    CHAVE        identificador aleatório (hex) que a página guarda entre
+    --                 o envio e a digitação do código; não é o código.
+    --    CANAL        EMAIL ou WHATSAPP; DESTINO é o e-mail (minúsculas) ou o
+    --                 celular só com dígitos, com o 55 na frente (Z-API).
+    --    DADOS        campos do formulário em JSON (sem a senha).
+    --    SENHA_HASH   senha já em PBKDF2 (mesmo formato de USUARIO.SENHA_HASH).
+    --    CODIGO_HASH  SHA-256 do código de 6 dígitos com a CHAVE como sal.
+    --    TENTATIVAS   códigos errados digitados; ENVIOS = códigos enviados.
+    --    SITUACAO     PENDENTE -> CONFIRMADO (cadastro feito) | EXPIRADO |
+    --                 BLOQUEADO (tentativas esgotadas).
+    ----------------------------------------------------------------------------
+    ddl(q'[
+        create table cadastro_verificacao (
+            verificacao_id   number generated by default on null as identity,
+            chave            varchar2(64 char)   not null,
+            canal            varchar2(10 char)   not null,
+            destino          varchar2(320 char)  not null,
+            cnpj             varchar2(14 char)   not null,
+            email            varchar2(320 char)  not null,
+            dados            clob                not null,
+            senha_hash       varchar2(400 char)  not null,
+            codigo_hash      varchar2(64 char)   not null,
+            expira_em        timestamp with local time zone not null,
+            tentativas       number(2)           default on null 0 not null,
+            envios           number(2)           default on null 1 not null,
+            ultimo_envio_em  timestamp with local time zone default on null systimestamp not null,
+            ip_solicitante   varchar2(45 char),
+            situacao         varchar2(10 char)   default on null 'PENDENTE' not null,
+            escritorio_id    number,
+            confirmado_em    timestamp with local time zone,
+            criado_em        timestamp with local time zone default on null systimestamp not null,
+            constraint cadastro_verificacao_pk primary key (verificacao_id),
+            constraint cadastro_verificacao_chave_uk unique (chave),
+            constraint cadastro_verificacao_canal_ck check (canal in ('EMAIL','WHATSAPP')),
+            constraint cadastro_verificacao_sit_ck check (situacao in ('PENDENTE','CONFIRMADO','EXPIRADO','BLOQUEADO')),
+            constraint cadastro_verificacao_dados_ck check (dados is json),
+            constraint cadastro_verificacao_senha_ck check (senha_hash like 'pbkdf2$%'),
+            constraint cadastro_verificacao_conf_ck check (
+                (situacao = 'CONFIRMADO' and escritorio_id is not null and confirmado_em is not null)
+                or (situacao <> 'CONFIRMADO' and escritorio_id is null)),
+            constraint cadastro_verificacao_esc_fk foreign key (escritorio_id) references escritorio (escritorio_id) on delete cascade
+        )]');
+    -- limites de reenvio por destino e por IP olham as últimas horas
+    ddl('create index cadastro_verificacao_dest_ix on cadastro_verificacao (destino, criado_em)');
+    ddl('create index cadastro_verificacao_ip_ix on cadastro_verificacao (ip_solicitante, criado_em)');
+    ddl('create index cadastro_verificacao_cnpj_ix on cadastro_verificacao (cnpj, situacao)');
+    ddl('create index cadastro_verificacao_esc_ix on cadastro_verificacao (escritorio_id)');
+    ddl(q'[comment on table cadastro_verificacao is 'Pré-cadastro aguardando o código de verificação (e-mail ou WhatsApp). Guarda só hashes da senha e do código.']');
+
+    ----------------------------------------------------------------------------
+    -- 2. RTC_CHAMADA_LOG: serviço ZAPI e referência CADASTRO_VERIFICACAO.
+    --    (01_tabelas.sql, 01c e 01d usam as mesmas listas.)
+    ----------------------------------------------------------------------------
+    politica_log(false);
+    trocar_check('rtc_chamada_log', 'rtc_chamada_log_serv_ck',
+                 q'[servico in ('REGIME','SIMPLES','DANFSE','MIDIA','STONE','ZAPI')]');
+    trocar_check('rtc_chamada_log', 'rtc_chamada_log_ref_ck',
+                 q'[referencia_tipo in ('SIMULACAO','DANFSE','CACHE','ERRO_CATALOGO','TESTE_CONEXAO','ANUNCIO','ASSINATURA_FATURA','CADASTRO_VERIFICACAO')]');
+    politica_log(true);
+
+    dbms_output.put_line('01e_tabelas_verificacao.sql: pré-cadastro e código de verificação verificados.');
+exception
+    when others then
+        politica_log(true);
+        raise;
+end;
+/

@@ -260,8 +260,9 @@ as
     -- e sempre a própria linha (necessário para montar o contexto).
     function fn_usuario(p_schema in varchar2, p_objeto in varchar2) return varchar2;
 
-    -- RTC_CHAMADA_LOG e ASSINATURA_WEBHOOK: escritório vê o seu; linhas sem
-    -- escritório (jobs, teste de conexão, aviso ainda não processado) só
+    -- RTC_CHAMADA_LOG, ASSINATURA_WEBHOOK e CADASTRO_VERIFICACAO: escritório vê
+    -- o seu; linhas sem escritório (jobs, teste de conexão, aviso ainda não
+    -- processado, pré-cadastro) só
     -- para o admin da plataforma e o sistema.
     function fn_log(p_schema in varchar2, p_objeto in varchar2) return varchar2;
 
@@ -393,7 +394,10 @@ declare
         t_pol('ASSINATURA',          'PKG_RTC_VPD.FN_TABELA_ESCRITORIO'),
         t_pol('ASSINATURA_FATURA',   'PKG_RTC_VPD.FN_TABELA_ESCRITORIO'),
         t_pol('ASSINATURA_WEBHOOK',  'PKG_RTC_VPD.FN_LOG'),
-        t_pol('USUARIO_SENHA_TOKEN', 'PKG_RTC_VPD.FN_ESCRITORIO'));
+        t_pol('USUARIO_SENHA_TOKEN', 'PKG_RTC_VPD.FN_ESCRITORIO'),
+        -- Pré-cadastro (01e_tabelas_verificacao.sql): sem escritório até o
+        -- código ser confirmado, então só o sistema e o admin da plataforma veem.
+        t_pol('CADASTRO_VERIFICACAO', 'PKG_RTC_VPD.FN_LOG'));
     l_existe number;
 begin
     for i in 1 .. l_pols.count loop

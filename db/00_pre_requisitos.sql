@@ -78,7 +78,8 @@ whenever sqlerror continue
 --   hosts públicos com certificado válido (o Caddy usa Let's Encrypt).
 -- * On-premises: o APEX_WEB_SERVICE roda como o usuário do APEX da instância
 --   (APEX_260100 no 26.1, APEX_260200 no 26.2), que precisa de ACL para o host.
---   Repita o bloco abaixo com host => 'api.pagar.me' para a cobrança da Stone.
+--   Repita o bloco abaixo com host => 'api.pagar.me' para a cobrança da Stone
+--   e com host => 'api.z-api.io' para o WhatsApp do código do cadastro.
 --   Descomente e ajuste o principal_name antes de executar:
 --
 -- begin
