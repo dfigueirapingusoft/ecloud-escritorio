@@ -52,6 +52,10 @@ page 110 (
             template: @/standard
             templateOptions: #DEFAULT#
         }
+        serverSideCondition {
+            type: itemIsNull
+            item: P110_CHAVE
+        }
     )
 
     region responsavel (
@@ -65,6 +69,10 @@ page 110 (
             template: @/standard
             templateOptions: #DEFAULT#
         }
+        serverSideCondition {
+            type: itemIsNull
+            item: P110_CHAVE
+        }
     )
 
     region plano (
@@ -77,6 +85,58 @@ page 110 (
         appearance {
             template: @/standard
             templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P110_CHAVE
+        }
+    )
+
+    region codigo (
+        name: Confirme o seu contato
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                <p>Enviamos um código de 6 dígitos para <strong>&P110_DESTINO.</strong>. Ele vale por 10 minutos.</p>
+                <p class="ec-auth-subtitle">Não chegou? Confira a caixa de spam ou peça outro código. A conta só é criada depois do código certo.</p>
+                ```
+        }
+        layout {
+            sequence: 50
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P110_CHAVE
+        }
+    )
+
+    pageItem P110_CHAVE (
+        type: hidden
+        layout {
+            sequence: 5
+            region: @topo
+            slot: regionBody
+        }
+    )
+
+    pageItem P110_DESTINO (
+        type: hidden
+        layout {
+            sequence: 6
+            region: @topo
+            slot: regionBody
+        }
+        source {
+            used: always
+            type: expression
+            language: plsql
+            plsqlExpression: case when :P110_CHAVE is not null then pkg_ecloud_verificacao.destino_mascarado(:P110_CHAVE) end
         }
     )
 
@@ -155,7 +215,7 @@ page 110 (
     pageItem P110_TELEFONE (
         type: textField
         label {
-            label: Telefone
+            label: Telefone / celular
             alignment: right
         }
         layout {
@@ -467,6 +527,109 @@ page 110 (
         }
     )
 
+    pageItem P110_CANAL (
+        type: radioGroup
+        label {
+            label: Receber o código de confirmação por
+            alignment: right
+        }
+        layout {
+            sequence: 50
+            region: @responsavel
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select 'E-mail' d, 'EMAIL' r, 1 o from dual
+                union all
+                select 'WhatsApp (no celular informado acima)', 'WHATSAPP', 2 from dual
+                 where pkg_zapi_api.configurado = 'S'
+                 order by 3
+                ```
+            displayNullValue: false
+        }
+        default {
+            type: static
+            staticValue: EMAIL
+        }
+        serverSideCondition {
+            type: expression
+            language: plsql
+            plsqlExpression: pkg_ecloud_verificacao.exige_codigo = 'S'
+        }
+    )
+
+    pageItem P110_CODIGO (
+        type: textField
+        label {
+            label: Código de 6 dígitos
+            alignment: right
+        }
+        layout {
+            sequence: 10
+            region: @codigo
+            slot: regionBody
+            columnSpan: 4
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+        }
+        validation {
+            valueRequired: true
+            maxLength: 9
+        }
+        advanced {
+            customAttributes: autocomplete="one-time-code" inputmode="numeric"
+        }
+        sessionState {
+            storage: request
+        }
+    )
+
+    pageItem P110_CANAL_REENVIO (
+        type: radioGroup
+        label {
+            label: Reenviar por
+            alignment: right
+        }
+        layout {
+            sequence: 20
+            region: @codigo
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        lov {
+            type: staticValues
+            staticValues: STATIC:E-mail;EMAIL,WhatsApp;WHATSAPP
+            displayNullValue: false
+        }
+        default {
+            type: item
+            item: P110_CANAL
+        }
+        serverSideCondition {
+            type: expression
+            language: plsql
+            plsqlExpression: pkg_zapi_api.configurado = 'S'
+        }
+    )
+
     pageItem P110_PLANO (
         type: radioGroup
         label {
@@ -507,6 +670,81 @@ page 110 (
         }
     )
 
+    button enviar-codigo (
+        buttonName: ENVIAR_CODIGO
+        label: Continuar
+        layout {
+            sequence: 5
+            region: @plano
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+        serverSideCondition {
+            type: expression
+            language: plsql
+            plsqlExpression: pkg_ecloud_verificacao.exige_codigo = 'S'
+        }
+    )
+
+    button confirmar (
+        buttonName: CONFIRMAR
+        label: Confirmar e criar conta
+        layout {
+            sequence: 10
+            region: @codigo
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button reenviar (
+        buttonName: REENVIAR
+        label: Reenviar código
+        layout {
+            sequence: 20
+            region: @codigo
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button corrigir (
+        buttonName: CORRIGIR
+        label: Corrigir os dados
+        layout {
+            sequence: 30
+            region: @codigo
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
     button cadastrar (
         buttonName: CADASTRAR
         label: Criar conta e entrar
@@ -523,6 +761,11 @@ page 110 (
         behavior {
             warnOnUnsavedChanges: doNotCheck
         }
+        serverSideCondition {
+            type: expression
+            language: plsql
+            plsqlExpression: pkg_ecloud_verificacao.exige_codigo = 'N'
+        }
     )
 
     validation senhas-iguais (
@@ -537,6 +780,159 @@ page 110 (
         }
         execution {
             sequence: 10
+        }
+        serverSideCondition {
+            type: expression
+            language: plsql
+            plsqlExpression: :REQUEST in ('ENVIAR_CODIGO', 'CADASTRAR')
+        }
+    )
+
+    process enviar-codigo (
+        name: Enviar o código
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                -- Passo 1: valida o formulário inteiro, guarda o pré-cadastro (senha
+                -- só em hash) e manda o código (db/06e_pacotes_body_verificacao.sql).
+                -- O IP é o último do X-Forwarded-For (o que o balanceador viu) ou o
+                -- REMOTE_ADDR; serve só para o limite de envios por hora.
+                declare
+                    l_ip  varchar2(200);
+                    l_xff varchar2(4000);
+                begin
+                    begin
+                        l_xff := owa_util.get_cgi_env('HTTP_X_FORWARDED_FOR');
+                        l_ip  := coalesce(trim(regexp_substr(l_xff, '[^,]+$')), owa_util.get_cgi_env('REMOTE_ADDR'));
+                    exception
+                        when others then l_ip := null;
+                    end;
+                    :P110_CHAVE := pkg_ecloud_verificacao.iniciar(
+                        p_cnpj           => :P110_CNPJ,
+                        p_razao_social   => :P110_RAZAO_SOCIAL,
+                        p_nome_fantasia  => :P110_NOME_FANTASIA,
+                        p_uf             => :P110_UF,
+                        p_municipio_ibge => to_number(:P110_MUNICIPIO_IBGE),
+                        p_telefone       => :P110_TELEFONE,
+                        p_cep            => :P110_CEP,
+                        p_logradouro     => :P110_ENDERECO,
+                        p_numero         => :P110_NUMERO,
+                        p_complemento    => :P110_COMPLEMENTO,
+                        p_bairro         => :P110_BAIRRO,
+                        p_nome           => :P110_NOME,
+                        p_email          => :P110_EMAIL,
+                        p_senha          => :P110_SENHA,
+                        p_plano_codigo   => :P110_PLANO,
+                        p_canal          => :P110_CANAL,
+                        p_ip             => substr(l_ip, 1, 45));
+                    :P110_CANAL_REENVIO := :P110_CANAL;
+                end;
+                ```
+        }
+        execution {
+            sequence: 5
+        }
+        advanced {
+            executionMappingIdentifier: 1101100002
+        }
+        serverSideCondition {
+            whenButtonPressed: @enviar-codigo
+        }
+    )
+
+    process confirmar (
+        name: Confirmar o código e criar a conta
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                -- Passo 2: código certo cria escritório, administrador e assinatura
+                -- com a senha guardada em hash. A senha não fica na sessão, então
+                -- a pessoa entra pela tela de login.
+                declare
+                    l_escritorio number;
+                    l_usuario    number;
+                begin
+                    pkg_ecloud_verificacao.confirmar(
+                        p_chave         => :P110_CHAVE,
+                        p_codigo        => :P110_CODIGO,
+                        p_escritorio_id => l_escritorio,
+                        p_usuario_id    => l_usuario);
+                    :P110_CHAVE := null;
+                end;
+                ```
+        }
+        execution {
+            sequence: 6
+        }
+        advanced {
+            executionMappingIdentifier: 1101100003
+        }
+        successMessage {
+            successMessage: Conta criada! Entre com o seu e-mail e a senha que você escolheu.
+        }
+        serverSideCondition {
+            whenButtonPressed: @confirmar
+        }
+    )
+
+    process reenviar (
+        name: Reenviar o código
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                declare
+                    l_ip  varchar2(200);
+                    l_xff varchar2(4000);
+                begin
+                    begin
+                        l_xff := owa_util.get_cgi_env('HTTP_X_FORWARDED_FOR');
+                        l_ip  := coalesce(trim(regexp_substr(l_xff, '[^,]+$')), owa_util.get_cgi_env('REMOTE_ADDR'));
+                    exception
+                        when others then l_ip := null;
+                    end;
+                    pkg_ecloud_verificacao.reenviar(
+                        p_chave => :P110_CHAVE,
+                        p_canal => :P110_CANAL_REENVIO,
+                        p_ip    => substr(l_ip, 1, 45));
+                end;
+                ```
+        }
+        execution {
+            sequence: 7
+        }
+        advanced {
+            executionMappingIdentifier: 1101100004
+        }
+        successMessage {
+            successMessage: Enviamos um novo código.
+        }
+        serverSideCondition {
+            whenButtonPressed: @reenviar
+        }
+    )
+
+    process corrigir (
+        name: Voltar ao formulário
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                -- O pré-cadastro fica pendente e vence sozinho; o próximo envio do
+                -- mesmo CNPJ ou e-mail o substitui.
+                :P110_CHAVE := null;
+                ```
+        }
+        execution {
+            sequence: 8
+        }
+        advanced {
+            executionMappingIdentifier: 1101100005
+        }
+        serverSideCondition {
+            whenButtonPressed: @corrigir
         }
     )
 
@@ -588,4 +984,37 @@ page 110 (
         }
     )
 
+    branch depois-confirmar (
+        name: Conta criada: ir para o login
+        execution {
+            sequence: 10
+        }
+        behavior {
+            type: pageOrUrl
+            target: {
+                page: 9999
+            }
+        }
+        serverSideCondition {
+            whenButtonPressed: @confirmar
+        }
+    )
+
+    branch mesmo-passo (
+        name: Continuar no cadastro
+        execution {
+            sequence: 20
+        }
+        behavior {
+            type: pageOrUrl
+            target: {
+                page: 110
+            }
+        }
+        serverSideCondition {
+            type: expression
+            language: plsql
+            plsqlExpression: :REQUEST in ('ENVIAR_CODIGO', 'REENVIAR', 'CORRIGIR')
+        }
+    )
 )

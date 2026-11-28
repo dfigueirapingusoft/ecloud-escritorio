@@ -61,7 +61,7 @@ editável e gráficos seguem o `example-1`.
 | 107/108 | Planos e cobrança | admin. plataforma | Planos (preço por mês, meses por fatura, aparece no cadastro, ativo) com o número de assinaturas e a URL do webhook para o painel da Stone; modal de edição (sem excluir: plano em uso tem FK). |
 | 10/11 (assinatura) | Escritórios | admin. plataforma | Colunas situação, teste até, plano e origem; no modal, quadro da assinatura com **Iniciar assinatura**, **Liberar acesso** até uma data e **Cancelar escritório**. |
 | 13 (senha) | Usuário | Administrador | Usuário novo recebe por e-mail o link para criar a senha; botão **Enviar link de senha** para reenviar. |
-| 110 | Cadastre seu escritório | público | CNPJ, razão social, endereço com CEP (`cep.js`), UF e município, responsável (e-mail = usuário), senha e plano; cria tudo (`pkg_ecloud_cadastro.cadastrar`) e já entra. |
+| 110 | Cadastre seu escritório | público | CNPJ, razão social, endereço com CEP (`cep.js`), UF e município, responsável (e-mail = usuário), senha, plano e canal do código (e-mail ou WhatsApp). Passo 2: código de 6 dígitos (`pkg_ecloud_verificacao`, docs/08); a conta nasce no código certo e a pessoa entra pelo login. Com `CADASTRO_EXIGE_CODIGO = 'N'` cria tudo direto (`pkg_ecloud_cadastro.cadastrar`) e já entra. |
 | 111 | Esqueci a senha | público | Envia o link de redefinição (mesma mensagem exista ou não o e-mail). |
 | 112 | Criar nova senha | público | Recebe `P112_TOKEN` do e-mail (redefinir ou primeira senha) e grava a senha. |
 | 113 | Trocar senha | todos | Senha atual e nova (`pkg_ecloud_auth.trocar_senha`). No menu do usuário. |

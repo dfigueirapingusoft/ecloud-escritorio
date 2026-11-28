@@ -99,6 +99,8 @@ python3 tools/verificar_sql_apex.py /tmp/v.sql && sql ECLOUD@base @/tmp/v.sql
   `starRating` não aceitam `layout.alignment`.
 * Radio group nunca exibe opção nula: todo `type: radioGroup` leva `displayNullValue: false` em `lov { }`
   (o padrão do 26.2 é `Y`). Confira com `python3 tools/verificar_convencoes_apex.py`.
+* Página 110 (cadastro) tem dois passos: formulário -> código (`P110_CHAVE` escondido e protegido); a senha
+  fica só no pedido (`storage: request`), então depois do código a pessoa entra pelo login.
 * UF aparece só pela sigla ("SP") em todo o app: LOV compartilhada `ufs` (27 UFs fixas, sem depender do cache).
 * Teste local do app: `db/testes/dados_demo.sql <workspace> <usuario> <senha>` cria usuário e dados fictícios.
 * No PL/SQL, `JSON_VALUE` nativo ignora item methods (`type()`, `size()`): use SQL.

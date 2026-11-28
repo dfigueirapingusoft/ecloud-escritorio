@@ -84,7 +84,8 @@ for rel, ln, prop, lang, txt in trechos:
         # tenta como booleano se falhar como texto: gera as duas versões
         sql_b = f'declare b boolean; begin if ({t}) then null; end if; end;'
         sql, sql_b = com_variaveis(sql, t), com_variaveis(sql_b, t)
-        out.append(f"    begin t('{onde} (bool)', q'~{sql_b}~'); end;") if any(w in t for w in (' is not null', ' is null', '<>', ' and ', 'not ', 'is_admin', 'persistent_cookies')) else out.append(f"    t('{onde}', q'~{sql}~');")
+        # booleano (condição) primeiro; se não compilar, como texto (origem/padrão de item)
+        out.append(f"    t2('{onde}', q'~{sql_b}~', q'~{sql}~');")
         continue
     elif prop == 'plsqlFunctionBody':
         sql_b = com_variaveis(f'declare function f return boolean is begin\n{t}\nend; begin null; end;', t)
