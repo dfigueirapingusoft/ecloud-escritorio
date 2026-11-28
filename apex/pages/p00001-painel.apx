@@ -61,7 +61,10 @@ page 1 (
         }
         appearance {
             template: @/required-floating
-            templateOptions: #DEFAULT#
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
         }
         validation {
             valueRequired: true
@@ -91,7 +94,10 @@ page 1 (
         }
         appearance {
             template: @/required-floating
-            templateOptions: #DEFAULT#
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
         }
         validation {
             valueRequired: true
@@ -121,7 +127,10 @@ page 1 (
         }
         appearance {
             template: @/optional-floating
-            templateOptions: #DEFAULT#
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
         }
         lov {
             type: sharedComponent
@@ -150,7 +159,10 @@ page 1 (
         }
         appearance {
             template: @/optional-floating
-            templateOptions: #DEFAULT#
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
         }
         lov {
             type: sharedComponent

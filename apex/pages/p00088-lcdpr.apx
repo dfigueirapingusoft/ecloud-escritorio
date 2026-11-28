@@ -67,7 +67,10 @@ page 88 (
         }
         appearance {
             template: @/required-floating
-            templateOptions: #DEFAULT#
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
         }
         validation {
             valueRequired: true
@@ -99,7 +102,10 @@ page 88 (
         }
         appearance {
             template: @/required-floating
-            templateOptions: #DEFAULT#
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
         }
         validation {
             valueRequired: true
@@ -168,7 +174,10 @@ page 88 (
         }
         appearance {
             template: @/required-floating
-            templateOptions: #DEFAULT#
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
         }
         validation {
             valueRequired: true
@@ -200,7 +209,10 @@ page 88 (
         }
         appearance {
             template: @/required-floating
-            templateOptions: #DEFAULT#
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
         }
         validation {
             valueRequired: true
@@ -232,7 +244,10 @@ page 88 (
         }
         appearance {
             template: @/optional-floating
-            templateOptions: #DEFAULT#
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
         }
     )
 
@@ -251,7 +266,10 @@ page 88 (
         }
         appearance {
             template: @/optional-floating
-            templateOptions: #DEFAULT#
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
         }
         validation {
             maxLength: 150
@@ -274,7 +292,10 @@ page 88 (
         }
         appearance {
             template: @/optional-floating
-            templateOptions: #DEFAULT#
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
         }
         validation {
             maxLength: 18
@@ -297,7 +318,10 @@ page 88 (
         }
         appearance {
             template: @/optional-floating
-            templateOptions: #DEFAULT#
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
         }
         validation {
             maxLength: 30
@@ -319,7 +343,10 @@ page 88 (
         }
         appearance {
             template: @/optional-floating
-            templateOptions: #DEFAULT#
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
         }
         validation {
             maxLength: 115
@@ -342,7 +369,10 @@ page 88 (
         }
         appearance {
             template: @/optional-floating
-            templateOptions: #DEFAULT#
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
         }
         validation {
             maxLength: 20

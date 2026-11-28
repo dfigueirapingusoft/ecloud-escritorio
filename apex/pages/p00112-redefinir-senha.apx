@@ -59,7 +59,10 @@ page 112 (
         }
         appearance {
             template: @/hidden
-            templateOptions: #DEFAULT#
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
             icon: fa-key
             valuePlaceholder: Nova senha
         }
@@ -89,7 +92,10 @@ page 112 (
         }
         appearance {
             template: @/hidden
-            templateOptions: #DEFAULT#
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
             icon: fa-key
             valuePlaceholder: Repita a nova senha
         }

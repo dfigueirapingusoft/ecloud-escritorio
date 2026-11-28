@@ -86,7 +86,10 @@ page 104 (
         }
         appearance {
             template: @/required-floating
-            templateOptions: #DEFAULT#
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
         }
         validation {
             valueRequired: true
@@ -109,7 +112,10 @@ page 104 (
         }
         appearance {
             template: @/optional-floating
-            templateOptions: #DEFAULT#
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
         }
         validation {
             maxLength: 60
@@ -133,7 +139,10 @@ page 104 (
         }
         appearance {
             template: @/required-floating
-            templateOptions: #DEFAULT#
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
         }
         validation {
             valueRequired: true
@@ -156,7 +165,10 @@ page 104 (
         }
         appearance {
             template: @/optional-floating
-            templateOptions: #DEFAULT#
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
         }
         validation {
             maxLength: 120
@@ -175,7 +187,10 @@ page 104 (
         }
         appearance {
             template: @/required-floating
-            templateOptions: #DEFAULT#
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
         }
         validation {
             valueRequired: true
@@ -199,7 +214,10 @@ page 104 (
         }
         appearance {
             template: @/required-floating
-            templateOptions: #DEFAULT#
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
         }
         validation {
             valueRequired: true
