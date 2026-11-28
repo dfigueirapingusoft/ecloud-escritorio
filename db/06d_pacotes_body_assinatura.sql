@@ -1082,6 +1082,14 @@ as
                           and f.situacao = 'VENCIDA'
                           and f.vencimento + l_tolerancia < p_hoje);
         commit;
+
+        -- 4. Pré-cadastros do código de verificação vencidos (06e)
+        begin
+            l_id := pkg_ecloud_verificacao.expurgar;
+        exception
+            when others then
+                rollback;
+        end;
         restaurar(l_ctx);
     exception
         when others then

@@ -67,8 +67,19 @@ não respondeu, não configurada).
 | 1 | `db/03e_pacotes_spec_verificacao.sql`: `PKG_ZAPI_API` e `PKG_ECLOUD_VERIFICACAO` |
 | 1 | `db/03d` + `06d`: `PKG_ECLOUD_CADASTRO.validar` e `cadastrar_com_hash` (o cadastro direto continua igual) |
 | 1 | `docs/contratos/openapi-zapi.json` (recorte do `send-text`) e o validador |
-| 2 | `db/06e_pacotes_body_verificacao.sql`, serviço `ZAPI` em `PKG_RTC_HTTP` (header pela Web Credential, token mascarado no log), testes `fase2_verificacao.sql` (sem HTTP) e `fase2_verificacao_integracao.sql` (Z-API real) |
+| 2 | `db/06e_pacotes_body_verificacao.sql`; serviço `ZAPI` em `PKG_RTC_CONFIG` (URL e Web Credential); `PKG_RTC_LOG` troca o token do caminho por `***` na URL e no erro e o `message` do corpo da Z-API por `***` (o código não fica no log); a rotina diária da assinatura chama o expurgo; testes `fase2_verificacao.sql` (envio simulado) e `fase2_verificacao_integracao.sql <celular>` (Z-API real) |
 | 3 | Página 110 em dois passos, template de e-mail `ECLOUD_CODIGO_VERIFICACAO`, campos da Z-API na Configuração global |
+
+## Mensagens
+
+* WhatsApp: "Ecloud: seu código de verificação é 123456. Ele vale por 10 minutos.
+  Não compartilhe este código com ninguém."
+* E-mail: template `ECLOUD_CODIGO_VERIFICACAO` (fase 3) com os campos `#NOME#`,
+  `#CODIGO#` e `#MINUTOS#`, pelo mesmo remetente das boas-vindas
+  (`RTC_CONFIG.EMAIL_REMETENTE`).
+* Falha no envio volta para a página como -20157 ("tente o outro canal") e
+  desfaz o pré-cadastro; o detalhe fica em `RTC_CHAMADA_LOG` (Z-API) ou no
+  log do `APEX_MAIL`.
 
 ## Configurar a Z-API (fase 4)
 

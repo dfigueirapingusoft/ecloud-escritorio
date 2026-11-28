@@ -197,6 +197,7 @@ as
                                when 'DANFSE'  then c_danfse_base_url
                                when 'MIDIA'   then c_midia_base_url
                                when 'STONE'   then c_stone_base_url
+                               when 'ZAPI'    then c_zapi_base_url
                                else 'SERVICO_INVALIDO_' || p_servico
                            end), '/');
     end url_base;
@@ -212,6 +213,8 @@ as
             return valor(c_midia_credencial);
         elsif upper(p_servico) = 'STONE' then
             return valor(c_stone_credencial);
+        elsif upper(p_servico) = 'ZAPI' then
+            return valor(c_zapi_credencial);
         end if;
         return credencial_static_id;
     end credencial_static_id;
@@ -278,6 +281,21 @@ as
         return l_saida;
     end truncar;
 
+    -- Z-API: o token da instância vai no caminho (/token/{token}/...) e o
+    -- corpo leva o código de verificação. Nenhum dos dois vai para o log.
+    function mascarar_url(p_url in varchar2) return varchar2 is
+    begin
+        return regexp_replace(p_url, '(/token/)[^/?]+', '\1***');
+    end mascarar_url;
+
+    function mascarar_corpo(p_servico in varchar2, p_corpo in clob) return clob is
+    begin
+        if upper(p_servico) = 'ZAPI' and p_corpo is not null then
+            return regexp_replace(p_corpo, '("message"[[:space:]]*:[[:space:]]*")([^"\\]|\\.)*"', '\1***"');
+        end if;
+        return p_corpo;
+    end mascarar_corpo;
+
     function iniciar(
         p_servico          in varchar2,
         p_operacao         in varchar2,
@@ -292,7 +310,8 @@ as
     is
         pragma autonomous_transaction;
         l_id    number;
-        l_corpo clob := truncar(p_request_body);  -- função privada não pode ir no SQL
+        l_corpo clob := truncar(mascarar_corpo(p_servico, p_request_body));  -- função privada não pode ir no SQL
+        l_url   varchar2(2000) := substr(mascarar_url(p_url), 1, 2000);
     begin
         insert into rtc_chamada_log (
             escritorio_id, servico, operacao, metodo, url,
@@ -301,7 +320,7 @@ as
             apex_app_id, apex_page_id, apex_session_id)
         values (
             case when p_sem_escritorio then null else pkg_ecloud_ctx.escritorio_id end,
-            upper(p_servico), upper(p_operacao), upper(p_metodo), substr(p_url, 1, 2000),
+            upper(p_servico), upper(p_operacao), upper(p_metodo), l_url,
             p_content_type, l_corpo,
             coalesce(p_request_bytes, dbms_lob.getlength(p_request_body)),
             p_referencia_tipo, p_referencia_id,
@@ -340,9 +359,10 @@ as
 
     procedure registrar_falha(p_chamada_id in number, p_erro in varchar2) is
         pragma autonomous_transaction;
+        l_erro varchar2(4000) := substr(mascarar_url(p_erro), 1, 4000);  -- função privada não pode ir no SQL
     begin
         update rtc_chamada_log
-           set erro_oracle = substr(p_erro, 1, 4000),
+           set erro_oracle = l_erro,
                sucesso     = 'N',
                fim_em      = systimestamp,
                tempo_ms    = round((cast(systimestamp as date) - cast(inicio_em as date)) * 86400000
@@ -2160,3 +2180,6 @@ end pkg_rtc_danfse;
 
 -- Autocadastro do escritório e assinatura pela Stone
 @@06d_pacotes_body_assinatura.sql
+
+-- Código de verificação do cadastro (e-mail ou WhatsApp pela Z-API)
+@@06e_pacotes_body_verificacao.sql
