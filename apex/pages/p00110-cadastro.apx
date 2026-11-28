@@ -598,7 +598,6 @@ page 110 (
             type: sqlQuery
             sqlQuery:
                 ```sql
-                -- LOV aceita só 2 colunas (exibição, retorno): a ordem fica na subconsulta
                 select d, r
                   from (select 'E-mail' d, 'EMAIL' r, 1 o from dual
                         union all
